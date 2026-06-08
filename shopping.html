@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopping List — FatScran</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Recipes</a></li>
+      <li><a href="shopping.html" class="active">Shopping List</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>Shopping List</h1>
+    <p>Tick the recipes you're making this week and get a combined ingredient list.</p>
+  </div>
+
+  <div class="shopping-layout" id="shopping-layout">
+    <!-- populated by JS -->
+  </div>
+</main>
+
+<script src="recipes.js"></script>
+<script>
+  const layout = document.getElementById('shopping-layout');
+
+  function parseQuantity(qty) {
+    const s = qty.trim();
+    const match = s.match(/^([\d.]+)\s*([a-zA-Z]+)$/);
+    if (match) return { amount: parseFloat(match[1]), unit: match[2].toLowerCase() };
+    const num = s.match(/^([\d.]+)$/);
+    if (num) return { amount: parseFloat(num[1]), unit: '' };
+    return { amount: null, unit: s };
+  }
+
+  function combineQuantities(quantities) {
+    if (quantities.length === 1) return quantities[0];
+    const parsed = quantities.map(parseQuantity);
+    const firstUnit = parsed[0].unit;
+    const allSameUnit = parsed.every(p => p.unit === firstUnit && p.amount !== null);
+    if (allSameUnit) {
+      const total = parsed.reduce((s, p) => s + p.amount, 0);
+      const neat = Number.isInteger(total) ? total : parseFloat(total.toFixed(1));
+      return neat + (firstUnit || '');
+    }
+    return quantities.join(' + ');
+  }
+
+  function buildList(selected) {
+    const merged = {};
+    for (const recipe of selected) {
+      for (const ing of recipe.ingredients) {
+        const key = ing.name.toLowerCase();
+        if (!merged[key]) {
+          merged[key] = { name: ing.name, category: ing.category, quantities: [] };
+        }
+        merged[key].quantities.push(ing.quantity);
+      }
+    }
+
+    const byCategory = {};
+    for (const item of Object.values(merged)) {
+      if (!byCategory[item.category]) byCategory[item.category] = [];
+      byCategory[item.category].push({
+        name: item.name,
+        qty: combineQuantities(item.quantities),
+      });
+    }
+    return byCategory;
+  }
+
+  function renderList(byCategory) {
+    const panel = document.getElementById('list-panel');
+    const keys = Object.keys(byCategory);
+
+    if (keys.length === 0) {
+      panel.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🛒</div>
+          <p>Select recipes on the left to build your shopping list.</p>
+        </div>`;
+      return;
+    }
+
+    const orderedKeys = CATEGORY_ORDER.filter(c => byCategory[c])
+      .concat(keys.filter(k => !CATEGORY_ORDER.includes(k)));
+
+    panel.innerHTML = orderedKeys.map(cat => `
+      <div class="category-group">
+        <p class="cat-title">${cat}</p>
+        <ul class="item-list">
+          ${byCategory[cat].map(item => `
+            <li>
+              <span>${item.name}</span>
+              <span class="item-qty">${item.qty}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`).join('');
+  }
+
+  function getSelected() {
+    return recipes.filter(r => {
+      const cb = document.getElementById('pick-' + r.id);
+      return cb && cb.checked;
+    });
+  }
+
+  function onChange() {
+    renderList(buildList(getSelected()));
+  }
+
+  function init() {
+    if (recipes.length === 0) {
+      layout.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;color:var(--muted)">
+          <p style="font-size:1.05rem;font-weight:700;margin-bottom:0.4rem">No recipes yet</p>
+          <p>Add recipes to <code>recipes.js</code> and they'll appear here automatically.</p>
+        </div>`;
+      return;
+    }
+
+    const pickerItems = recipes.map(r => `
+      <div class="picker-item" onclick="document.getElementById('pick-${r.id}').click()">
+        <input type="checkbox" id="pick-${r.id}" onclick="event.stopPropagation();onChange()">
+        <label for="pick-${r.id}" onclick="event.preventDefault()">
+          <span class="picker-name">${r.name}</span>
+          <span class="picker-detail">${r.section} &middot; ${r.portions} portions &middot; ${r.protein}g protein</span>
+        </label>
+      </div>`).join('');
+
+    layout.innerHTML = `
+      <div class="panel shopping-picker-panel">
+        <div class="panel-header">
+          <h2>Recipes</h2>
+          <div class="panel-actions">
+            <button class="btn-sm" onclick="selectAll()">Select all</button>
+            <button class="btn-sm" onclick="clearAll()">Clear</button>
+          </div>
+        </div>
+        <div class="recipe-picker">${pickerItems}</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Your shopping list</h2>
+          <div class="panel-actions">
+            <button class="btn-sm btn-primary" onclick="window.print()">Print</button>
+          </div>
+        </div>
+        <div class="list-content" id="list-panel">
+          <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <p>Select recipes on the left to build your shopping list.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function selectAll() {
+    recipes.forEach(r => {
+      const cb = document.getElementById('pick-' + r.id);
+      if (cb) cb.checked = true;
+    });
+    onChange();
+  }
+
+  function clearAll() {
+    recipes.forEach(r => {
+      const cb = document.getElementById('pick-' + r.id);
+      if (cb) cb.checked = false;
+    });
+    onChange();
+  }
+
+  init();
+</script>
+</body>
+</html>
