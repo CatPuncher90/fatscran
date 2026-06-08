@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
@@ -17,30 +17,25 @@
     </ul>
   </div>
 </nav>
-
 <main>
   <div class="page-header">
     <h1>Meal Prep Recipes</h1>
     <p>High protein, batch-friendly meals to fuel your week.</p>
   </div>
-
   <div class="filters" id="filters">
     <button class="filter-btn active" data-section="all">All</button>
-    <button class="filter-btn" data-section="Breakfast">Breakfast</button>
-    <button class="filter-btn" data-section="Dinner">Dinner</button>
-    <button class="filter-btn" data-section="Tea">Tea</button>
-    <button class="filter-btn" data-section="Sauces">Sauces</button>
+    <button class="filter-btn" data-section="breakfast">Breakfast</button>
+    <button class="filter-btn" data-section="dinner">Dinner</button>
+    <button class="filter-btn" data-section="tea">Tea</button>
+    <button class="filter-btn" data-section="sauces">Sauces</button>
   </div>
-
   <div class="recipe-grid" id="recipe-grid"></div>
 </main>
-
 <script src="recipes.js"></script>
 <script>
   function badgeClass(section) {
     return 'badge badge-' + section.toLowerCase();
   }
-
   function renderCards(list) {
     const grid = document.getElementById('recipe-grid');
     if (list.length === 0) {
@@ -50,48 +45,43 @@
     grid.innerHTML = list.map(r => `
       <a class="recipe-card" href="recipe.html?id=${r.id}">
         <div class="card-top">
-          <span class="card-name">${r.name}</span>
+          <span class="card-name">${r.title}</span>
           <span class="${badgeClass(r.section)}">${r.section}</span>
         </div>
         <div class="card-stats">
           <div class="stat-block">
-            <span class="stat-value">${r.calories}</span>
+            <span class="stat-value">${r.macrosPerPortion.calories}</span>
             <span class="stat-label">kcal</span>
           </div>
           <div class="stat-block">
-            <span class="stat-value">${r.protein}g</span>
+            <span class="stat-value">${r.macrosPerPortion.protein}g</span>
             <span class="stat-label">protein</span>
           </div>
           <div class="stat-block">
-            <span class="stat-value">${r.cookTime}m</span>
+            <span class="stat-value">${r.cookTime}</span>
             <span class="stat-label">cook time</span>
           </div>
           <div class="stat-block">
-            <span class="stat-value">${r.portions}</span>
+            <span class="stat-value">${r.basePortions}</span>
             <span class="stat-label">portions</span>
           </div>
         </div>
       </a>
     `).join('');
   }
-
   let activeSection = 'all';
-
   function applyFilter(section) {
     activeSection = section;
     const filtered = section === 'all' ? recipes : recipes.filter(r => r.section === section);
     renderCards(filtered);
-
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.section === section);
     });
   }
-
   document.getElementById('filters').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
     if (btn) applyFilter(btn.dataset.section);
   });
-
   applyFilter('all');
 </script>
 </body>
