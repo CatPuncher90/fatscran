@@ -74,7 +74,7 @@
       </div>`;
   } else {
     document.title = recipe.title + ' — FatScran';
-    portions = recipe.basePortions;
+    portions = 1;
 
     function renderPage() {
       const ingredientRows = recipe.ingredients.map(ing => `
