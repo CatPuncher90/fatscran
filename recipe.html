@@ -27,16 +27,37 @@
   const recipe = recipes.find(r => r.id === id);
   const main = document.getElementById('page-content');
 
-  function badgeClass(section) {
-    return 'badge badge-' + section.toLowerCase();
+  function badgeClass(section) { return 'badge badge-' + section.toLowerCase(); }
+  function clockIcon() { return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`; }
+  function portionIcon() { return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`; }
+
+  function getList() { try { return JSON.parse(localStorage.getItem('fatscran-list') || '[]'); } catch(e) { return []; } }
+  function saveList(list) { localStorage.setItem('fatscran-list', JSON.stringify(list)); }
+
+  function addToList() {
+    const list = getList();
+    const existing = list.find(i => i.id === recipe.id);
+    if (existing) {
+      existing.portions = portions;
+    } else {
+      list.push({ id: recipe.id, portions });
+    }
+    saveList(list);
+    updateBtn();
   }
 
-  function clockIcon() {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-  }
-
-  function portionIcon() {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+  function updateBtn() {
+    const btn = document.getElementById('add-btn');
+    if (!btn) return;
+    const list = getList();
+    const inList = list.find(i => i.id === recipe.id);
+    if (inList) {
+      btn.textContent = 'Update shopping list';
+      btn.style.background = '#0F6E56';
+    } else {
+      btn.textContent = 'Add to shopping list';
+      btn.style.background = '#1D9E75';
+    }
   }
 
   if (!recipe) {
@@ -52,7 +73,6 @@
       </div>`;
   } else {
     document.title = recipe.title + ' — FatScran';
-
     let portions = recipe.basePortions;
 
     function renderPage() {
@@ -73,43 +93,27 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           All Recipes
         </a>
-
         <div class="recipe-hero-top">
           <span class="${badgeClass(recipe.section)}">${recipe.section}</span>
         </div>
         <h1 class="recipe-title">${recipe.title}</h1>
-
         <div class="recipe-meta">
           <span>${clockIcon()} ${recipe.cookTime}</span>
           <span>${portionIcon()} ${portions} portion${portions !== 1 ? 's' : ''}</span>
         </div>
-
         <div class="portions-control" style="margin:1rem 0;display:flex;align-items:center;gap:12px;">
           <label style="font-size:14px;color:var(--muted)">Portions:</label>
           <button onclick="changePortion(-1)" style="width:32px;height:32px;border-radius:50%;border:1px solid #ccc;background:none;font-size:18px;cursor:pointer;">-</button>
           <span id="portion-count" style="font-size:16px;font-weight:600;min-width:24px;text-align:center;">${portions}</span>
           <button onclick="changePortion(1)" style="width:32px;height:32px;border-radius:50%;border:1px solid #ccc;background:none;font-size:18px;cursor:pointer;">+</button>
         </div>
-
         <div class="macros-strip">
-          <div class="macro-item">
-            <span class="macro-value">${Math.round(recipe.macrosPerPortion.calories * portions)}</span>
-            <span class="macro-label">Calories</span>
-          </div>
-          <div class="macro-item">
-            <span class="macro-value">${Math.round(recipe.macrosPerPortion.protein * portions)}g</span>
-            <span class="macro-label">Protein</span>
-          </div>
-          <div class="macro-item">
-            <span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs * portions)}g</span>
-            <span class="macro-label">Carbs</span>
-          </div>
-          <div class="macro-item">
-            <span class="macro-value">${Math.round(recipe.macrosPerPortion.fat * portions)}g</span>
-            <span class="macro-label">Fat</span>
-          </div>
+          <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.calories * portions)}</span><span class="macro-label">Calories</span></div>
+          <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.protein * portions)}g</span><span class="macro-label">Protein</span></div>
+          <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs * portions)}g</span><span class="macro-label">Carbs</span></div>
+          <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fat * portions)}g</span><span class="macro-label">Fat</span></div>
         </div>
-
+        <button id="add-btn" onclick="addToList()" style="margin:1rem 0;padding:10px 24px;background:#1D9E75;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Add to shopping list</button>
         <div class="recipe-body">
           <div class="ingredients-col">
             <p class="section-label">Ingredients</p>
@@ -119,8 +123,8 @@
             <p class="section-label">Method</p>
             <ol class="method-list">${methodSteps}</ol>
           </div>
-        </div>
-      `;
+        </div>`;
+      updateBtn();
     }
 
     function changePortion(delta) {

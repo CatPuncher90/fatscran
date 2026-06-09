@@ -21,16 +21,17 @@
 <main>
   <div class="page-header">
     <h1>Shopping List</h1>
-    <p>Tick the recipes you're making this week and get a combined ingredient list.</p>
+    <p>Recipes you've added this week.</p>
   </div>
   <div class="shopping-layout" id="shopping-layout"></div>
 </main>
 
 <script src="recipes.js"></script>
 <script>
-  const layout = document.getElementById('shopping-layout');
-
   const CATEGORY_ORDER = ['meat','fish','dairy','veg','fruit','carbs','tins','sauces','spices','other'];
+
+  function getList() { try { return JSON.parse(localStorage.getItem('fatscran-list') || '[]'); } catch(e) { return []; } }
+  function saveList(list) { localStorage.setItem('fatscran-list', JSON.stringify(list)); }
 
   function guessCategory(name) {
     const n = name.toLowerCase();
@@ -42,22 +43,22 @@
     if (/rice|pasta|noodle|tortilla|muffin|bun|flour|cornflake/.test(n)) return 'carbs';
     if (/can|tin|passata|coconut|evaporated|stock/.test(n)) return 'tins';
     if (/sauce|paste|ketchup|mayo|relish|vinegar|honey|ketjap|teriyaki|harissa|chipotle|pizza/.test(n)) return 'sauces';
-    if (/powder|spice|spices|cumin|paprika|chili|chilli|pepper|salt|oregano|basil|thyme|garam|coriander|turmeric|herb|seasoning|sesame|yeast/.test(n)) return 'spices';
+    if (/powder|spice|cumin|paprika|chili|chilli|salt|oregano|basil|thyme|garam|coriander|herb|seasoning|sesame|yeast/.test(n)) return 'spices';
     return 'other';
   }
 
-  function buildList(selected, portions) {
+  function buildIngredients(list) {
     const merged = {};
-    for (const recipe of selected) {
-      const p = portions[recipe.id] || recipe.basePortions;
-      const scale = p / recipe.basePortions;
+    for (const item of list) {
+      const recipe = recipes.find(r => r.id === item.id);
+      if (!recipe) continue;
+      const scale = item.portions / recipe.basePortions;
       for (const ing of recipe.ingredients) {
         const key = ing.name.toLowerCase();
         if (!merged[key]) merged[key] = { name: ing.name, category: guessCategory(ing.name), unit: ing.unit, total: 0, isToTaste: ing.amount === null };
         if (ing.amount !== null) merged[key].total += ing.amount * scale;
       }
     }
-
     const byCategory = {};
     for (const item of Object.values(merged)) {
       const cat = item.category;
@@ -68,15 +69,11 @@
     return byCategory;
   }
 
-  function renderList(byCategory) {
-    const panel = document.getElementById('list-panel');
+  function renderIngredients(byCategory) {
     const keys = Object.keys(byCategory);
-    if (keys.length === 0) {
-      panel.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><p>Select recipes on the left to build your shopping list.</p></div>`;
-      return;
-    }
+    if (keys.length === 0) return `<div class="empty-state"><p>No ingredients yet.</p></div>`;
     const orderedKeys = CATEGORY_ORDER.filter(c => byCategory[c]).concat(keys.filter(k => !CATEGORY_ORDER.includes(k)));
-    panel.innerHTML = orderedKeys.map(cat => `
+    return orderedKeys.map(cat => `
       <div class="category-group">
         <p class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</p>
         <ul class="item-list">
@@ -85,41 +82,66 @@
       </div>`).join('');
   }
 
-  function getPortions() {
-    const p = {};
-    recipes.forEach(r => {
-      const el = document.getElementById('portions-' + r.id);
-      p[r.id] = el ? parseInt(el.value) || r.basePortions : r.basePortions;
-    });
-    return p;
+  function removeItem(id) {
+    const list = getList().filter(i => i.id !== id);
+    saveList(list);
+    render();
   }
 
-  function getSelected() {
-    return recipes.filter(r => { const cb = document.getElementById('pick-' + r.id); return cb && cb.checked; });
+  function updatePortions(id, val) {
+    const list = getList();
+    const item = list.find(i => i.id === id);
+    if (item) { item.portions = Math.max(1, parseInt(val) || 1); saveList(list); }
+    render();
   }
 
-  function onChange() { renderList(buildList(getSelected(), getPortions())); }
+  function clearAll() {
+    saveList([]);
+    render();
+  }
 
-  function init() {
-    const pickerItems = recipes.map(r => `
-      <div class="picker-item">
-        <input type="checkbox" id="pick-${r.id}" onchange="onChange()">
-        <label for="pick-${r.id}">
-          <span class="picker-name">${r.title}</span>
-          <span class="picker-detail">${r.section} &middot; <input type="number" id="portions-${r.id}" value="${r.basePortions}" min="1" max="50" style="width:40px;border:1px solid #ccc;border-radius:4px;padding:1px 4px;font-size:12px;" onchange="onChange()" onclick="event.stopPropagation()"> portions &middot; ${r.macrosPerPortion.protein}g protein</span>
-        </label>
-      </div>`).join('');
+  function render() {
+    const layout = document.getElementById('shopping-layout');
+    const list = getList();
+
+    if (list.length === 0) {
+      layout.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;color:var(--muted)">
+          <p style="font-size:1.05rem;font-weight:700;margin-bottom:0.4rem">No recipes added yet</p>
+          <p>Open a recipe and press "Add to shopping list".</p>
+          <a href="index.html" style="display:inline-block;margin-top:1rem;padding:8px 20px;background:#1D9E75;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Browse recipes</a>
+        </div>`;
+      return;
+    }
+
+    const recipeRows = list.map(item => {
+      const recipe = recipes.find(r => r.id === item.id);
+      if (!recipe) return '';
+      return `
+        <div class="picker-item" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <a href="recipe.html?id=${recipe.id}" style="text-decoration:none;color:inherit;flex:1;">
+            <span class="picker-name">${recipe.title}</span>
+            <span class="picker-detail">${recipe.section}</span>
+          </a>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" style="width:28px;height:28px;border-radius:50%;border:1px solid #ccc;background:none;font-size:16px;cursor:pointer;">-</button>
+            <span style="font-size:14px;font-weight:600;min-width:20px;text-align:center;">${item.portions}</span>
+            <button onclick="updatePortions(${recipe.id}, ${item.portions + 1})" style="width:28px;height:28px;border-radius:50%;border:1px solid #ccc;background:none;font-size:16px;cursor:pointer;">+</button>
+            <span style="font-size:12px;color:var(--muted)">portions</span>
+            <button onclick="removeItem(${recipe.id})" style="margin-left:8px;padding:4px 10px;border:1px solid #ffcccc;background:#fff5f5;color:#cc3333;border-radius:6px;font-size:12px;cursor:pointer;">Remove</button>
+          </div>
+        </div>`;
+    }).join('');
 
     layout.innerHTML = `
       <div class="panel shopping-picker-panel">
         <div class="panel-header">
-          <h2>Recipes</h2>
+          <h2>This week</h2>
           <div class="panel-actions">
-            <button class="btn-sm" onclick="selectAll()">Select all</button>
-            <button class="btn-sm" onclick="clearAll()">Clear</button>
+            <button class="btn-sm" style="color:#cc3333;border-color:#ffcccc;" onclick="clearAll()">Clear list</button>
           </div>
         </div>
-        <div class="recipe-picker">${pickerItems}</div>
+        <div class="recipe-picker">${recipeRows}</div>
       </div>
       <div class="panel">
         <div class="panel-header">
@@ -128,16 +150,11 @@
             <button class="btn-sm btn-primary" onclick="window.print()">Print</button>
           </div>
         </div>
-        <div class="list-content" id="list-panel">
-          <div class="empty-state"><div class="empty-icon">🛒</div><p>Select recipes on the left to build your shopping list.</p></div>
-        </div>
+        <div class="list-content">${renderIngredients(buildIngredients(list))}</div>
       </div>`;
   }
 
-  function selectAll() { recipes.forEach(r => { const cb = document.getElementById('pick-' + r.id); if (cb) cb.checked = true; }); onChange(); }
-  function clearAll() { recipes.forEach(r => { const cb = document.getElementById('pick-' + r.id); if (cb) cb.checked = false; }); onChange(); }
-
-  init();
+  render();
 </script>
 </body>
 </html>
