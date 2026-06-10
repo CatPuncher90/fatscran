@@ -13,11 +13,11 @@ const recipes = [
     cookTime: "5 mins",
     macrosPerPortion: { calories: 383, protein: 30, carbs: 43, fat: 8 },
     ingredients: [
-      { name: "Quick oats", amount: 1, unit: "serving" },
-      { name: "Psyllium husk", amount: 1, unit: "serving" },
-      { name: "Semi skimmed milk", amount: 1, unit: "portion" },
-      { name: "Blueberries", amount: 1, unit: "serving" },
-      { name: "Whey protein", amount: 1, unit: "portion" }
+      { name: "Quick oats", amount: 40, unit: "g" },
+      { name: "Psyllium husk", amount: 10, unit: "g" },
+      { name: "Semi skimmed milk", amount: 120, unit: "ml" },
+      { name: "Blueberries", amount: 60, unit: "g" },
+      { name: "Whey protein", amount: 30, unit: "g" }
     ],
     steps: [
       { title: "Mix", description: "Combine oats, psyllium husk and milk. Top with blueberries and mix in whey protein." }
@@ -39,7 +39,7 @@ const recipes = [
       { name: "Garam masala", amount: 10, unit: "g" },
       { name: "Kashmiri red chili powder", amount: 10, unit: "g" },
       { name: "Salt", amount: 8.4, unit: "g" },
-      { name: "Garlic cloves (marinade)", amount: 4.5, unit: "cloves" },
+      { name: "Garlic (marinade)", amount: 23, unit: "g" },
       { name: "Burrito tortillas", amount: 14, unit: "whole" },
       { name: "Basmati rice", amount: 280, unit: "g" },
       { name: "Cilantro", amount: null, unit: "to taste" },
@@ -48,7 +48,7 @@ const recipes = [
       { name: "Garlic (sauce)", amount: 4.2, unit: "g" },
       { name: "Light butter", amount: 42, unit: "g" },
       { name: "Onion", amount: 1.4, unit: "whole" },
-      { name: "Garlic cloves (curry)", amount: 8.5, unit: "cloves" },
+      { name: "Garlic (curry)", amount: 43, unit: "g" },
       { name: "Ground cumin", amount: 8.4, unit: "g" },
       { name: "Coriander", amount: 8.4, unit: "g" },
       { name: "Crushed tomatoes", amount: 2, unit: "cans (14oz)" },
@@ -139,7 +139,7 @@ const recipes = [
       { name: "Garlic powder", amount: 7.8, unit: "g" },
       { name: "Onion powder", amount: 7.8, unit: "g" },
       { name: "Italian herb seasoning", amount: 2.8, unit: "tbsp" },
-      { name: "Garlic cloves", amount: 11.5, unit: "cloves" },
+      { name: "Garlic", amount: 58, unit: "g" },
       { name: "Pizza sauce", amount: 336, unit: "g" },
       { name: "Cream cheese", amount: 224, unit: "g" },
       { name: "Parmesan cheese", amount: 28, unit: "g" },
@@ -225,11 +225,11 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 397, protein: 42, carbs: 37, fat: 10 },
     ingredients: [
-      { name: "Chicken chipolatas", amount: 28, unit: "whole" },
-      { name: "50% reduced fat mature cheese", amount: 1, unit: "serving" },
-      { name: "0% Greek yogurt", amount: 1, unit: "serving" },
+      { name: "Chicken chipolatas", amount: 14, unit: "whole" },
+      { name: "50% reduced fat mature cheese", amount: 200, unit: "g" },
+      { name: "0% Greek yogurt", amount: 60, unit: "g" },
       { name: "Multigrain wraps", amount: 14, unit: "whole" },
-      { name: "Lean smoked bacon medallions", amount: 28, unit: "rashers" },
+      { name: "Lean smoked bacon medallions", amount: 16, unit: "whole" },
       { name: "Free range egg whites", amount: 840, unit: "g" },
       { name: "Salt & pepper", amount: null, unit: "to taste" }
     ],
@@ -248,9 +248,9 @@ const recipes = [
     cookTime: "10 mins",
     macrosPerPortion: { calories: 409, protein: 41, carbs: 39, fat: 9 },
     ingredients: [
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" },
-      { name: "Sweet smoky chicken", amount: 1, unit: "portion" },
-      { name: "Chilli protein cheese", amount: 1, unit: "portion" },
+      { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" },
+      { name: "Sweet smoky chicken", amount: 420, unit: "g" },
+      { name: "Chilli protein cheese", amount: 180, unit: "g" },
       { name: "High protein flatbreads", amount: 7, unit: "whole" }
     ],
     steps: [
@@ -267,9 +267,9 @@ const recipes = [
     macrosPerPortion: { calories: 342, protein: 31, carbs: 39, fat: 7 },
     ingredients: [
       { name: "High protein flatbread", amount: 1, unit: "whole" },
-      { name: "Tuna chunks in spring water", amount: 1, unit: "portion" },
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" },
-      { name: "Gherkins", amount: 1, unit: "serving" }
+      { name: "Tuna chunks in spring water", amount: 40, unit: "g" },
+      { name: "Soft cheese (50% reduced fat)", amount: 51, unit: "g" },
+      { name: "Gherkins", amount: 25, unit: "g" }
     ],
     steps: [
       { title: "Assemble", description: "Spread soft cheese onto the flatbread. Top with tuna and gherkins." }
@@ -284,10 +284,10 @@ const recipes = [
     cookTime: "5 mins",
     macrosPerPortion: { calories: 379, protein: 34, carbs: 30, fat: 13 },
     ingredients: [
-      { name: "Wild Pacific pink salmon (canned)", amount: 2.5, unit: "cans" },
+      { name: "Wild Pacific pink salmon (canned)", amount: 800, unit: "g" },
       { name: "Protein bagels", amount: 5, unit: "whole" },
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" },
-      { name: "Cucumber", amount: 1, unit: "whole" }
+      { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" },
+      { name: "Cucumber", amount: 300, unit: "g" }
     ],
     steps: [
       { title: "Assemble", description: "Spread soft cheese on each bagel. Top with salmon and sliced cucumber." }
@@ -302,11 +302,11 @@ const recipes = [
     cookTime: "20 mins",
     macrosPerPortion: { calories: 487, protein: 49, carbs: 30, fat: 19 },
     ingredients: [
-      { name: "Eggs", amount: 7, unit: "whole" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Baby plum tomatoes", amount: 1, unit: "serving" },
+      { name: "Eggs", amount: 14, unit: "whole" },
+      { name: "Chicken breast", amount: 470, unit: "g" },
+      { name: "Baby plum tomatoes", amount: 250, unit: "g" },
       { name: "High protein tortillas", amount: 7, unit: "whole" },
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" }
+      { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" }
     ],
     steps: [
       { title: "Cook the chicken", description: "Cook chicken breast in a pan over medium-high heat until cooked through. Slice or shred." },
@@ -323,11 +323,11 @@ const recipes = [
     cookTime: "20 mins",
     macrosPerPortion: { calories: 372, protein: 39, carbs: 34, fat: 17 },
     ingredients: [
-      { name: "Medium sliced brown bread", amount: 28, unit: "slices" },
-      { name: "Sweet peppers", amount: 1, unit: "portion" },
-      { name: "Green pesto", amount: 1, unit: "serving" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Fat free Greek yogurt", amount: 1, unit: "serving" }
+      { name: "Medium sliced brown bread", amount: 1000, unit: "g" },
+      { name: "Sweet peppers", amount: 1200, unit: "g" },
+      { name: "Green pesto", amount: 200, unit: "g" },
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Fat free Greek yogurt", amount: 250, unit: "g" }
     ],
     steps: [
       { title: "Cook the chicken", description: "Season and cook chicken breast until cooked through. Slice." },
@@ -343,14 +343,14 @@ const recipes = [
     cookTime: "10 mins",
     macrosPerPortion: { calories: 233, protein: 40, carbs: 13, fat: 4 },
     ingredients: [
-      { name: "Red onion", amount: 1, unit: "serving" },
-      { name: "Spring onions", amount: 1, unit: "serving" },
-      { name: "Cucumber", amount: 1, unit: "whole" },
-      { name: "Tuna chunks in spring water", amount: 7, unit: "cans" },
-      { name: "Pickled dill cucumbers", amount: 1, unit: "serving" },
-      { name: "Low fat cottage cheese", amount: 1, unit: "portion" },
-      { name: "Fat free Greek yogurt", amount: 1, unit: "serving" },
-      { name: "Dijon mustard", amount: 1, unit: "serving" }
+      { name: "Red onion", amount: 1000, unit: "g" },
+      { name: "Spring onions", amount: 200, unit: "g" },
+      { name: "Cucumber", amount: 1100, unit: "g" },
+      { name: "Tuna chunks in spring water", amount: 1400, unit: "g" },
+      { name: "Pickled dill cucumbers", amount: 230, unit: "g" },
+      { name: "Low fat cottage cheese", amount: 1000, unit: "g" },
+      { name: "Fat free Greek yogurt", amount: 250, unit: "g" },
+      { name: "Dijon mustard", amount: 10, unit: "g" }
     ],
     steps: [
       { title: "Prep the veg", description: "Finely chop red onion, spring onions, cucumber, and gherkins." },
@@ -367,11 +367,11 @@ const recipes = [
     cookTime: "10 mins",
     macrosPerPortion: { calories: 337, protein: 42, carbs: 15, fat: 9 },
     ingredients: [
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" },
+      { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" },
       { name: "High protein wraps", amount: 6, unit: "whole" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" },
-      { name: "Salad", amount: null, unit: "to taste" },
-      { name: "Sweet smoky chicken", amount: 1, unit: "portion" }
+      { name: "Eatlean cheese", amount: 180, unit: "g" },
+      { name: "Salad", amount: 200, unit: "g" },
+      { name: "Sweet smoky chicken", amount: 420, unit: "g" }
     ],
     steps: [
       { title: "Assemble", description: "Spread soft cheese on each wrap. Add sweet smoky chicken, Eatlean cheese, and salad. Wrap tightly." }
@@ -391,7 +391,7 @@ const recipes = [
       { name: "Basmati rice", amount: 1050, unit: "g" },
       { name: "British beef mince", amount: 1680, unit: "g" },
       { name: "Onions", amount: 7, unit: "whole" },
-      { name: "Garlic cloves", amount: 7, unit: "cloves" },
+      { name: "Garlic", amount: 35, unit: "g" },
       { name: "Red kidney beans (canned)", amount: 7, unit: "cans (400g)" },
       { name: "Mature cheddar cheese", amount: 210, unit: "g" },
       { name: "Mexican-style spice mix", amount: 7, unit: "sachets" },
@@ -483,7 +483,7 @@ const recipes = [
       { name: "Diced chicken breast", amount: 1820, unit: "g" },
       { name: "Red onion", amount: 7, unit: "whole" },
       { name: "Green beans", amount: 560, unit: "g" },
-      { name: "Garlic cloves", amount: 7, unit: "cloves" },
+      { name: "Garlic", amount: 35, unit: "g" },
       { name: "Teriyaki sauce", amount: 1050, unit: "g" },
       { name: "Red chilli", amount: 4, unit: "whole" },
       { name: "Roasted white sesame seeds", amount: 35, unit: "g" }
@@ -507,7 +507,7 @@ const recipes = [
     ingredients: [
       { name: "Lamb mince", amount: 1400, unit: "g" },
       { name: "Basmati rice", amount: 1050, unit: "g" },
-      { name: "Garlic cloves", amount: 14, unit: "cloves" },
+      { name: "Garlic", amount: 70, unit: "g" },
       { name: "Fresh mint", amount: 1, unit: "large bunch" },
       { name: "Harissa paste", amount: 350, unit: "g" },
       { name: "Chermoula spice mix", amount: 7, unit: "sachets" },
@@ -520,7 +520,7 @@ const recipes = [
     steps: [
       { title: "Cook the mince", description: "Heat a large frying pan over medium-high heat (no oil). Add the mince and cook until browned, 5–6 minutes, breaking it up as it cooks. Drain any excess fat." },
       { title: "Cook the rice", description: "Pour boiled water into a large saucepan with 1/4 tsp salt over high heat. Add the rice and cook for 10–12 minutes. Once cooked, drain, return to the pan, cover, and set aside." },
-      { title: "Prepare the ingredients", description: "Peel and grate the garlic cloves. Pick and finely chop the mint leaves, discarding the stalks." },
+      { title: "Prepare the ingredients", description: "Peel and grate the garlic. Pick and finely chop the mint leaves, discarding the stalks." },
       { title: "Add spices and sauce", description: "To the browned mince, add the grated garlic, harissa paste, chermoula spice mix, and tomato purée. Cook for 1 minute. Stir in water and the chicken stock paste. Season with salt and pepper. Bring to a boil, then simmer until slightly thickened, 2–3 minutes." },
       { title: "Prepare the mint yoghurt", description: "Mix the Greek-style natural yoghurt with half of the chopped mint. Season with salt and pepper." },
       { title: "Combine and serve", description: "Mix the cooked rice into the mince mixture until well combined. Divide among plates, top with mint yoghurt, and sprinkle with the remaining mint." }
@@ -536,7 +536,7 @@ const recipes = [
     macrosPerPortion: { calories: 523, protein: 39, carbs: 76, fat: 6 },
     ingredients: [
       { name: "Basmati rice", amount: 1050, unit: "g" },
-      { name: "Garlic cloves", amount: 7, unit: "cloves" },
+      { name: "Garlic", amount: 35, unit: "g" },
       { name: "Bell peppers", amount: 7, unit: "whole" },
       { name: "British beef mince", amount: 1680, unit: "g" },
       { name: "Tomato purée", amount: 210, unit: "g" },
@@ -623,7 +623,7 @@ const recipes = [
     ingredients: [
       { name: "Baking potatoes", amount: 3150, unit: "g" },
       { name: "Carrot", amount: 7, unit: "whole" },
-      { name: "Garlic cloves", amount: 14, unit: "cloves" },
+      { name: "Garlic", amount: 70, unit: "g" },
       { name: "Lamb mince", amount: 1400, unit: "g" },
       { name: "Tomato passata", amount: 3500, unit: "ml" },
       { name: "Red wine stock paste", amount: 196, unit: "g" },
@@ -706,7 +706,7 @@ const recipes = [
     ingredients: [
       { name: "Bell peppers", amount: 8, unit: "whole" },
       { name: "Diced chicken breast", amount: 1680, unit: "g" },
-      { name: "Garlic cloves", amount: 14, unit: "cloves" },
+      { name: "Garlic", amount: 70, unit: "g" },
       { name: "Ketjap manis", amount: 350, unit: "g" },
       { name: "Soy sauce", amount: 70, unit: "ml" },
       { name: "Udon noodles", amount: 1540, unit: "g" },
@@ -769,15 +769,15 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 486, protein: 33, carbs: 70, fat: 8 },
     ingredients: [
-      { name: "5% lean beef mince", amount: 1400, unit: "g" },
-      { name: "Chicken stock pot", amount: 1, unit: "serving" },
-      { name: "Fresh mint", amount: 1, unit: "bunch" },
-      { name: "Tomato purée", amount: 14, unit: "tbsp" },
-      { name: "Moroccan spice mix", amount: 1, unit: "serving" },
-      { name: "Rose harissa", amount: 1, unit: "serving" },
-      { name: "Jasmine rice", amount: 1, unit: "serving" },
-      { name: "Fat free Greek yogurt", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 14, unit: "cloves" }
+      { name: "5% lean beef mince", amount: 1500, unit: "g" },
+      { name: "Chicken stock", amount: 300, unit: "ml" },
+      { name: "Fresh mint", amount: 20, unit: "g" },
+      { name: "Tomato purée", amount: 200, unit: "g" },
+      { name: "Moroccan spice mix", amount: 30, unit: "g" },
+      { name: "Rose harissa", amount: 350, unit: "g" },
+      { name: "Jasmine rice", amount: 1000, unit: "g" },
+      { name: "Fat free Greek yogurt", amount: 550, unit: "g" },
+      { name: "Garlic", amount: 75, unit: "g" }
     ],
     steps: [
       { title: "Cook the beef", description: "Heat a large frying pan over medium-high heat (no oil). Add the beef mince and cook until browned, 5–6 minutes. Drain any excess fat." },
@@ -795,14 +795,14 @@ const recipes = [
     cookTime: "25 mins",
     macrosPerPortion: { calories: 464, protein: 38, carbs: 51, fat: 11 },
     ingredients: [
-      { name: "5% lean beef mince", amount: 1400, unit: "g" },
-      { name: "Basmati rice", amount: 1, unit: "serving" },
-      { name: "Broccoli florets", amount: 1, unit: "serving" },
-      { name: "Petit pois", amount: 1, unit: "serving" },
-      { name: "Sweet soy sauce", amount: 1, unit: "serving" },
-      { name: "Toasted sesame oil", amount: 1, unit: "serving" },
-      { name: "Honey", amount: 1, unit: "serving" },
-      { name: "White onion", amount: 1, unit: "whole" }
+      { name: "5% lean beef mince", amount: 2000, unit: "g" },
+      { name: "Basmati rice", amount: 1500, unit: "g" },
+      { name: "Broccoli florets", amount: 1000, unit: "g" },
+      { name: "Petit pois", amount: 650, unit: "g" },
+      { name: "Sweet soy sauce", amount: 150, unit: "g" },
+      { name: "Toasted sesame oil", amount: 30, unit: "ml" },
+      { name: "Honey", amount: 100, unit: "g" },
+      { name: "White onion", amount: 750, unit: "g" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
@@ -820,13 +820,13 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 604, protein: 43, carbs: 82, fat: 13 },
     ingredients: [
-      { name: "5% lean beef mince", amount: 1400, unit: "g" },
-      { name: "Onion", amount: 1, unit: "large" },
-      { name: "Carrots", amount: 1, unit: "serving" },
-      { name: "Red wine", amount: 100, unit: "ml" },
-      { name: "Passata", amount: 1, unit: "serving" },
-      { name: "Sundried tomato paste", amount: 1, unit: "serving" },
-      { name: "Wholewheat fusilli", amount: 1, unit: "serving" }
+      { name: "5% lean beef mince", amount: 2000, unit: "g" },
+      { name: "Onion", amount: 950, unit: "g" },
+      { name: "Carrots", amount: 800, unit: "g" },
+      { name: "Red wine", amount: 400, unit: "ml" },
+      { name: "Passata", amount: 1400, unit: "g" },
+      { name: "Sundried tomato paste", amount: 175, unit: "g" },
+      { name: "Wholewheat fusilli", amount: 1250, unit: "g" }
     ],
     steps: [
       { title: "Cook the pasta", description: "Cook pasta in well-salted boiling water. Reserve some pasta water before draining." },
@@ -844,16 +844,16 @@ const recipes = [
     cookTime: "25 mins",
     macrosPerPortion: { calories: 717, protein: 97, carbs: 64, fat: 7 },
     ingredients: [
-      { name: "Red bell peppers", amount: 2, unit: "whole" },
-      { name: "Carrots", amount: 1, unit: "serving" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "KBBQ sauce", amount: 1, unit: "portion" },
-      { name: "Bean sprouts", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 14, unit: "cloves" },
-      { name: "Fine noodles (wok ready)", amount: 1, unit: "portion" },
-      { name: "Dark soy sauce", amount: 1, unit: "serving" },
-      { name: "Lime juice", amount: 1, unit: "serving" },
-      { name: "Sweet soy sauce", amount: 1, unit: "serving" }
+      { name: "Red bell peppers", amount: 450, unit: "g" },
+      { name: "Carrots", amount: 400, unit: "g" },
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "KBBQ sauce", amount: 300, unit: "g" },
+      { name: "Bean sprouts", amount: 300, unit: "g" },
+      { name: "Garlic", amount: 35, unit: "g" },
+      { name: "Fine noodles (wok ready)", amount: 900, unit: "g" },
+      { name: "Dark soy sauce", amount: 20, unit: "ml" },
+      { name: "Lime juice", amount: 5, unit: "ml" },
+      { name: "Sweet soy sauce", amount: 25, unit: "g" }
     ],
     steps: [
       { title: "Fry the chicken", description: "Slice peppers and carrots into thin strips. Cook chicken in a hot pan until golden and cooked through. Add peppers and carrots and cook for 2–3 minutes." },
@@ -870,21 +870,21 @@ const recipes = [
     cookTime: "25 mins",
     macrosPerPortion: { calories: 552, protein: 62, carbs: 50, fat: 13 },
     ingredients: [
-      { name: "Smoked bacon lardons", amount: 1, unit: "serving" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Garlic & herb croutons", amount: 1, unit: "serving" },
-      { name: "High protein fusilli", amount: 1, unit: "portion" },
-      { name: "Gherkins", amount: 1, unit: "serving" },
-      { name: "Sweetcorn", amount: 3, unit: "tbsp" },
-      { name: "Cucumber", amount: 1, unit: "large" },
-      { name: "Salad tomatoes", amount: 1, unit: "serving" },
-      { name: "Greek yoghurt", amount: 1, unit: "serving" },
-      { name: "Grated Parmesan", amount: 1, unit: "portion" },
-      { name: "Lemon juice", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 1, unit: "clove" },
-      { name: "Worcester sauce", amount: 1, unit: "serving" },
-      { name: "Fish sauce", amount: 1, unit: "serving" },
-      { name: "Dijon mustard", amount: 1, unit: "serving" }
+      { name: "Smoked bacon lardons", amount: 200, unit: "g" },
+      { name: "Chicken breast", amount: 1000, unit: "g" },
+      { name: "Garlic & herb croutons", amount: 40, unit: "g" },
+      { name: "High protein fusilli", amount: 500, unit: "g" },
+      { name: "Gherkins", amount: 150, unit: "g" },
+      { name: "Sweetcorn", amount: 640, unit: "g" },
+      { name: "Cucumber", amount: 150, unit: "g" },
+      { name: "Salad tomatoes", amount: 280, unit: "g" },
+      { name: "Greek yoghurt", amount: 250, unit: "g" },
+      { name: "Grated Parmesan", amount: 20, unit: "g" },
+      { name: "Lemon juice", amount: 12.5, unit: "g" },
+      { name: "Garlic", amount: 10, unit: "g" },
+      { name: "Worcester sauce", amount: 7.5, unit: "ml" },
+      { name: "Fish sauce", amount: 5, unit: "g" },
+      { name: "Dijon mustard", amount: 7.5, unit: "g" }
     ],
     steps: [
       { title: "Cook the pasta", description: "Cook high protein fusilli in boiling salted water. Drain and leave to cool." },
@@ -902,15 +902,15 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 655, protein: 62, carbs: 77, fat: 13 },
     ingredients: [
-      { name: "Sweet potato", amount: 7, unit: "large" },
-      { name: "5% lean beef mince", amount: 1, unit: "serving" },
-      { name: "Greek yogurt", amount: 1, unit: "portion" },
-      { name: "Broccoli florets", amount: 1, unit: "serving" },
-      { name: "Red bell pepper", amount: 7, unit: "whole" },
-      { name: "Petit pois", amount: 1, unit: "serving" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" },
-      { name: "Garlic purée", amount: 1, unit: "serving" },
-      { name: "Sweet BBQ sauce", amount: 1, unit: "serving" }
+      { name: "Sweet potato", amount: 1250, unit: "g" },
+      { name: "5% lean beef mince", amount: 1375, unit: "g" },
+      { name: "Greek yogurt", amount: 250, unit: "g" },
+      { name: "Broccoli florets", amount: 450, unit: "g" },
+      { name: "Red bell pepper", amount: 500, unit: "g" },
+      { name: "Petit pois", amount: 250, unit: "g" },
+      { name: "Eatlean cheese", amount: 180, unit: "g" },
+      { name: "Garlic purée", amount: 35, unit: "g" },
+      { name: "Sweet BBQ sauce", amount: 500, unit: "g" }
     ],
     steps: [
       { title: "Cook the sweet potato", description: "Bake or microwave sweet potatoes until soft." },
@@ -928,15 +928,15 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 626, protein: 62, carbs: 70, fat: 13 },
     ingredients: [
-      { name: "Sweet potato", amount: 7, unit: "large" },
-      { name: "5% lean beef mince", amount: 1, unit: "serving" },
-      { name: "Greek yogurt", amount: 1, unit: "portion" },
-      { name: "Broccoli florets", amount: 1, unit: "serving" },
-      { name: "Red bell pepper", amount: 7, unit: "whole" },
-      { name: "Petit pois", amount: 1, unit: "serving" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" },
-      { name: "Garlic purée", amount: 1, unit: "serving" },
-      { name: "Hot honey chilli sauce", amount: 1, unit: "serving" }
+      { name: "Sweet potato", amount: 1250, unit: "g" },
+      { name: "5% lean beef mince", amount: 1375, unit: "g" },
+      { name: "Greek yogurt", amount: 250, unit: "g" },
+      { name: "Broccoli florets", amount: 450, unit: "g" },
+      { name: "Red bell pepper", amount: 500, unit: "g" },
+      { name: "Petit pois", amount: 250, unit: "g" },
+      { name: "Eatlean cheese", amount: 180, unit: "g" },
+      { name: "Garlic purée", amount: 35, unit: "g" },
+      { name: "Hot honey chilli sauce", amount: 310, unit: "g" }
     ],
     steps: [
       { title: "Cook the sweet potato", description: "Bake or microwave sweet potatoes until soft." },
@@ -954,14 +954,14 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 620, protein: 54, carbs: 64, fat: 16 },
     ingredients: [
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Baby spinach", amount: 1, unit: "serving" },
-      { name: "Tikka masala spice paste", amount: 1, unit: "serving" },
-      { name: "Mango chutney", amount: 1, unit: "serving" },
-      { name: "Onion", amount: 1, unit: "large" },
-      { name: "Greek yoghurt", amount: 1, unit: "serving" },
-      { name: "Basmati rice", amount: 1, unit: "serving" },
-      { name: "Chickpeas", amount: 1, unit: "can" }
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Baby spinach", amount: 450, unit: "g" },
+      { name: "Tikka masala spice paste", amount: 430, unit: "g" },
+      { name: "Mango chutney", amount: 230, unit: "g" },
+      { name: "Onion", amount: 450, unit: "g" },
+      { name: "Greek yoghurt", amount: 500, unit: "g" },
+      { name: "Basmati rice", amount: 1750, unit: "g" },
+      { name: "Chickpeas", amount: 720, unit: "g" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
@@ -979,16 +979,16 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 537, protein: 50, carbs: 50, fat: 17 },
     ingredients: [
-      { name: "Red onion", amount: 1, unit: "serving" },
-      { name: "Baby plum tomatoes", amount: 1, unit: "serving" },
-      { name: "Little gem lettuce", amount: 1, unit: "serving" },
-      { name: "5% lean beef mince", amount: 1, unit: "portion" },
-      { name: "Potatoes", amount: 1, unit: "serving" },
-      { name: "Gherkins", amount: 1, unit: "serving" },
-      { name: "Tomato ketchup", amount: 1, unit: "serving" },
-      { name: "Light mayo", amount: 1, unit: "serving" },
-      { name: "Yellow mustard", amount: 1, unit: "serving" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" }
+      { name: "Red onion", amount: 500, unit: "g" },
+      { name: "Baby plum tomatoes", amount: 300, unit: "g" },
+      { name: "Little gem lettuce", amount: 500, unit: "g" },
+      { name: "5% lean beef mince", amount: 2000, unit: "g" },
+      { name: "Potatoes", amount: 2000, unit: "g" },
+      { name: "Gherkins", amount: 370, unit: "g" },
+      { name: "Tomato ketchup", amount: 200, unit: "g" },
+      { name: "Light mayo", amount: 360, unit: "g" },
+      { name: "Yellow mustard", amount: 120, unit: "g" },
+      { name: "Eatlean cheese", amount: 360, unit: "g" }
     ],
     steps: [
       { title: "Cook the potatoes", description: "Chop potatoes into chunks. Roast or air fry until golden and crispy." },
@@ -1006,23 +1006,24 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 576, protein: 57, carbs: 53, fat: 16 },
     ingredients: [
-      { name: "Lean braising steak", amount: 1, unit: "serving" },
-      { name: "Basmati rice", amount: 1, unit: "serving" },
-      { name: "Cheddar cheese sauce mix", amount: 1, unit: "serving" },
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" },
-      { name: "Low fat cottage cheese", amount: 1, unit: "serving" },
-      { name: "Mozzarella", amount: 1, unit: "serving" },
-      { name: "Onion", amount: 1, unit: "large" },
-      { name: "Red bell peppers", amount: 1, unit: "large" },
-      { name: "Bone broth", amount: 1, unit: "serving" },
-      { name: "Worcester sauce", amount: 1, unit: "serving" },
-      { name: "Light soy sauce", amount: 1, unit: "tsp" }
+      { name: "Lean braising steak", amount: 2000, unit: "g" },
+      { name: "Basmati rice", amount: 1500, unit: "g" },
+      { name: "Cheddar cheese sauce mix", amount: 80, unit: "g" },
+      { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" },
+      { name: "Low fat cottage cheese", amount: 300, unit: "g" },
+      { name: "Mozzarella", amount: 240, unit: "g" },
+      { name: "Cheddar cheese", amount: 100, unit: "g" },
+      { name: "Onion", amount: 600, unit: "g" },
+      { name: "Red bell peppers", amount: 900, unit: "g" },
+      { name: "Bone broth", amount: 1000, unit: "ml" },
+      { name: "Worcester sauce", amount: 30, unit: "ml" },
+      { name: "Light soy sauce", amount: 30, unit: "ml" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
       { title: "Cook the steak", description: "Slice braising steak thinly. Cook in a hot pan with Worcester sauce and soy sauce until browned." },
       { title: "Cook the veg", description: "In the same pan, cook sliced onion and peppers until softened." },
-      { title: "Make the cheese sauce", description: "Mix cheddar cheese sauce mix, soft cheese, cottage cheese, mozzarella, and bone broth in a pan over low heat until smooth." },
+      { title: "Make the cheese sauce", description: "Mix cheddar cheese sauce mix, soft cheese, cottage cheese, mozzarella, cheddar, and bone broth in a pan over low heat until smooth." },
       { title: "Assemble", description: "Divide rice between bowls. Top with steak, veg, and cheese sauce." }
     ]
   },
@@ -1035,14 +1036,14 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 592, protein: 69, carbs: 66, fat: 5 },
     ingredients: [
-      { name: "Sweet potato", amount: 1, unit: "large" },
-      { name: "Mixed beans", amount: 1, unit: "can" },
-      { name: "BBQ sauce", amount: 1, unit: "tbsp" },
-      { name: "Shallots", amount: 1, unit: "serving" },
-      { name: "Cherry tomatoes", amount: 1, unit: "cup" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" },
-      { name: "Spring onions", amount: 1, unit: "serving" }
+      { name: "Sweet potato", amount: 2400, unit: "g" },
+      { name: "Mixed beans", amount: 720, unit: "g" },
+      { name: "BBQ sauce", amount: 500, unit: "g" },
+      { name: "Shallots", amount: 250, unit: "g" },
+      { name: "Cherry tomatoes", amount: 250, unit: "g" },
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Eatlean cheese", amount: 360, unit: "g" },
+      { name: "Spring onions", amount: 250, unit: "g" }
     ],
     steps: [
       { title: "Cook the sweet potato", description: "Bake or microwave sweet potatoes until soft." },
@@ -1060,14 +1061,14 @@ const recipes = [
     cookTime: "25 mins",
     macrosPerPortion: { calories: 547, protein: 64, carbs: 43, fat: 13 },
     ingredients: [
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Basmati rice", amount: 1, unit: "serving" },
-      { name: "Light soy sauce", amount: 1, unit: "tsp" },
-      { name: "Onion", amount: 1, unit: "large" },
-      { name: "Curry sauce mix", amount: 1, unit: "serving" },
-      { name: "Eggs", amount: 1, unit: "portion" },
-      { name: "Garlic", amount: 1, unit: "serving" },
-      { name: "Fresh ginger", amount: 1, unit: "tsp" }
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Basmati rice", amount: 1500, unit: "g" },
+      { name: "Light soy sauce", amount: 60, unit: "ml" },
+      { name: "Onion", amount: 450, unit: "g" },
+      { name: "Curry sauce mix", amount: 510, unit: "g" },
+      { name: "Eggs", amount: 12, unit: "whole" },
+      { name: "Garlic", amount: 30, unit: "g" },
+      { name: "Fresh ginger", amount: 15, unit: "g" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water. Drain and leave to cool completely." },
@@ -1085,16 +1086,16 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 494, protein: 63, carbs: 51, fat: 5 },
     ingredients: [
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Chicken stock", amount: 1, unit: "serving" },
-      { name: "Chicken bone broth", amount: 1, unit: "serving" },
-      { name: "Fine egg noodles", amount: 1, unit: "serving" },
-      { name: "Spring greens", amount: 1, unit: "serving" },
-      { name: "Carrots", amount: 1, unit: "serving" },
-      { name: "Spring onions", amount: 1, unit: "serving" },
-      { name: "Bean sprouts", amount: 1, unit: "portion" },
-      { name: "Light soy sauce", amount: 1, unit: "serving" },
-      { name: "Lime juice", amount: 5, unit: "ml" }
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Chicken stock", amount: 1000, unit: "ml" },
+      { name: "Chicken bone broth", amount: 1000, unit: "ml" },
+      { name: "Fine egg noodles", amount: 2000, unit: "g" },
+      { name: "Spring greens", amount: 300, unit: "g" },
+      { name: "Carrots", amount: 400, unit: "g" },
+      { name: "Spring onions", amount: 100, unit: "g" },
+      { name: "Bean sprouts", amount: 300, unit: "g" },
+      { name: "Light soy sauce", amount: 100, unit: "ml" },
+      { name: "Lime juice", amount: 50, unit: "ml" }
     ],
     steps: [
       { title: "Make the broth", description: "Bring chicken stock and bone broth to a boil in a large pot. Add soy sauce and lime juice." },
@@ -1112,12 +1113,12 @@ const recipes = [
     cookTime: "40 mins",
     macrosPerPortion: { calories: 623, protein: 59, carbs: 75, fat: 10 },
     ingredients: [
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Carrots", amount: 1, unit: "serving" },
-      { name: "Baking potatoes", amount: 1, unit: "serving" },
-      { name: "Golden curry sauce mix", amount: 1, unit: "serving" },
-      { name: "Basmati rice", amount: 1, unit: "serving" },
-      { name: "Onion", amount: 1, unit: "large" }
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Carrots", amount: 1000, unit: "g" },
+      { name: "Baking potatoes", amount: 1000, unit: "g" },
+      { name: "Golden curry sauce mix", amount: 240, unit: "g" },
+      { name: "Basmati rice", amount: 1500, unit: "g" },
+      { name: "Onion", amount: 600, unit: "g" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
@@ -1136,16 +1137,16 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 432, protein: 69, carbs: 21, fat: 11 },
     ingredients: [
-      { name: "Smoked bacon lardons", amount: 1, unit: "serving" },
-      { name: "White onion", amount: 1, unit: "pack" },
-      { name: "Broccoli florets", amount: 1, unit: "serving" },
-      { name: "Carrots", amount: 1, unit: "serving" },
-      { name: "Chicken stock pot", amount: 1, unit: "serving" },
-      { name: "Reduced fat evaporated milk", amount: 1, unit: "serving" },
-      { name: "Plain flour", amount: 1, unit: "serving" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Garlic", amount: 1, unit: "tsp" }
+      { name: "Smoked bacon lardons", amount: 400, unit: "g" },
+      { name: "White onion", amount: 200, unit: "g" },
+      { name: "Broccoli florets", amount: 900, unit: "g" },
+      { name: "Carrots", amount: 450, unit: "g" },
+      { name: "Chicken stock", amount: 2000, unit: "ml" },
+      { name: "Reduced fat evaporated milk", amount: 400, unit: "g" },
+      { name: "Plain flour", amount: 40, unit: "g" },
+      { name: "Eatlean cheese", amount: 180, unit: "g" },
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Garlic", amount: 70, unit: "g" }
     ],
     steps: [
       { title: "Cook the base", description: "Fry bacon lardons in a large pot until crispy. Add onion, carrots, and garlic and cook until softened." },
@@ -1164,13 +1165,13 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 637, protein: 72, carbs: 47, fat: 15 },
     ingredients: [
-      { name: "Chicken breast", amount: 1, unit: "serving" },
-      { name: "Semi skimmed milk", amount: 1, unit: "serving" },
-      { name: "Mature cheddar (lighter)", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 1, unit: "serving" },
-      { name: "Soft cheese (50% reduced fat)", amount: 1, unit: "serving" },
-      { name: "Honey", amount: 1, unit: "serving" },
-      { name: "Elbow macaroni", amount: 1, unit: "cup" }
+      { name: "Chicken breast", amount: 2600, unit: "g" },
+      { name: "Semi skimmed milk", amount: 1000, unit: "ml" },
+      { name: "Mature cheddar (lighter)", amount: 300, unit: "g" },
+      { name: "Garlic", amount: 75, unit: "g" },
+      { name: "Soft cheese (50% reduced fat)", amount: 600, unit: "g" },
+      { name: "Honey", amount: 100, unit: "g" },
+      { name: "Elbow macaroni", amount: 770, unit: "g" }
     ],
     steps: [
       { title: "Cook the pasta", description: "Cook elbow macaroni in boiling salted water. Drain and set aside." },
@@ -1188,17 +1189,17 @@ const recipes = [
     cookTime: "35 mins",
     macrosPerPortion: { calories: 543, protein: 56, carbs: 63, fat: 5 },
     ingredients: [
-      { name: "Chicken breast", amount: 1, unit: "serving" },
-      { name: "Sweet peppers", amount: 1, unit: "portion" },
-      { name: "Mixed beans", amount: 1, unit: "can" },
-      { name: "Onion", amount: 1, unit: "large" },
-      { name: "Chicken stock pot", amount: 1, unit: "serving" },
-      { name: "Tomato purée", amount: 1, unit: "serving" },
-      { name: "Passata", amount: 1, unit: "serving" },
-      { name: "Chipotle paste", amount: 1, unit: "serving" },
-      { name: "Honey", amount: 1, unit: "serving" },
-      { name: "Basmati rice", amount: 1, unit: "serving" },
-      { name: "Fat free Greek yogurt", amount: 1, unit: "serving" }
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Sweet peppers", amount: 820, unit: "g" },
+      { name: "Mixed beans", amount: 1000, unit: "g" },
+      { name: "Onion", amount: 660, unit: "g" },
+      { name: "Chicken stock", amount: 200, unit: "ml" },
+      { name: "Tomato purée", amount: 100, unit: "g" },
+      { name: "Passata", amount: 240, unit: "g" },
+      { name: "Chipotle paste", amount: 100, unit: "g" },
+      { name: "Honey", amount: 100, unit: "g" },
+      { name: "Basmati rice", amount: 1750, unit: "g" },
+      { name: "Fat free Greek yogurt", amount: 500, unit: "g" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
@@ -1216,13 +1217,13 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 487, protein: 54, carbs: 25, fat: 19 },
     ingredients: [
-      { name: "Diced beef", amount: 1, unit: "serving" },
-      { name: "Fusilli pasta", amount: 1, unit: "serving" },
-      { name: "Low fat cottage cheese", amount: 1, unit: "portion" },
-      { name: "Passata", amount: 1, unit: "serving" },
-      { name: "Semi skimmed milk", amount: 1, unit: "serving" },
-      { name: "Cajun seasoning", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 1, unit: "serving" }
+      { name: "Diced beef", amount: 1650, unit: "g" },
+      { name: "Fusilli pasta", amount: 565, unit: "g" },
+      { name: "Low fat cottage cheese", amount: 800, unit: "g" },
+      { name: "Passata", amount: 300, unit: "g" },
+      { name: "Semi skimmed milk", amount: 120, unit: "ml" },
+      { name: "Cajun seasoning", amount: 15, unit: "g" },
+      { name: "Garlic", amount: 15, unit: "g" }
     ],
     steps: [
       { title: "Cook the pasta", description: "Cook fusilli in boiling salted water. Reserve some pasta water before draining." },
@@ -1240,12 +1241,12 @@ const recipes = [
     cookTime: "25 mins",
     macrosPerPortion: { calories: 507, protein: 48, carbs: 63, fat: 6 },
     ingredients: [
-      { name: "Coleslaw mix", amount: 1, unit: "serving" },
-      { name: "Rice vinegar", amount: 1, unit: "serving" },
-      { name: "Sweet chilli sauce", amount: 1, unit: "serving" },
-      { name: "Chicken breast", amount: 1, unit: "serving" },
-      { name: "Ketjap manis", amount: 15, unit: "ml" },
-      { name: "Basmati rice", amount: 1, unit: "serving" }
+      { name: "Coleslaw mix", amount: 1200, unit: "g" },
+      { name: "Rice vinegar", amount: 120, unit: "ml" },
+      { name: "Sweet chilli sauce", amount: 500, unit: "g" },
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Ketjap manis", amount: 125, unit: "ml" },
+      { name: "Basmati rice", amount: 1750, unit: "g" }
     ],
     steps: [
       { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
@@ -1263,14 +1264,14 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 558, protein: 75, carbs: 39, fat: 12 },
     ingredients: [
-      { name: "Grana Padano cheese", amount: 1, unit: "serving" },
-      { name: "Low fat cottage cheese", amount: 1, unit: "serving" },
-      { name: "Baby spinach", amount: 1, unit: "serving" },
-      { name: "Chicken breast", amount: 1, unit: "portion" },
-      { name: "Wholewheat fusilli", amount: 1, unit: "serving" },
-      { name: "Broccoli florets", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 1, unit: "tsp" },
-      { name: "Petit pois", amount: 1, unit: "serving" }
+      { name: "Grana Padano cheese", amount: 300, unit: "g" },
+      { name: "Low fat cottage cheese", amount: 1800, unit: "g" },
+      { name: "Baby spinach", amount: 450, unit: "g" },
+      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Wholewheat fusilli", amount: 1000, unit: "g" },
+      { name: "Broccoli florets", amount: 1200, unit: "g" },
+      { name: "Garlic", amount: 75, unit: "g" },
+      { name: "Petit pois", amount: 500, unit: "g" }
     ],
     steps: [
       { title: "Cook the pasta", description: "Cook wholewheat fusilli in boiling salted water. Reserve some pasta water before draining." },
@@ -1288,46 +1289,20 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 505, protein: 47, carbs: 60, fat: 9 },
     ingredients: [
-      { name: "Sweet potato", amount: 7, unit: "large" },
-      { name: "Broccoli florets", amount: 1, unit: "serving" },
-      { name: "Chicken mince", amount: 1, unit: "portion" },
-      { name: "Low fat Greek yogurt", amount: 1, unit: "serving" },
-      { name: "Lemon juice", amount: 1, unit: "serving" },
-      { name: "Garlic", amount: 1, unit: "clove" },
-      { name: "BBQ sauce", amount: 1, unit: "serving" },
-      { name: "Sweetcorn", amount: 1, unit: "portion" }
+      { name: "Sweet potato", amount: 1250, unit: "g" },
+      { name: "Broccoli florets", amount: 530, unit: "g" },
+      { name: "Chicken mince", amount: 1250, unit: "g" },
+      { name: "Low fat Greek yogurt", amount: 500, unit: "g" },
+      { name: "Lemon juice", amount: 50, unit: "ml" },
+      { name: "Garlic", amount: 10, unit: "g" },
+      { name: "BBQ sauce", amount: 200, unit: "g" },
+      { name: "Sweetcorn", amount: 520, unit: "g" }
     ],
     steps: [
       { title: "Cook the sweet potato", description: "Bake or microwave sweet potatoes until soft." },
       { title: "Cook the chicken mince", description: "Fry chicken mince with garlic in a pan over medium-high heat until cooked through. Add BBQ sauce and lemon juice. Stir through." },
       { title: "Cook the veg", description: "Steam or microwave broccoli and sweetcorn until tender." },
       { title: "Assemble", description: "Slice open each sweet potato. Fill with chicken mince mixture. Add veg on the side and top with Greek yogurt." }
-    ]
-  },
-
-  {
-    id: 50,
-    title: "Beef & Sweet Potato Bowl",
-    section: "tea",
-    basePortions: 12,
-    cookTime: "35 mins",
-    macrosPerPortion: { calories: 478, protein: 53, carbs: 43, fat: 12 },
-    ingredients: [
-      { name: "Sweet potato", amount: 1, unit: "large" },
-      { name: "Fat free Greek yogurt", amount: 1, unit: "serving" },
-      { name: "Onion", amount: 1, unit: "large" },
-      { name: "Red bell pepper", amount: 1, unit: "large" },
-      { name: "5% lean beef mince", amount: 1, unit: "serving" },
-      { name: "Eatlean cheese", amount: 1, unit: "portion" },
-      { name: "Garlic", amount: 1, unit: "clove" },
-      { name: "Tomato paste", amount: 1, unit: "serving" },
-      { name: "Garden peas", amount: 1, unit: "serving" }
-    ],
-    steps: [
-      { title: "Cook the sweet potato", description: "Bake or microwave sweet potatoes until soft." },
-      { title: "Cook the beef", description: "Fry beef mince with onion, garlic, and peppers until browned. Add tomato paste and stir through." },
-      { title: "Add peas", description: "Stir in garden peas and cook for 2–3 minutes." },
-      { title: "Assemble", description: "Slice open sweet potatoes and fill with beef mixture. Top with Greek yogurt and Eatlean cheese." }
     ]
   },
 
@@ -1339,12 +1314,12 @@ const recipes = [
     cookTime: "30 mins",
     macrosPerPortion: { calories: 653, protein: 48, carbs: 92, fat: 14 },
     ingredients: [
-      { name: "Fat free Greek yogurt", amount: 1, unit: "serving" },
-      { name: "Plain flour", amount: 1, unit: "serving" },
-      { name: "50% lighter mature cheese", amount: 1, unit: "portion" },
-      { name: "Pepperoni", amount: 1, unit: "serving" },
-      { name: "Chicken breast pieces", amount: 1, unit: "portion" },
-      { name: "Tomato purée", amount: 1, unit: "serving" }
+      { name: "Fat free Greek yogurt", amount: 150, unit: "g" },
+      { name: "Plain flour", amount: 190, unit: "g" },
+      { name: "50% lighter mature cheese", amount: 60, unit: "g" },
+      { name: "Pepperoni", amount: 30, unit: "g" },
+      { name: "Chicken breast pieces", amount: 160, unit: "g" },
+      { name: "Tomato purée", amount: 90, unit: "g" }
     ],
     steps: [
       { title: "Make the dough", description: "Mix Greek yogurt and self raising flour together until a dough forms. Knead briefly." },
@@ -1355,9 +1330,9 @@ const recipes = [
 
 ];
 
-function scaleAmount(ingredient, portions) {
+function scaleAmount(ingredient, portions, basePortions) {
   if (ingredient.amount === null) return ingredient.unit;
-  const scaled = ingredient.amount * (portions / (ingredient.basePortions || 1));
+  const scaled = ingredient.amount * (portions / basePortions);
   const rounded = scaled >= 100 ? Math.round(scaled) : scaled >= 10 ? Math.round(scaled * 10) / 10 : Math.round(scaled * 100) / 100;
   return rounded + ' ' + ingredient.unit;
 }
