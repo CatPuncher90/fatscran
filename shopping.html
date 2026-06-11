@@ -109,7 +109,7 @@
         <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;color:var(--muted)">
           <p style="font-size:1.05rem;font-weight:700;margin-bottom:0.4rem">No recipes added yet</p>
           <p>Open a recipe and press "Add to shopping list".</p>
-          <a href="index.html" style="display:inline-block;margin-top:1rem;padding:8px 20px;background:#1D9E75;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Browse recipes</a>
+          <a href="index.html" style="display:inline-block;margin-top:1rem;padding:10px 24px;background:var(--accent);color:#FAF7F2;border-radius:var(--radius-sm);text-decoration:none;font-weight:600;font-family:'DM Sans',sans-serif;font-size:0.875rem;">Browse recipes</a>
         </div>`;
       return;
     }
@@ -124,11 +124,11 @@
             <span class="picker-detail">${recipe.section}</span>
           </a>
           <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" style="width:28px;height:28px;border-radius:50%;border:1px solid #ccc;background:none;font-size:16px;cursor:pointer;">-</button>
-            <span style="font-size:14px;font-weight:600;min-width:20px;text-align:center;">${item.portions}</span>
-            <button onclick="updatePortions(${recipe.id}, ${item.portions + 1})" style="width:28px;height:28px;border-radius:50%;border:1px solid #ccc;background:none;font-size:16px;cursor:pointer;">+</button>
-            <span style="font-size:12px;color:var(--muted)">portions</span>
-            <button onclick="removeItem(${recipe.id})" style="margin-left:8px;padding:4px 10px;border:1px solid #ffcccc;background:#fff5f5;color:#cc3333;border-radius:6px;font-size:12px;cursor:pointer;">Remove</button>
+            <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">−</button>
+            <span style="font-size:0.875rem;font-weight:700;min-width:20px;text-align:center;color:var(--text);">${item.portions}</span>
+            <button onclick="updatePortions(${recipe.id}, ${item.portions + 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">+</button>
+            <span style="font-size:0.75rem;color:var(--muted);">portions</span>
+            <button onclick="removeItem(${recipe.id})" style="margin-left:8px;padding:4px 10px;border:1px solid #F5C5B8;background:#FDF0EB;color:#9B3A20;border-radius:var(--radius-sm);font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
           </div>
         </div>`;
     }).join('');
@@ -138,7 +138,7 @@
         <div class="panel-header">
           <h2>This week</h2>
           <div class="panel-actions">
-            <button class="btn-sm" style="color:#cc3333;border-color:#ffcccc;" onclick="clearAll()">Clear list</button>
+            <button class="btn-sm" style="color:#9B3A20;border-color:#F5C5B8;" onclick="clearAll()">Clear list</button>
           </div>
         </div>
         <div class="recipe-picker">${recipeRows}</div>
