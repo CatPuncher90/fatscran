@@ -95,32 +95,11 @@
         <div class="card-top">
           <span class="card-name">${r.title}</span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="toggleFav(${r.id}, event)" style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:${isFav ? '#e85d5d' : 'var(--muted)'};">${isFav ? '♥' : '♡'}</button>
+            <button onclick="toggleFav(${r.id}, event)" style="background:none;border:none;cursor:pointer;font-size:24px;line-height:1;padding:0;color:${isFav ? '#e85d5d' : 'var(--muted)'};">${isFav ? '♥' : '♡'}</button>
             <span class="${badgeClass(r.section)}">${r.section}</span>
           </div>
         </div>
-        <div class="card-stats">
-          <div class="stat-block">
-            <span class="stat-value">${r.macrosPerPortion.calories}</span>
-            <span class="stat-label">kcal</span>
-          </div>
-          <div class="stat-block">
-            <span class="stat-value">${r.macrosPerPortion.protein}g</span>
-            <span class="stat-label">protein</span>
-          </div>
-          <div class="stat-block">
-            <span class="stat-value">${r.macrosPerPortion.carbs}g</span>
-            <span class="stat-label">carbs</span>
-          </div>
-          <div class="stat-block">
-            <span class="stat-value">${r.macrosPerPortion.fat}g</span>
-            <span class="stat-label">fat</span>
-          </div>
-          <div class="stat-block">
-            <span class="stat-value">${r.cookTime}</span>
-            <span class="stat-label">cook time*</span>
-          </div>
-        </div>
+        <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin:0.5rem 0 0;">${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.macrosPerPortion.carbs}g carbs &middot; ${r.macrosPerPortion.fat}g fat &middot; ${r.cookTime}*</p>
       </a>`}).join('');
   }
 
