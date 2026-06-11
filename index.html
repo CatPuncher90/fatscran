@@ -21,6 +21,11 @@
     <h1>Meal Prep Recipes</h1>
     <p>High protein, batch-friendly meals to fuel your week.</p>
   </div>
+
+  <div style="padding:0 1.5rem 1rem;">
+    <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="applyFilters()" style="width:100%;padding:10px 14px;border:1px solid var(--color-border-secondary);border-radius:8px;font-size:14px;font-family:inherit;background:var(--color-background-primary);color:var(--color-text-primary);box-sizing:border-box;">
+  </div>
+
   <div class="filters" id="filters">
     <button class="filter-btn active" data-section="all">All</button>
     <button class="filter-btn" data-section="breakfast">Breakfast</button>
@@ -28,17 +33,50 @@
     <button class="filter-btn" data-section="tea">Tea</button>
     <button class="filter-btn" data-section="sauces">Sauces</button>
   </div>
+
+  <div class="filters" id="protein-filters" style="padding-top:0;">
+    <button class="filter-btn" data-protein="all">All proteins</button>
+    <button class="filter-btn" data-protein="chicken">Chicken</button>
+    <button class="filter-btn" data-protein="beef">Beef</button>
+    <button class="filter-btn" data-protein="lamb">Lamb</button>
+    <button class="filter-btn" data-protein="fish">Fish</button>
+    <button class="filter-btn" data-protein="vegetarian">Vegetarian</button>
+  </div>
+
   <div class="recipe-grid" id="recipe-grid"></div>
 </main>
 <script src="recipes.js"></script>
 <script>
-  function badgeClass(section) {
-    return 'badge badge-' + section.toLowerCase();
+  const PROTEIN_KEYWORDS = {
+    chicken: ['chicken', 'chipolata'],
+    beef: ['beef', 'mince'],
+    lamb: ['lamb'],
+    fish: ['salmon', 'tuna', 'fish'],
+    vegetarian: []
+  };
+
+  const VEGETARIAN_EXCLUDE = ['chicken', 'beef', 'lamb', 'mince', 'bacon', 'salmon', 'tuna', 'fish', 'pepperoni', 'chipolata', 'steak', 'pork'];
+
+  function recipeMatchesProtein(recipe, protein) {
+    if (protein === 'all') return true;
+    const text = (recipe.title + ' ' + recipe.ingredients.map(i => i.name).join(' ')).toLowerCase();
+    if (protein === 'vegetarian') return !VEGETARIAN_EXCLUDE.some(k => text.includes(k));
+    return PROTEIN_KEYWORDS[protein].some(k => text.includes(k));
   }
+
+  function recipeMatchesSearch(recipe, query) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    if (recipe.title.toLowerCase().includes(q)) return true;
+    return recipe.ingredients.some(i => i.name.toLowerCase().includes(q));
+  }
+
+  function badgeClass(section) { return 'badge badge-' + section.toLowerCase(); }
+
   function renderCards(list) {
     const grid = document.getElementById('recipe-grid');
     if (list.length === 0) {
-      grid.innerHTML = '<p class="no-results">No recipes in this section yet. Check back soon.</p>';
+      grid.innerHTML = '<p class="no-results">No recipes found.</p>';
       return;
     }
     grid.innerHTML = list.map(r => `
@@ -65,23 +103,39 @@
             <span class="stat-label">portions</span>
           </div>
         </div>
-      </a>
-    `).join('');
+      </a>`).join('');
   }
+
   let activeSection = 'all';
-  function applyFilter(section) {
-    activeSection = section;
-    const filtered = section === 'all' ? recipes : recipes.filter(r => r.section === section);
+  let activeProtein = 'all';
+
+  function applyFilters() {
+    const query = document.getElementById('search-input').value;
+    const filtered = recipes.filter(r =>
+      (activeSection === 'all' || r.section === activeSection) &&
+      recipeMatchesProtein(r, activeProtein) &&
+      recipeMatchesSearch(r, query)
+    );
     renderCards(filtered);
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.section === section);
-    });
   }
+
   document.getElementById('filters').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
-    if (btn) applyFilter(btn.dataset.section);
+    if (!btn) return;
+    activeSection = btn.dataset.section;
+    document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
+    applyFilters();
   });
-  applyFilter('all');
+
+  document.getElementById('protein-filters').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    activeProtein = btn.dataset.protein;
+    document.querySelectorAll('#protein-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.protein === activeProtein));
+    applyFilters();
+  });
+
+  applyFilters();
 </script>
 </body>
 </html>
