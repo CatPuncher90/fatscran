@@ -99,7 +99,13 @@
             <span class="${badgeClass(r.section)}">${r.section}</span>
           </div>
         </div>
-        <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin:0.5rem 0 0;">${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.macrosPerPortion.carbs}g carbs &middot; ${r.macrosPerPortion.fat}g fat &middot; ${r.cookTime}*</p>
+        <div class="card-stats">
+          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.calories}</span><span class="stat-label">kcal</span></div>
+          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.protein}g</span><span class="stat-label">protein</span></div>
+          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.carbs}g</span><span class="stat-label">carbs</span></div>
+          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.fat}g</span><span class="stat-label">fat</span></div>
+          <div class="stat-block"><span class="stat-value">${r.cookTime}</span><span class="stat-label">cook time*</span></div>
+        </div>
       </a>`}).join('');
   }
 
