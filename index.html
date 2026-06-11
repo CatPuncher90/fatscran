@@ -33,6 +33,7 @@
     <button class="filter-btn" data-section="dinner">Dinner</button>
     <button class="filter-btn" data-section="tea">Tea</button>
     <button class="filter-btn" data-section="sauces">Sauces</button>
+    <button class="filter-btn" data-section="favourites">♥ Favourites</button>
   </div>
 
   <div class="filters" id="time-filters" style="padding-top:0;">
@@ -46,6 +47,19 @@
 </main>
 <script src="recipes.js"></script>
 <script>
+  function getFavourites() { try { return JSON.parse(localStorage.getItem('fatscran-favs') || '[]'); } catch(e) { return []; } }
+  function saveFavourites(favs) { localStorage.setItem('fatscran-favs', JSON.stringify(favs)); }
+
+  function toggleFav(id, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const favs = getFavourites();
+    const idx = favs.indexOf(id);
+    if (idx === -1) { favs.push(id); } else { favs.splice(idx, 1); }
+    saveFavourites(favs);
+    applyFilters();
+  }
+
   function parseMins(cookTime) {
     if (!cookTime) return 999;
     const hrs = cookTime.match(/(\d+)\s*hr/);
@@ -69,15 +83,21 @@
 
   function renderCards(list) {
     const grid = document.getElementById('recipe-grid');
+    const favs = getFavourites();
     if (list.length === 0) {
       grid.innerHTML = '<p class="no-results">No recipes found.</p>';
       return;
     }
-    grid.innerHTML = list.map(r => `
+    grid.innerHTML = list.map(r => {
+      const isFav = favs.includes(r.id);
+      return `
       <a class="recipe-card" href="recipe.html?id=${r.id}">
         <div class="card-top">
           <span class="card-name">${r.title}</span>
-          <span class="${badgeClass(r.section)}">${r.section}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="toggleFav(${r.id}, event)" style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:${isFav ? '#e85d5d' : 'var(--muted)'};">${isFav ? '♥' : '♡'}</button>
+            <span class="${badgeClass(r.section)}">${r.section}</span>
+          </div>
         </div>
         <div class="card-stats">
           <div class="stat-block">
@@ -89,15 +109,19 @@
             <span class="stat-label">protein</span>
           </div>
           <div class="stat-block">
-            <span class="stat-value">${r.cookTime}</span>
-            <span class="stat-label">cook time</span>
+            <span class="stat-value">${r.macrosPerPortion.carbs}g</span>
+            <span class="stat-label">carbs</span>
           </div>
           <div class="stat-block">
-            <span class="stat-value">1</span>
-            <span class="stat-label">portions</span>
+            <span class="stat-value">${r.macrosPerPortion.fat}g</span>
+            <span class="stat-label">fat</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-value">${r.cookTime}</span>
+            <span class="stat-label">cook time*</span>
           </div>
         </div>
-      </a>`).join('');
+      </a>`}).join('');
   }
 
   let activeSection = 'all';
@@ -105,8 +129,9 @@
 
   function applyFilters() {
     const query = document.getElementById('search-input').value;
+    const favs = getFavourites();
     const filtered = recipes.filter(r =>
-      (activeSection === 'all' || r.section === activeSection) &&
+      (activeSection === 'all' || (activeSection === 'favourites' ? favs.includes(r.id) : r.section === activeSection)) &&
       recipeMatchesTime(r, activeTime) &&
       recipeMatchesSearch(r, query)
     );
