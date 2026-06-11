@@ -49,6 +49,19 @@
     return 'other';
   }
 
+  function calcTotals(list) {
+    let calories = 0, protein = 0, carbs = 0, fat = 0;
+    for (const item of list) {
+      const recipe = recipes.find(r => r.id === item.id);
+      if (!recipe) continue;
+      calories += recipe.macrosPerPortion.calories * item.portions;
+      protein += recipe.macrosPerPortion.protein * item.portions;
+      carbs += recipe.macrosPerPortion.carbs * item.portions;
+      fat += recipe.macrosPerPortion.fat * item.portions;
+    }
+    return { calories: Math.round(calories), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat) };
+  }
+
   function buildIngredients(list) {
     const merged = {};
     for (const item of list) {
@@ -134,6 +147,8 @@
       return;
     }
 
+    const totals = calcTotals(list);
+
     const recipeRows = list.map(item => {
       const recipe = recipes.find(r => r.id === item.id);
       if (!recipe) return '';
@@ -141,7 +156,7 @@
         <div class="picker-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
           <a href="recipe.html?id=${recipe.id}" style="text-decoration:none;color:inherit;flex:1;min-width:0;">
             <span class="picker-name" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${recipe.title}</span>
-            <span class="picker-detail">${recipe.section}</span>
+            <span class="picker-detail">${recipe.section} &middot; ${item.portions} portion${item.portions !== 1 ? 's' : ''} &middot; ${Math.round(recipe.macrosPerPortion.calories * item.portions)} kcal &middot; ${Math.round(recipe.macrosPerPortion.protein * item.portions)}g protein</span>
           </a>
           <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
             <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">−</button>
@@ -162,6 +177,27 @@
           </div>
         </div>
         <div class="recipe-picker">${recipeRows}</div>
+        <div style="margin-top:1rem;padding:1rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <p style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Weekly totals</p>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
+            <div>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.calories.toLocaleString()}</div>
+              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">kcal</div>
+            </div>
+            <div>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.protein}g</div>
+              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">protein</div>
+            </div>
+            <div>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.carbs}g</div>
+              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">carbs</div>
+            </div>
+            <div>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.fat}g</div>
+              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">fat</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="panel">
         <div class="panel-header">
