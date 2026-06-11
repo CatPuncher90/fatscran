@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Planner — FatScran</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .planner-layout { display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; padding: 1rem 0 2rem; }
+    .recipe-sidebar { position: sticky; top: 1rem; max-height: calc(100vh - 120px); display: flex; flex-direction: column; gap: 0.5rem; }
+    .sidebar-search { width: 100%; box-sizing: border-box; margin-bottom: 0.5rem; }
+    .sidebar-recipes { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+    .sidebar-recipe { padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: grab; font-size: 0.8rem; font-weight: 600; color: var(--text); user-select: none; }
+    .sidebar-recipe:active { cursor: grabbing; opacity: 0.7; }
+    .sidebar-recipe .sr-detail { font-size: 0.7rem; font-weight: 400; color: var(--muted); margin-top: 2px; }
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    .day-col { display: flex; flex-direction: column; gap: 6px; }
+    .day-header { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: center; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+    .day-header.today { color: var(--accent); }
+    .meal-slot { min-height: 70px; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); padding: 6px; display: flex; flex-direction: column; gap: 4px; transition: background 0.15s, border-color 0.15s; }
+    .meal-slot.drag-over { background: var(--bg-card); border-color: var(--accent); }
+    .meal-slot-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .slot-recipe { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 5px 7px; font-size: 0.72rem; font-weight: 600; color: var(--text); position: relative; }
+    .slot-recipe .slot-macros { font-size: 0.65rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
+    .slot-recipe .remove-slot { position: absolute; top: 3px; right: 5px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+    .slot-recipe .remove-slot:hover { color: #9B3A20; }
+    .day-totals { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .day-total-item { text-align: center; }
+    .day-total-val { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+    .day-total-lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .batch-summary { margin-top: 2rem; }
+    .batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 1rem; }
+    .batch-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+    .batch-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .batch-card-days { font-size: 0.75rem; color: var(--muted); }
+    .planner-actions { display: flex; gap: 8px; align-items: center; margin-bottom: 1rem; }
+    @media (max-width: 768px) {
+      .planner-layout { grid-template-columns: 1fr; }
+      .recipe-sidebar { position: static; max-height: 200px; }
+      .week-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Recipes</a></li>
+      <li><a href="shopping.html">Shopping List</a></li>
+      <li><a href="planner.html" class="active">Planner</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>Meal Planner</h1>
+    <p>Drag recipes onto each day to plan your week.</p>
+  </div>
+
+  <div class="planner-actions">
+    <button class="btn-sm btn-primary" onclick="addPlanToShoppingList()">Add plan to shopping list</button>
+    <button class="btn-sm" style="color:#9B3A20;border-color:#F5C5B8;" onclick="clearPlan()">Clear week</button>
+  </div>
+
+  <div class="planner-layout">
+    <div class="recipe-sidebar">
+      <input class="sidebar-search" type="text" placeholder="Search recipes..." oninput="renderSidebar(this.value)">
+      <div class="sidebar-recipes" id="sidebar-recipes"></div>
+    </div>
+    <div>
+      <div class="week-grid" id="week-grid"></div>
+      <div class="batch-summary" id="batch-summary"></div>
+    </div>
+  </div>
+</main>
+
+<script src="recipes.js"></script>
+<script>
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const MEALS = ['breakfast','dinner','tea'];
+
+  function getPlan() { try { return JSON.parse(localStorage.getItem('fatscran-plan') || '{}'); } catch(e) { return {}; } }
+  function savePlan(plan) { localStorage.setItem('fatscran-plan', JSON.stringify(plan)); }
+
+  function getTodayIndex() {
+    const d = new Date().getDay();
+    return d === 0 ? 6 : d - 1;
+  }
+
+  let dragRecipeId = null;
+
+  function renderSidebar(query) {
+    const container = document.getElementById('sidebar-recipes');
+    const q = (query || '').toLowerCase();
+    const filtered = recipes.filter(r => !q || r.title.toLowerCase().includes(q) || r.section.toLowerCase().includes(q));
+    container.innerHTML = filtered.map(r => `
+      <div class="sidebar-recipe" draggable="true" data-id="${r.id}"
+        ondragstart="dragRecipeId=${r.id};event.dataTransfer.effectAllowed='copy';">
+        ${r.title}
+        <div class="sr-detail">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein</div>
+      </div>`).join('');
+  }
+
+  function renderWeek() {
+    const plan = getPlan();
+    const todayIdx = getTodayIndex();
+    const grid = document.getElementById('week-grid');
+
+    grid.innerHTML = DAYS.map((day, di) => {
+      let dayCalories = 0, dayProtein = 0;
+      const slots = MEALS.map(meal => {
+        const key = `${day}-${meal}`;
+        const recipeId = plan[key];
+        const recipe = recipeId ? recipes.find(r => r.id === recipeId) : null;
+        if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; }
+        return `
+          <div class="meal-slot" id="slot-${key}"
+            ondragover="event.preventDefault();document.getElementById('slot-${key}').classList.add('drag-over')"
+            ondragleave="document.getElementById('slot-${key}').classList.remove('drag-over')"
+            ondrop="dropOnSlot('${day}','${meal}',event)">
+            <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
+            ${recipe ? `
+              <div class="slot-recipe">
+                <button class="remove-slot" onclick="removeFromSlot('${day}','${meal}')">×</button>
+                ${recipe.title}
+                <div class="slot-macros">${recipe.macrosPerPortion.calories} kcal &middot; ${recipe.macrosPerPortion.protein}g protein</div>
+              </div>` : ''}
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="day-col">
+          <div class="day-header ${di === todayIdx ? 'today' : ''}">${day}</div>
+          ${slots}
+          ${dayCalories > 0 ? `
+            <div class="day-totals">
+              <div class="day-total-item"><div class="day-total-val">${dayCalories}</div><div class="day-total-lbl">kcal</div></div>
+              <div class="day-total-item"><div class="day-total-val">${dayProtein}g</div><div class="day-total-lbl">protein</div></div>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+
+    renderBatchSummary(plan);
+  }
+
+  function renderBatchSummary(plan) {
+    const recipeDays = {};
+    for (const [key, recipeId] of Object.entries(plan)) {
+      if (!recipeId) continue;
+      const [day] = key.split('-');
+      if (!recipeDays[recipeId]) recipeDays[recipeId] = [];
+      if (!recipeDays[recipeId].includes(day)) recipeDays[recipeId].push(day);
+    }
+    const el = document.getElementById('batch-summary');
+    const ids = Object.keys(recipeDays);
+    if (!ids.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <p class="section-label">What to batch cook</p>
+      <div class="batch-grid">
+        ${ids.map(id => {
+          const recipe = recipes.find(r => r.id === parseInt(id));
+          if (!recipe) return '';
+          const days = recipeDays[id];
+          return `
+            <div class="batch-card">
+              <div class="batch-card-title">${recipe.title}</div>
+              <div class="batch-card-days">Needed: ${days.join(', ')}</div>
+              <div class="batch-card-days" style="margin-top:2px;">${recipe.cookTime} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function dropOnSlot(day, meal, event) {
+    event.preventDefault();
+    const slotEl = document.getElementById(`slot-${day}-${meal}`);
+    if (slotEl) slotEl.classList.remove('drag-over');
+    if (!dragRecipeId) return;
+    const plan = getPlan();
+    plan[`${day}-${meal}`] = dragRecipeId;
+    savePlan(plan);
+    renderWeek();
+  }
+
+  function removeFromSlot(day, meal) {
+    const plan = getPlan();
+    delete plan[`${day}-${meal}`];
+    savePlan(plan);
+    renderWeek();
+  }
+
+  function clearPlan() {
+    if (!confirm('Clear the whole week?')) return;
+    savePlan({});
+    renderWeek();
+  }
+
+  function addPlanToShoppingList() {
+    const plan = getPlan();
+    const list = JSON.parse(localStorage.getItem('fatscran-list') || '[]');
+    for (const recipeId of Object.values(plan)) {
+      if (!recipeId) continue;
+      const id = parseInt(recipeId);
+      const existing = list.find(i => i.id === id);
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) continue;
+      if (existing) { existing.portions += 1; } else { list.push({ id, portions: 1 }); }
+    }
+    localStorage.setItem('fatscran-list', JSON.stringify(list));
+    window.location.href = 'shopping.html';
+  }
+
+  renderSidebar();
+  renderWeek();
+</script>
+</body>
+</html>
