@@ -32,6 +32,8 @@
 
   function getList() { try { return JSON.parse(localStorage.getItem('fatscran-list') || '[]'); } catch(e) { return []; } }
   function saveList(list) { localStorage.setItem('fatscran-list', JSON.stringify(list)); }
+  function getChecked() { try { return JSON.parse(localStorage.getItem('fatscran-checked') || '[]'); } catch(e) { return []; } }
+  function saveChecked(checked) { localStorage.setItem('fatscran-checked', JSON.stringify(checked)); }
 
   function guessCategory(name) {
     const n = name.toLowerCase();
@@ -64,20 +66,37 @@
       const cat = item.category;
       if (!byCategory[cat]) byCategory[cat] = [];
       const qty = item.isToTaste ? 'to taste' : (Math.round(item.total * 10) / 10) + ' ' + item.unit;
-      byCategory[cat].push({ name: item.name, qty });
+      byCategory[cat].push({ name: item.name, qty, key: item.name.toLowerCase() });
     }
     return byCategory;
   }
 
-  function renderIngredients(byCategory) {
+  function toggleCheck(key) {
+    const checked = getChecked();
+    const idx = checked.indexOf(key);
+    if (idx === -1) { checked.push(key); } else { checked.splice(idx, 1); }
+    saveChecked(checked);
+    renderIngredientList();
+  }
+
+  function renderIngredientList() {
+    const byCategory = buildIngredients(getList());
+    const checked = getChecked();
+    const el = document.getElementById('ingredient-list');
+    if (!el) return;
     const keys = Object.keys(byCategory);
-    if (keys.length === 0) return `<div class="empty-state"><p>No ingredients yet.</p></div>`;
+    if (keys.length === 0) { el.innerHTML = '<div class="empty-state"><p>No ingredients yet.</p></div>'; return; }
     const orderedKeys = CATEGORY_ORDER.filter(c => byCategory[c]).concat(keys.filter(k => !CATEGORY_ORDER.includes(k)));
-    return orderedKeys.map(cat => `
+    el.innerHTML = orderedKeys.map(cat => `
       <div class="category-group">
         <p class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</p>
         <ul class="item-list">
-          ${byCategory[cat].map(item => `<li><span>${item.name}</span><span class="item-qty">${item.qty}</span></li>`).join('')}
+          ${byCategory[cat].map(item => `
+            <li onclick="toggleCheck('${item.key}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;${checked.includes(item.key) ? 'opacity:0.4;' : ''}">
+              <span style="flex-shrink:0;width:18px;height:18px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;background:${checked.includes(item.key) ? 'var(--accent)' : 'transparent'};color:#fff;font-size:11px;">${checked.includes(item.key) ? '✓' : ''}</span>
+              <span style="flex:1;${checked.includes(item.key) ? 'text-decoration:line-through;' : ''}">${item.name}</span>
+              <span class="item-qty">${item.qty}</span>
+            </li>`).join('')}
         </ul>
       </div>`).join('');
   }
@@ -97,6 +116,7 @@
 
   function clearAll() {
     saveList([]);
+    saveChecked([]);
     render();
   }
 
@@ -118,17 +138,17 @@
       const recipe = recipes.find(r => r.id === item.id);
       if (!recipe) return '';
       return `
-        <div class="picker-item" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <a href="recipe.html?id=${recipe.id}" style="text-decoration:none;color:inherit;flex:1;">
-            <span class="picker-name">${recipe.title}</span>
+        <div class="picker-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <a href="recipe.html?id=${recipe.id}" style="text-decoration:none;color:inherit;flex:1;min-width:0;">
+            <span class="picker-name" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${recipe.title}</span>
             <span class="picker-detail">${recipe.section}</span>
           </a>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
             <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">−</button>
             <span style="font-size:0.875rem;font-weight:700;min-width:20px;text-align:center;color:var(--text);">${item.portions}</span>
             <button onclick="updatePortions(${recipe.id}, ${item.portions + 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">+</button>
             <span style="font-size:0.75rem;color:var(--muted);">portions</span>
-            <button onclick="removeItem(${recipe.id})" style="margin-left:8px;padding:4px 10px;border:1px solid #F5C5B8;background:#FDF0EB;color:#9B3A20;border-radius:var(--radius-sm);font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
+            <button onclick="removeItem(${recipe.id})" style="padding:4px 10px;border:1px solid #F5C5B8;background:#FDF0EB;color:#9B3A20;border-radius:var(--radius-sm);font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;">Remove</button>
           </div>
         </div>`;
     }).join('');
@@ -150,8 +170,10 @@
             <button class="btn-sm btn-primary" onclick="window.print()">Print</button>
           </div>
         </div>
-        <div class="list-content">${renderIngredients(buildIngredients(list))}</div>
+        <div class="list-content" id="ingredient-list"></div>
       </div>`;
+
+    renderIngredientList();
   }
 
   render();
