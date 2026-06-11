@@ -34,34 +34,27 @@
     <button class="filter-btn" data-section="sauces">Sauces</button>
   </div>
 
-  <div class="filters" id="protein-filters" style="padding-top:0;">
-    <button class="filter-btn" data-protein="all">All proteins</button>
-    <button class="filter-btn" data-protein="chicken">Chicken</button>
-    <button class="filter-btn" data-protein="beef">Beef</button>
-    <button class="filter-btn" data-protein="lamb">Lamb</button>
-    <button class="filter-btn" data-protein="fish">Fish</button>
-    <button class="filter-btn" data-protein="vegetarian">Other</button>
+  <div class="filters" id="time-filters" style="padding-top:0;">
+    <button class="filter-btn active" data-time="all">Any time</button>
+    <button class="filter-btn" data-time="30">Under 30 mins</button>
+    <button class="filter-btn" data-time="45">Under 45 mins</button>
+    <button class="filter-btn" data-time="60">Under 1 hr</button>
   </div>
 
   <div class="recipe-grid" id="recipe-grid"></div>
 </main>
 <script src="recipes.js"></script>
 <script>
-  const PROTEIN_KEYWORDS = {
-    chicken: ['chicken', 'chipolata'],
-    beef: ['beef', 'mince'],
-    lamb: ['lamb'],
-    fish: ['salmon', 'tuna', 'fish'],
-    vegetarian: []
-  };
+  function parseMins(cookTime) {
+    if (!cookTime) return 999;
+    const hrs = cookTime.match(/(\d+)\s*hr/);
+    const mins = cookTime.match(/(\d+)\s*min/);
+    return (hrs ? parseInt(hrs[1]) * 60 : 0) + (mins ? parseInt(mins[1]) : 0);
+  }
 
-  const VEGETARIAN_EXCLUDE = ['chicken', 'beef', 'lamb', 'mince', 'bacon', 'salmon', 'tuna', 'fish', 'pepperoni', 'chipolata', 'steak', 'pork'];
-
-  function recipeMatchesProtein(recipe, protein) {
-    if (protein === 'all') return true;
-    const text = (recipe.title + ' ' + recipe.ingredients.map(i => i.name).join(' ')).toLowerCase();
-    if (protein === 'vegetarian') return !VEGETARIAN_EXCLUDE.some(k => text.includes(k));
-    return PROTEIN_KEYWORDS[protein].some(k => text.includes(k));
+  function recipeMatchesTime(recipe, maxMins) {
+    if (maxMins === 'all') return true;
+    return parseMins(recipe.cookTime) <= parseInt(maxMins);
   }
 
   function recipeMatchesSearch(recipe, query) {
@@ -107,13 +100,13 @@
   }
 
   let activeSection = 'all';
-  let activeProtein = 'all';
+  let activeTime = 'all';
 
   function applyFilters() {
     const query = document.getElementById('search-input').value;
     const filtered = recipes.filter(r =>
       (activeSection === 'all' || r.section === activeSection) &&
-      recipeMatchesProtein(r, activeProtein) &&
+      recipeMatchesTime(r, activeTime) &&
       recipeMatchesSearch(r, query)
     );
     renderCards(filtered);
@@ -127,11 +120,11 @@
     applyFilters();
   });
 
-  document.getElementById('protein-filters').addEventListener('click', e => {
+  document.getElementById('time-filters').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
     if (!btn) return;
-    activeProtein = btn.dataset.protein;
-    document.querySelectorAll('#protein-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.protein === activeProtein));
+    activeTime = btn.dataset.time;
+    document.querySelectorAll('#time-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.time === activeTime));
     applyFilters();
   });
 
