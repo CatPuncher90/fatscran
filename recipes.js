@@ -1107,25 +1107,32 @@ const recipes = [
 
   {
     id: 42,
-    title: "Chicken Japanese Curry",
+    title: "Naked Chicken Katsu Curry",
     section: "tea",
-    basePortions: 12,
+    basePortions: 14,
     cookTime: "40 mins",
-    macrosPerPortion: { calories: 623, protein: 59, carbs: 75, fat: 10 },
+    macrosPerPortion: { calories: 602, protein: 54, carbs: 73, fat: 11, fiber: 7 },
     ingredients: [
-      { name: "Chicken breast", amount: 2000, unit: "g" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "Golden curry Japanese curry mix", amount: 276, unit: "g" },
+      { name: "Potatoes", amount: 1000, unit: "g" },
       { name: "Carrots", amount: 1000, unit: "g" },
-      { name: "Baking potatoes", amount: 1000, unit: "g" },
-      { name: "Golden curry sauce mix", amount: 240, unit: "g" },
-      { name: "Basmati rice", amount: 1500, unit: "g" },
-      { name: "Onion", amount: 600, unit: "g" }
+      { name: "Basmati rice", amount: 1750, unit: "g" },
+      { name: "Chicken bone broth", amount: 500, unit: "g" },
+      { name: "Petit pois", amount: 500, unit: "g" },
+      { name: "Garlic purée", amount: 75, unit: "g" },
+      { name: "Onions", amount: 600, unit: "g" }
     ],
     steps: [
-      { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10–12 minutes. Drain and set aside." },
-      { title: "Prep the veg", description: "Chop potatoes, carrots, and onion into chunks." },
-      { title: "Cook the curry", description: "Fry onion in a pan until softened. Add chicken, potatoes, and carrots. Pour in water and bring to a boil. Simmer for 15 minutes until potatoes are tender." },
-      { title: "Add the curry sauce", description: "Break golden curry sauce mix into the pot and stir until dissolved. Simmer for 5 more minutes until thickened." },
-      { title: "Serve", description: "Divide rice between bowls and ladle curry on top." }
+      { title: "Prep the veg", description: "Cube the carrots and potatoes into large dice. Dice the onions." },
+      { title: "Prep the chicken", description: "Butterfly the chicken breast, tenderise, then dice." },
+      { title: "Brown the chicken", description: "Fry the diced chicken with the garlic purée in a large pot until browned." },
+      { title: "Add the veg", description: "Stir in the carrots, potatoes, and onions." },
+      { title: "Simmer", description: "Add the chicken bone broth and 1.6L water. Bring to a simmer and cook for 20–30 minutes." },
+      { title: "Add the curry mix", description: "Break the golden curry mix into the pot and stir until dissolved. Simmer until thickened." },
+      { title: "Add peas", description: "Stir in the petit pois and cook for a few minutes." },
+      { title: "Cook the rice", description: "Separately, whenever it suits, cook basmati rice in boiling salted water for 10–12 minutes." },
+      { title: "Serve", description: "Divide rice between portions and ladle curry on top." }
     ]
   },
 
