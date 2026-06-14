@@ -1,4 +1,4 @@
-const CACHE = 'fatscran-v1';
+const CACHE = 'fatscran-v2';
 const URLS = [
   '/fatscran/',
   '/fatscran/index.html',
@@ -22,5 +22,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('/fatscran/index.html'))));
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        const resClone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, resClone));
+        return res;
+      })
+      .catch(() => caches.match(e.request).then(r => r || caches.match('/fatscran/index.html')))
+  );
 });
