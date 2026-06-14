@@ -1114,6 +1114,7 @@ const recipes = [
     section: "tea",
     basePortions: 14,
     cookTime: "40 mins",
+    image: "images/naked-chicken-katsu-curry.jpg",
     macrosPerPortion: { calories: 602, protein: 54, carbs: 73, fat: 11, fiber: 7 },
     ingredients: [
       { name: "Chicken breast fillet", amount: 2000, unit: "g" },
