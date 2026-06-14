@@ -676,11 +676,17 @@ main {
 }
 
 /* === RESPONSIVE === */
+.recipe-banner-image { height: 280px; }
+
 @media (max-width: 800px) {
   .recipe-body,
   .shopping-layout    { grid-template-columns: 1fr; }
   .recipe-title       { font-size: 2.1rem; }
   .macros-strip       { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .recipe-banner-image { height: 360px; }
 }
 
 @media (max-width: 480px) {
