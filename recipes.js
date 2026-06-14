@@ -7,20 +7,23 @@ const recipes = [
 
   {
     id: 20,
-    title: "Oats N Berries",
+    title: "Oats & Berries",
     section: "breakfast",
     basePortions: 1,
     cookTime: "5 mins",
-    macrosPerPortion: { calories: 383, protein: 30, carbs: 43, fat: 8 },
+    macrosPerPortion: { calories: 393, protein: 28, carbs: 44, fat: 9, fiber: 14.5 },
     ingredients: [
       { name: "Quick oats", amount: 40, unit: "g" },
       { name: "Psyllium husk", amount: 10, unit: "g" },
-      { name: "Semi skimmed milk", amount: 120, unit: "ml" },
+      { name: "Semi skimmed milk", amount: 110, unit: "g" },
       { name: "Blueberries", amount: 60, unit: "g" },
-      { name: "Whey protein", amount: 30, unit: "g" }
+      { name: "Whey protein", amount: 30, unit: "g" },
+      { name: "Greek style yogurt with honey", amount: 20, unit: "g" }
     ],
     steps: [
-      { title: "Mix", description: "Combine oats, psyllium husk and milk. Top with blueberries and mix in whey protein." }
+      { title: "Combine the dry mix", description: "Add the oats, protein powder, and psyllium husk to a bowl." },
+      { title: "Add milk", description: "Pour in the milk and stir until well combined." },
+      { title: "Top and serve", description: "Add the blueberries and top with the Greek yogurt." }
     ]
   },
 
