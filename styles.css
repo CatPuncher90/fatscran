@@ -212,6 +212,9 @@ main {
   line-height: 1.35;
   flex: 1;
   color: var(--text);
+  min-height: calc(1.1rem * 1.35 * 2);
+  display: flex;
+  align-items: flex-start;
 }
 
 /* === SECTION BADGES === */
