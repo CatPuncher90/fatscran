@@ -11,7 +11,6 @@ const recipes = [
     section: "breakfast",
     basePortions: 1,
     cookTime: "5 mins",
-    image: "images/oats-and-berries.jpg",
     macrosPerPortion: { calories: 393, protein: 28, carbs: 44, fat: 9, fiber: 14.5 },
     ingredients: [
       { name: "Quick oats", amount: 40, unit: "g" },
@@ -250,14 +249,12 @@ const recipes = [
     section: "dinner",
     basePortions: 7,
     cookTime: "10 mins",
-    image: "images/chicken-flatbread.jpg",
     macrosPerPortion: { calories: 409, protein: 41, carbs: 39, fat: 9 },
     ingredients: [
       { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" },
       { name: "Sweet smoky chicken", amount: 420, unit: "g" },
       { name: "Chilli protein cheese", amount: 180, unit: "g" },
-      { name: "High protein flatbreads", amount: 7, unit: "whole" },
-      { name: "Salad leaf", amount: null, unit: "to taste" }
+      { name: "High protein flatbreads", amount: 7, unit: "whole" }
     ],
     steps: [
       { title: "Assemble", description: "Spread soft cheese onto each flatbread. Top with sweet smoky chicken and chilli protein cheese. Serve cold or warm in a pan." }
@@ -1135,7 +1132,7 @@ const recipes = [
       { title: "Prep the chicken", description: "Butterfly the chicken breast, tenderise, then dice." },
       { title: "Brown the chicken", description: "Fry the diced chicken with the garlic purée in a large pot until browned." },
       { title: "Add the veg", description: "Stir in the carrots, potatoes, and onions." },
-      { title: "Simmer", description: "Add the chicken bone broth and enough water to reach your desired thickness. Bring to a simmer and cook for 20–30 minutes." },
+      { title: "Simmer", description: "Add the chicken bone broth and 1.6L water. Bring to a simmer and cook for 20–30 minutes." },
       { title: "Add the curry mix", description: "Break the golden curry mix into the pot and stir until dissolved. Simmer until thickened." },
       { title: "Add peas", description: "Stir in the petit pois and cook for a few minutes." },
       { title: "Cook the rice", description: "Separately, whenever it suits, cook basmati rice in boiling salted water for 10–12 minutes." },
@@ -1340,7 +1337,505 @@ const recipes = [
       { title: "Shape and top", description: "Roll out the dough into a pizza base. Spread tomato purée on top. Add chicken, pepperoni, and cheese." },
       { title: "Bake", description: "Bake at 200°C for 10–12 minutes until the base is cooked and the cheese is melted and golden." }
     ]
+  },
+  // ─── NEW BATCH (MacroFactor import) ────────────────────────────────────────
+
+  {
+    id: 52,
+    title: "Protein Oats",
+    section: "breakfast",
+    basePortions: 1,
+    cookTime: "5 mins",
+    macrosPerPortion: { calories: 323, protein: 30, carbs: 33, fat: 7, fiber: 4 },
+    ingredients: [
+      { name: "Porridge oats", amount: 40, unit: "g" },
+      { name: "Whey protein", amount: 30, unit: "g" },
+      { name: "Semi skimmed milk", amount: 150, unit: "g" },
+      { name: "Psyllium husk (optional)", amount: 10, unit: "g" }
+    ],
+    steps: [
+      { title: "Combine the dry mix", description: "Add the oats, whey protein, and psyllium husk to a bowl." },
+      { title: "Add milk", description: "Pour in the milk and stir until well combined." },
+      { title: "Serve", description: "Leave to thicken for a couple of minutes, then serve." }
+    ]
+  },
+
+  {
+    id: 53,
+    title: "Chicken & Chorizo Veggie Pasta",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "40 mins",
+    macrosPerPortion: { calories: 715, protein: 75, carbs: 71, fat: 13, fiber: 0.6 },
+    ingredients: [
+      { name: "Tomato passata", amount: 1400, unit: "g" },
+      { name: "Baby plum tomatoes", amount: 500, unit: "g" },
+      { name: "Chorizo sausage ring", amount: 185, unit: "g" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "Green courgettes", amount: 300, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" },
+      { name: "Red bell peppers", amount: 492, unit: "g" },
+      { name: "High protein fusilli", amount: 1000, unit: "g" },
+      { name: "Sundried tomato paste", amount: 185, unit: "g" },
+      { name: "Eatlean cheese", amount: 360, unit: "g" },
+      { name: "Fresh parsley", amount: null, unit: "1 bunch" }
+    ],
+    steps: [
+      { title: "Cook the pasta", description: "Cook pasta according to package instructions. Once cooked, drain (reserve some pasta water) and spray pasta with a little bit of oil to prevent sticking. Set aside." },
+      { title: "Roast the veg", description: "Quarter courgettes, dice peppers, and halve tomatoes. Season and roast in oven until soft." },
+      { title: "Cook the chorizo", description: "Dice chorizo sausage. Add to a hot pan and fry until oil is released and you achieve a nice browning of the chorizo." },
+      { title: "Cook the chicken", description: "Dice chicken and add to the chorizo pan, cooking until no pink remains." },
+      { title: "Make the sauce", description: "Once the chicken is almost cooked, turn down the heat and add crushed garlic until fragrant. Add tomato passata and sundried tomato paste. Add red wine stock pots and a swig of balsamic vinegar to taste. Use a splash of reserved pasta water to thicken slightly, then simmer to reduce until thickened further." },
+      { title: "Combine", description: "Once thickened, add your roasted veggies to the chicken pot and stir to combine." },
+      { title: "Add the pasta", description: "Mix the pasta in at this point, or serve separately depending on your preference." },
+      { title: "Serve", description: "Serve with Eatlean cheese and fresh parsley (finely chopped or ripped for flavour)." }
+    ]
+  },
+
+  {
+    id: 54,
+    title: "Chicken Red Pesto & Feta Wrap",
+    section: "dinner",
+    basePortions: 6,
+    cookTime: "15 mins",
+    macrosPerPortion: { calories: 351, protein: 31, carbs: 13, fat: 16, fiber: 2.5 },
+    ingredients: [
+      { name: "Carb Balance tortilla wraps", amount: 6, unit: "whole" },
+      { name: "Cooked chicken pieces", amount: 420, unit: "g" },
+      { name: "Bistro style salad", amount: null, unit: "1 pack" },
+      { name: "Red pesto", amount: 190, unit: "g" },
+      { name: "Protein Greek-style cheese", amount: 135, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep the chicken", description: "If not already cooked, cook the chicken pieces until done through." },
+      { title: "Spread the pesto", description: "Lay out the tortilla wraps and spread red pesto evenly across each." },
+      { title: "Assemble", description: "Add chicken, salad, and Greek-style cheese to each wrap." },
+      { title: "Wrap and serve", description: "Fold tightly and wrap." }
+    ]
+  },
+
+  {
+    id: 55,
+    title: "Brownie Cups",
+    section: "dessert",
+    basePortions: 6,
+    cookTime: "20 mins",
+    macrosPerPortion: { calories: 232, protein: 3, carbs: 27, fat: 10 },
+    ingredients: [
+      { name: "Plain flour", amount: 40, unit: "g" },
+      { name: "Dairy milk chocolate", amount: 10, unit: "g" },
+      { name: "Granulated sugar", amount: 75, unit: "g" },
+      { name: "Light brown soft sugar", amount: 33, unit: "g" },
+      { name: "Cadbury hot chocolate", amount: 25, unit: "g" },
+      { name: "Egg", amount: 1, unit: "large" },
+      { name: "Sunflower oil", amount: 22, unit: "ml" },
+      { name: "Unsalted butter", amount: 57, unit: "g" }
+    ],
+    steps: [
+      { title: "Line the tray", description: "Line 6 muffin holes with cases. Preheat oven to 160°C fan." },
+      { title: "Melt the chocolate mixture", description: "In a saucepan over medium-low heat, add the butter, oil, granulated sugar, brown sugar, cocoa powder, and chocolate. Stir until melted, smooth, and glossy. Do not boil. Let cool 3-5 minutes." },
+      { title: "Add egg", description: "Add the egg and whisk vigorously for 1-2 minutes until thick and glossy." },
+      { title: "Add flour", description: "Add the flour and chocolate chunks. Fold gently until just combined." },
+      { title: "Fill", description: "Divide the mixture into the 6 muffin cases, filling 2/3 to 3/4 full." },
+      { title: "Bake", description: "Bake at 160°C fan for 15-17 minutes, checking from 14-15 minutes." },
+      { title: "Cool", description: "Cool for 5-10 minutes in the tin before removing." }
+    ]
+  },
+
+  {
+    id: 56,
+    title: "Mango Sorbet (Ninja Creami)",
+    section: "dessert",
+    basePortions: 3,
+    cookTime: "10 mins",
+    macrosPerPortion: { calories: 291, protein: 2, carbs: 68, fat: 1 },
+    ingredients: [
+      { name: "Sweetened Kesar mango pulp", amount: 850, unit: "g" },
+      { name: "Xanthan gum", amount: null, unit: "1/4 tsp" },
+      { name: "Lime juice", amount: null, unit: "to taste" }
+    ],
+    steps: [
+      { title: "Combine", description: "Mix the mango pulp, xanthan gum, and lime juice together until smooth." },
+      { title: "Freeze", description: "Pour into a Ninja Creami pint container and freeze for at least 24 hours." },
+      { title: "Spin", description: "Once frozen solid, process on the sorbet setting until smooth and creamy. Re-spin if needed." }
+    ]
+  },
+
+  {
+    id: 57,
+    title: "Chicken Tikka Wrap",
+    section: "dinner",
+    basePortions: 5,
+    cookTime: "15 mins",
+    macrosPerPortion: { calories: 258, protein: 30, carbs: 14.5, fat: 6, fiber: 15.4 },
+    ingredients: [
+      { name: "Cucumber", amount: 1, unit: "whole" },
+      { name: "Carb Balance tortilla wraps", amount: 5, unit: "whole" },
+      { name: "Tikka chicken breast pieces", amount: 420, unit: "g" },
+      { name: "Greek style yoghurt", amount: 50, unit: "g" },
+      { name: "Baby spinach", amount: null, unit: "1 pack" },
+      { name: "Tikka masala spice paste", amount: 10, unit: "g" }
+    ],
+    steps: [
+      { title: "Coat the chicken", description: "Mix the curry paste and yoghurt in a bowl. Add to chicken pieces until coated thoroughly." },
+      { title: "Assemble", description: "Add curried chicken pieces and spinach to each wrap. Optionally add a small amount of the curry/yoghurt mix to the tortilla for extra flavour." },
+      { title: "Wrap and serve", description: "Wrap and serve with cucumber rounds." }
+    ]
+  },
+
+  {
+    id: 58,
+    title: "Cherry Pie Oats",
+    section: "breakfast",
+    basePortions: 1,
+    cookTime: "5 mins",
+    macrosPerPortion: { calories: 317, protein: 28, carbs: 49, fat: 6, fiber: 12 },
+    ingredients: [
+      { name: "Porridge oats", amount: 40, unit: "g" },
+      { name: "Semi skimmed milk", amount: 130, unit: "ml" },
+      { name: "Vanilla bean paste", amount: 5, unit: "g" },
+      { name: "Morello cherry conserve", amount: 50, unit: "g" },
+      { name: "Vanilla whey protein", amount: 25, unit: "g" },
+      { name: "Psyllium husk (optional)", amount: 10, unit: "g" }
+    ],
+    steps: [
+      { title: "Combine the dry mix", description: "Add the oats, whey protein, and psyllium husk to a bowl." },
+      { title: "Add milk and vanilla", description: "Pour in the milk and vanilla bean paste, stir until well combined." },
+      { title: "Top and serve", description: "Spoon the cherry conserve over the top." }
+    ]
+  },
+
+  {
+    id: 59,
+    title: "Cherry & White Choc Creami",
+    section: "dessert",
+    basePortions: 3,
+    cookTime: "10 mins",
+    macrosPerPortion: { calories: 177, protein: 17, carbs: 27, fat: 0.4, fiber: 0.3 },
+    ingredients: [
+      { name: "White chocolate protein drink (premade)", amount: 500, unit: "g" },
+      { name: "Morello cherry conserve", amount: 100, unit: "g" },
+      { name: "Xanthan gum", amount: null, unit: "1/4 tsp" }
+    ],
+    steps: [
+      { title: "Combine", description: "Mix the protein drink, cherry conserve, and xanthan gum together until smooth." },
+      { title: "Freeze", description: "Pour into a Ninja Creami pint container and freeze for at least 24 hours." },
+      { title: "Spin", description: "Once frozen solid, process on the lite ice cream setting until smooth and creamy. Re-spin if needed." }
+    ]
+  },
+
+  {
+    id: 60,
+    title: "Paprika Chicken & Sticky Chilli Jam",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 564, protein: 52, carbs: 68, fat: 10, fiber: 0.3 },
+    ingredients: [
+      { name: "Red bell peppers", amount: 600, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" },
+      { name: "Green courgettes", amount: 850, unit: "g" },
+      { name: "Habanero chilli jam", amount: 420, unit: "g" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "Basmati rice", amount: 1750, unit: "g" },
+      { name: "Sundried tomato paste", amount: 185, unit: "g" },
+      { name: "Low fat Greek style yoghurt", amount: 500, unit: "g" },
+      { name: "Smoked paprika", amount: null, unit: "to taste" },
+      { name: "Garlic", amount: null, unit: "to taste" }
+    ],
+    steps: [
+      { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10-12 minutes. Drain and set aside." },
+      { title: "Prep and cook the veg", description: "Dice the peppers, onion, and courgettes. Cook in a pan until softened." },
+      { title: "Cook the chicken", description: "Dice chicken breast and fry in a pan with garlic and paprika until cooked through." },
+      { title: "Make the sauce", description: "Stir in sundried tomato paste and combine with the cooked veg and chicken." },
+      { title: "Serve", description: "Divide rice between bowls, top with the chicken and veg mixture, a dollop of Greek yoghurt, and a spoonful of chilli jam (added at serving, not during cooking)." }
+    ]
+  },
+
+  {
+    id: 61,
+    title: "Fajita Beef & Sweet Potato Bowl",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 560, protein: 61, carbs: 57, fat: 11, fiber: 0.9 },
+    ingredients: [
+      { name: "Sweet potato", amount: 2500, unit: "g" },
+      { name: "Fat free Greek style yogurt", amount: 200, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" },
+      { name: "Red bell peppers", amount: 776, unit: "g" },
+      { name: "5% lean beef mince", amount: 2250, unit: "g" },
+      { name: "Eatlean cheese", amount: 360, unit: "g" },
+      { name: "Garlic", amount: 75, unit: "g" },
+      { name: "Concentrated tomato purée", amount: 150, unit: "g" },
+      { name: "Sundried tomato paste", amount: 160, unit: "g" },
+      { name: "Garden peas", amount: 400, unit: "g" },
+      { name: "Fajita seasoning", amount: null, unit: "to taste" },
+      { name: "Lime juice", amount: null, unit: "to taste" }
+    ],
+    steps: [
+      { title: "Prep the sweet potato and veg", description: "Dice the sweet potato. Dice the onion and peppers." },
+      { title: "Roast the sweet potato", description: "Roast or air fry the diced sweet potato until golden and tender." },
+      { title: "Cook the beef", description: "Fry beef mince with garlic and fajita seasoning in a pan until browned. Drain excess fat." },
+      { title: "Add the veg", description: "Stir in the onion and peppers, cook until softened." },
+      { title: "Add sauce and peas", description: "Stir in tomato purée, sundried tomato paste, and garden peas. Simmer for a few minutes." },
+      { title: "Serve", description: "Divide the roasted sweet potato between bowls, top with the beef mixture, Greek yoghurt, Eatlean cheese, and a squeeze of lime juice." }
+    ]
+  },
+
+  {
+    id: 62,
+    title: "Teriyaki Chicken Wrap",
+    section: "dinner",
+    basePortions: 5,
+    cookTime: "15 mins",
+    macrosPerPortion: { calories: 370, protein: 29, carbs: 44, fat: 6, fiber: 15 },
+    ingredients: [
+      { name: "Cooked chicken pieces", amount: 420, unit: "g" },
+      { name: "Carb Balance tortilla wraps", amount: 5, unit: "whole" },
+      { name: "Blue Dragon sweet teriyaki sauce", amount: 200, unit: "g" },
+      { name: "Spring onion", amount: 5, unit: "whole" },
+      { name: "Crunchy salad mix", amount: null, unit: "1 pack" },
+      { name: "Cucumber", amount: 1, unit: "whole" }
+    ],
+    steps: [
+      { title: "Lay out the wraps", description: "Place the tortilla wraps flat." },
+      { title: "Spread the sauce", description: "Spread the teriyaki sauce evenly over each wrap." },
+      { title: "Add the chicken", description: "Add the cooked chicken pieces to the wraps." },
+      { title: "Add the salad", description: "Top with the salad mix, spring onion, and cucumber." },
+      { title: "Wrap and serve", description: "Fold tightly and wrap." }
+    ]
+  },
+
+  {
+    id: 63,
+    title: "Beef Japanese Curry & Veg",
+    section: "tea",
+    basePortions: 10,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 532, protein: 47, carbs: 57, fat: 13, fiber: 0.3 },
+    ingredients: [
+      { name: "Steak mince 5% fat", amount: 2000, unit: "g" },
+      { name: "White potato", amount: 2500, unit: "g" },
+      { name: "Fresh carrots", amount: 850, unit: "g" },
+      { name: "Golden curry blocks", amount: 120, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep and roast the potatoes", description: "Dice potatoes and roast in the oven or air fry until crispy and golden, spraying with oil if necessary." },
+      { title: "Prep the veg", description: "Finely dice the carrots and onions." },
+      { title: "Cook the beef", description: "Fry the beef mince until browned." },
+      { title: "Make the curry", description: "Mix the curry blocks with boiling water according to the packet instructions, then add to the beef." },
+      { title: "Combine", description: "Once the potatoes are roasted, add them to the beef curry mix." },
+      { title: "Serve", description: "Serve immediately, or meal prep and store in the fridge, reheating in the microwave." }
+    ]
+  },
+
+  {
+    id: 64,
+    title: "Creamy Chicken Pasta",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 645, protein: 77, carbs: 67, fat: 7, fiber: 0.6 },
+    ingredients: [
+      { name: "High protein spaghetti", amount: 900, unit: "g" },
+      { name: "Broccoli florets", amount: 300, unit: "g" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" },
+      { name: "Chicken stock (liquid)", amount: 750, unit: "g" },
+      { name: "Low fat cottage cheese", amount: 600, unit: "g" },
+      { name: "Salted butter", amount: 40, unit: "g" },
+      { name: "Garlic", amount: null, unit: "to taste" },
+      { name: "Fresh parsley", amount: null, unit: "1 bunch" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the chicken breast. Finely chop the onion and garlic. Cut the broccoli into florets if needed." },
+      { title: "Cook the pasta", description: "Cook the high protein spaghetti in boiling salted water. Reserve some pasta water before draining." },
+      { title: "Cook the chicken", description: "Fry the diced chicken in a pan until cooked through. Set aside." },
+      { title: "Cook the veg", description: "In the same pan, cook the onion and garlic until softened. Add the broccoli and cook for a few minutes." },
+      { title: "Make the sauce", description: "Blend the cottage cheese with the chicken stock until smooth. Add to the pan with the butter and stir over low heat until creamy." },
+      { title: "Combine", description: "Add the chicken back in along with the pasta. Stir through, adding reserved pasta water if needed to loosen the sauce." },
+      { title: "Serve", description: "Finish with chopped fresh parsley." }
+    ]
+  },
+
+  {
+    id: 65,
+    title: "Marry Me Chicken & Potato",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "40 mins",
+    macrosPerPortion: { calories: 638, protein: 77, carbs: 47, fat: 14, fiber: 0.6 },
+    ingredients: [
+      { name: "Spicy chorizo sausage ring", amount: 190, unit: "g" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "White potatoes", amount: 2800, unit: "g" },
+      { name: "Low fat cottage cheese", amount: 400, unit: "g" },
+      { name: "Broccoli florets", amount: 900, unit: "g" },
+      { name: "Eatlean cheese", amount: 360, unit: "g" },
+      { name: "Sundried tomato paste", amount: 285, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the chicken breast and chorizo. Cut the potatoes into chunks. Cut the broccoli into florets if needed." },
+      { title: "Roast the potatoes", description: "Roast or air fry the potatoes until golden and crispy." },
+      { title: "Cook the chorizo and chicken", description: "Fry the chorizo in a hot pan until oil is released and browned. Add the chicken and cook until no pink remains." },
+      { title: "Make the sauce", description: "Blend the cottage cheese until smooth, then stir into the pan with the sundried tomato paste." },
+      { title: "Add the broccoli", description: "Stir in the broccoli florets and cook until tender." },
+      { title: "Serve", description: "Divide the roasted potatoes between bowls, top with the chicken mixture, and finish with Eatlean cheese." }
+    ]
+  },
+
+  {
+    id: 66,
+    title: "Pulled-Beefy Pasta",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "3 hrs",
+    macrosPerPortion: { calories: 683, protein: 59, carbs: 69, fat: 18, fiber: 0.7 },
+    ingredients: [
+      { name: "Beef topside/silverside joint", amount: 1600, unit: "g" },
+      { name: "Closed cup mushrooms", amount: 250, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" },
+      { name: "Fresh carrots", amount: 572, unit: "g" },
+      { name: "High protein fusilli", amount: 900, unit: "g" },
+      { name: "Nutritional yeast flakes", amount: 20, unit: "g" },
+      { name: "Sundried tomato paste", amount: 185, unit: "g" },
+      { name: "Eatlean cheese", amount: 360, unit: "g" }
+    ],
+    steps: [
+      { title: "Cook the beef", description: "Slow-cook the beef joint (oven, slow cooker, or pressure cooker) until tender enough to pull apart with a fork. Shred the meat." },
+      { title: "Prep", description: "Finely chop the mushrooms, onion, and carrots." },
+      { title: "Cook the pasta", description: "Cook the fusilli in boiling salted water. Reserve some pasta water before draining." },
+      { title: "Cook the veg", description: "In a large pan, cook the onion, carrots, and mushrooms until softened." },
+      { title: "Make the sauce", description: "Stir in the sundried tomato paste and nutritional yeast. Add the shredded beef and a splash of pasta water to loosen." },
+      { title: "Combine", description: "Add the pasta and toss to coat. Serve topped with Eatlean cheese." }
+    ]
+  },
+
+  {
+    id: 67,
+    title: "Chicken Balti",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 632, protein: 60, carbs: 52, fat: 20, fiber: 5.4 },
+    ingredients: [
+      { name: "Basmati rice", amount: 1500, unit: "g" },
+      { name: "Balti curry paste", amount: 420, unit: "g" },
+      { name: "Light coconut milk", amount: 1200, unit: "ml" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "White onion", amount: 550, unit: "g" },
+      { name: "Petit pois", amount: 800, unit: "g" },
+      { name: "Greek yoghurt", amount: 100, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the chicken breast and finely chop the onion." },
+      { title: "Cook the rice", description: "Cook the basmati rice in boiling salted water for 10-12 minutes. Drain and set aside." },
+      { title: "Cook the chicken", description: "Fry the onion in a pan until softened. Add the chicken and cook until browned." },
+      { title: "Make the curry", description: "Stir in the balti curry paste and cook for 1 minute. Add the coconut milk and simmer until the chicken is cooked through." },
+      { title: "Add the peas", description: "Stir in the petit pois and cook for a few minutes." },
+      { title: "Serve", description: "Divide the rice between bowls, top with the curry, and finish with a dollop of Greek yoghurt." }
+    ]
+  },
+
+  {
+    id: 68,
+    title: "Spiced Vanilla Bean Cheesecake Muffins",
+    section: "dessert",
+    basePortions: 12,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 444, protein: 14, carbs: 54, fat: 20, fiber: 0.1 },
+    ingredients: [
+      { name: "Large eggs", amount: 4, unit: "whole" },
+      { name: "Egg whites", amount: 4, unit: "whole" },
+      { name: "Low fat cottage cheese", amount: 480, unit: "g" },
+      { name: "Plain flour", amount: 420, unit: "g" },
+      { name: "Canderel sugar substitute", amount: 100, unit: "g" },
+      { name: "Vanilla bean paste", amount: 40, unit: "g" },
+      { name: "Baking powder", amount: 12, unit: "g" },
+      { name: "Bicarbonate of soda", amount: 3, unit: "g" },
+      { name: "Soft cream cheese", amount: 300, unit: "g" },
+      { name: "Unsalted butter", amount: 150, unit: "g" },
+      { name: "Icing sugar", amount: 150, unit: "g" },
+      { name: "Spice mix", amount: null, unit: "to taste" }
+    ],
+    steps: [
+      { title: "Prep", description: "Preheat oven to 175°C fan and line a 12-hole muffin tray with tulip cases." },
+      { title: "Make the batter", description: "Blend the cottage cheese, eggs, egg whites, sugar substitute, and 30g of the vanilla bean paste until smooth. In a separate bowl, whisk the flour, baking powder, bicarbonate of soda, spice mix, and salt." },
+      { title: "Combine", description: "Add the blended wet mixture into the dry flour mixture, stirring until just combined." },
+      { title: "Bake", description: "Bake for 15-22 minutes, checking at intervals. Ready when a toothpick comes out clean." },
+      { title: "Cool", description: "Cool for a few minutes, then transfer to a wire rack to cool completely." },
+      { title: "Make the frosting", description: "Whisk the room-temperature butter for a few minutes to loosen. Add the icing sugar and beat again until smooth (around 5 minutes)." },
+      { title: "Finish the frosting", description: "Pat any excess liquid from the cream cheese, then add it and the remaining 10g vanilla bean paste to the butter and sugar mixture. Beat until smooth and thick." },
+      { title: "Serve", description: "Top each cooled muffin with a dollop of frosting and a light sprinkle of spice mix." }
+    ]
+  },
+
+  {
+    id: 69,
+    title: "Cinnamon Bun Vanilla Bean Cheesecake Muffins",
+    section: "dessert",
+    basePortions: 6,
+    cookTime: "20 mins",
+    macrosPerPortion: { calories: 558, protein: 8, carbs: 83, fat: 22 },
+    ingredients: [
+      { name: "Plain flour", amount: 250, unit: "g" },
+      { name: "Baking powder", amount: 3, unit: "g" },
+      { name: "Salt", amount: 3, unit: "g" },
+      { name: "Granulated sugar", amount: 50, unit: "g" },
+      { name: "Unsalted butter", amount: 42, unit: "g" },
+      { name: "Large egg", amount: 1, unit: "whole" },
+      { name: "Semi skimmed milk", amount: 240, unit: "ml" },
+      { name: "Vanilla bean paste", amount: 10, unit: "g" },
+      { name: "Light brown sugar", amount: 180, unit: "g" },
+      { name: "Cinnamon", amount: 9, unit: "g" },
+      { name: "Unsalted butter (filling)", amount: 42, unit: "g" },
+      { name: "Cream cheese", amount: 56, unit: "g" },
+      { name: "Icing sugar", amount: 120, unit: "g" },
+      { name: "Semi skimmed milk (frosting)", amount: 15, unit: "ml" },
+      { name: "Vanilla bean paste (frosting)", amount: 5, unit: "g" },
+      { name: "Spice mix", amount: null, unit: "to taste" }
+    ],
+    steps: [
+      { title: "Prep", description: "Preheat oven to 180°C fan and line a muffin tin with 6 large tulip muffin cases." },
+      { title: "Make the batter", description: "Sift together the flour, baking powder, salt, sugar, and spice mix in a large bowl. In a separate bowl, whisk together the melted butter, egg, and milk. Make a well in the dry mixture and add the wet mixture, stirring only until just combined." },
+      { title: "Make the cinnamon filling", description: "Combine the brown sugar, cinnamon, and butter. Gently fold half the mixture into the muffin batter." },
+      { title: "Fill and bake", description: "Spoon the batter into the muffin cases until about 3/4 full, topping with the remaining cinnamon brown sugar mixture. Bake at 180°C fan for 12-15 minutes, or until the muffins spring back when lightly pressed." },
+      { title: "Cool", description: "Cool slightly, then transfer carefully to a wire rack." },
+      { title: "Make the frosting and serve", description: "Whisk together the cream cheese, icing sugar, milk, and vanilla bean paste. Top the cooled muffins with frosting once fully cool." }
+    ]
+  },
+
+  {
+    id: 70,
+    title: "Mince & Mash",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "45 mins",
+    macrosPerPortion: { calories: 609, protein: 49, carbs: 72, fat: 17, fiber: 9.7 },
+    ingredients: [
+      { name: "5% lean beef mince", amount: 2000, unit: "g" },
+      { name: "White onions", amount: 1000, unit: "g" },
+      { name: "Fresh carrots", amount: 1000, unit: "g" },
+      { name: "Maris Piper potatoes", amount: 3000, unit: "g" },
+      { name: "Bone broth", amount: 750, unit: "ml" },
+      { name: "Beef stock", amount: 750, unit: "ml" },
+      { name: "Unsalted butter", amount: 125, unit: "g" },
+      { name: "Petit pois", amount: 500, unit: "g" },
+      { name: "Semi skimmed milk", amount: 400, unit: "ml" }
+    ],
+    steps: [
+      { title: "Prep", description: "Finely chop the onions and carrots. Chop the potatoes into chunks." },
+      { title: "Cook the potatoes", description: "Boil the potatoes until fork-tender, then drain." },
+      { title: "Cook the mince", description: "Fry the beef mince with the onion and carrots until browned." },
+      { title: "Simmer", description: "Add the bone broth and beef stock. Bring to a boil, then simmer until thickened." },
+      { title: "Add the peas", description: "Stir in the petit pois and cook for a few minutes." },
+      { title: "Make the mash", description: "Mash the boiled potatoes with the butter and milk until smooth." },
+      { title: "Serve", description: "Divide the mash between bowls and top with the mince." }
+    ]
   }
+
 
 ];
 

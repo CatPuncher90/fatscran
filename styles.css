@@ -233,6 +233,7 @@ main {
 .badge-dinner    { background: #DCE9D6; color: #2A5820; }
 .badge-tea       { background: #E8DFEF; color: #5A3278; }
 .badge-sauces    { background: #F5E0D8; color: #8A3010; }
+.badge-dessert   { background: #FCE4EC; color: #9B2D5E; }
 
 /* === CARD STAT GRID === */
 .card-stats {
