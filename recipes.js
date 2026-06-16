@@ -11,6 +11,7 @@ const recipes = [
     section: "breakfast",
     basePortions: 1,
     cookTime: "5 mins",
+    image: "images/oats-and-berries.jpg",
     macrosPerPortion: { calories: 393, protein: 28, carbs: 44, fat: 9, fiber: 14.5 },
     ingredients: [
       { name: "Quick oats", amount: 40, unit: "g" },
@@ -249,12 +250,14 @@ const recipes = [
     section: "dinner",
     basePortions: 7,
     cookTime: "10 mins",
+    image: "images/chicken-flatbread.jpg",
     macrosPerPortion: { calories: 409, protein: 41, carbs: 39, fat: 9 },
     ingredients: [
       { name: "Soft cheese (50% reduced fat)", amount: 200, unit: "g" },
       { name: "Sweet smoky chicken", amount: 420, unit: "g" },
       { name: "Chilli protein cheese", amount: 180, unit: "g" },
-      { name: "High protein flatbreads", amount: 7, unit: "whole" }
+      { name: "High protein flatbreads", amount: 7, unit: "whole" },
+      { name: "Salad leaf", amount: null, unit: "to taste" }
     ],
     steps: [
       { title: "Assemble", description: "Spread soft cheese onto each flatbread. Top with sweet smoky chicken and chilli protein cheese. Serve cold or warm in a pan." }
