@@ -1132,7 +1132,7 @@ const recipes = [
       { title: "Prep the chicken", description: "Butterfly the chicken breast, tenderise, then dice." },
       { title: "Brown the chicken", description: "Fry the diced chicken with the garlic purée in a large pot until browned." },
       { title: "Add the veg", description: "Stir in the carrots, potatoes, and onions." },
-      { title: "Simmer", description: "Add the chicken bone broth and 1.6L water. Bring to a simmer and cook for 20–30 minutes." },
+      { title: "Simmer", description: "Add the chicken bone broth and enough water to reach your desired thickness. Bring to a simmer and cook for 20–30 minutes." },
       { title: "Add the curry mix", description: "Break the golden curry mix into the pot and stir until dissolved. Simmer until thickened." },
       { title: "Add peas", description: "Stir in the petit pois and cook for a few minutes." },
       { title: "Cook the rice", description: "Separately, whenever it suits, cook basmati rice in boiling salted water for 10–12 minutes." },

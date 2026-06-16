@@ -40,13 +40,6 @@
     <button class="filter-btn" data-section="favourites">♥ Favourites</button>
   </div>
 
-  <div class="filters" id="time-filters" style="padding-top:0;">
-    <button class="filter-btn active" data-time="all">Any time</button>
-    <button class="filter-btn" data-time="30">Under 30 mins</button>
-    <button class="filter-btn" data-time="45">Under 45 mins</button>
-    <button class="filter-btn" data-time="60">Under 1 hr</button>
-  </div>
-
   <div class="recipe-grid" id="recipe-grid"></div>
 </main>
 <script src="recipes.js"></script>
@@ -62,18 +55,6 @@
     if (idx === -1) { favs.push(id); } else { favs.splice(idx, 1); }
     saveFavourites(favs);
     applyFilters();
-  }
-
-  function parseMins(cookTime) {
-    if (!cookTime) return 999;
-    const hrs = cookTime.match(/(\d+)\s*hr/);
-    const mins = cookTime.match(/(\d+)\s*min/);
-    return (hrs ? parseInt(hrs[1]) * 60 : 0) + (mins ? parseInt(mins[1]) : 0);
-  }
-
-  function recipeMatchesTime(recipe, maxMins) {
-    if (maxMins === 'all') return true;
-    return parseMins(recipe.cookTime) <= parseInt(maxMins);
   }
 
   function recipeMatchesSearch(recipe, query) {
@@ -96,7 +77,7 @@
       const isFav = favs.includes(r.id);
       const imageBlock = r.image
         ? `<div style="width:100%;aspect-ratio:16/9;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:0.75rem;"><img src="${r.image}" alt="${r.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`
-        : `<div style="width:100%;aspect-ratio:16/9;border-radius:var(--radius-sm);background:var(--bg);margin-bottom:0.75rem;"></div>`;
+        : '';
       return `
       <a class="recipe-card" href="recipe.html?id=${r.id}">
         ${imageBlock}
@@ -118,14 +99,12 @@
   }
 
   let activeSection = 'all';
-  let activeTime = 'all';
 
   function applyFilters() {
     const query = document.getElementById('search-input').value;
     const favs = getFavourites();
     const filtered = recipes.filter(r =>
       (activeSection === 'all' || (activeSection === 'favourites' ? favs.includes(r.id) : r.section === activeSection)) &&
-      recipeMatchesTime(r, activeTime) &&
       recipeMatchesSearch(r, query)
     );
     renderCards(filtered);
@@ -136,14 +115,6 @@
     if (!btn) return;
     activeSection = btn.dataset.section;
     document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
-    applyFilters();
-  });
-
-  document.getElementById('time-filters').addEventListener('click', e => {
-    const btn = e.target.closest('.filter-btn');
-    if (!btn) return;
-    activeTime = btn.dataset.time;
-    document.querySelectorAll('#time-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.time === activeTime));
     applyFilters();
   });
 
