@@ -10,6 +10,7 @@
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
+    <ul class="nav-links"></ul>
   </div>
 </nav>
 <main>
@@ -132,13 +133,20 @@ async function runMigration() {
 
 async function init() {
   await initAuth();
+  const session = getSession();
+  if (!session) {
+    log('Sign in as admin using the button in the nav, then refresh.', 'warn');
+    document.getElementById('migrate-btn').disabled = true;
+    document.getElementById('migrate-summary').textContent = 'Sign in as admin to use this tool.';
+    return;
+  }
   const isAdmin = await checkIsAdmin();
   if (!isAdmin) {
     document.getElementById('migrate-btn').disabled = true;
-    document.getElementById('migrate-summary').textContent = 'Sign in as admin to use this tool.';
-    log('Sign in as admin using the button in the nav, then refresh.', 'warn');
+    document.getElementById('migrate-summary').textContent = 'Signed in but not admin.';
+    log('Your account does not have admin permissions.', 'error');
   } else {
-    log(`Signed in as admin. ${recipes.length} recipes ready to migrate.`, 'success');
+    log(`Signed in as admin (${session.user.email}). ${recipes.length} recipes ready to migrate.`, 'success');
   }
 }
 
