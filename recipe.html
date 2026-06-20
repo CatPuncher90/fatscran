@@ -61,6 +61,28 @@
     btn.style.background = inList ? '#964517' : '#B8561E';
   }
 
+  function shareRecipe() {
+    const url = window.location.href;
+    const shareBtn = document.getElementById('share-btn');
+    if (navigator.share) {
+      navigator.share({ title: recipe.title + ' — FatScran', url });
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        const original = shareBtn.textContent;
+        shareBtn.textContent = 'Copied!';
+        shareBtn.style.background = 'var(--accent)';
+        shareBtn.style.color = '#FAF7F2';
+        shareBtn.style.borderColor = 'var(--accent)';
+        setTimeout(() => {
+          shareBtn.textContent = original;
+          shareBtn.style.background = '';
+          shareBtn.style.color = '';
+          shareBtn.style.borderColor = '';
+        }, 2000);
+      });
+    }
+  }
+
   async function fetchRatings() {
     try {
       const res = await fetch(
@@ -204,7 +226,10 @@
           <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs * portions)}g</span><span class="macro-label">Carbs</span></div>
           <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fat * portions)}g</span><span class="macro-label">Fat</span></div>
         </div>
-        <button id="add-btn" onclick="addToList()">Add to shopping list</button>
+        <div style="display:flex;gap:0.75rem;align-items:center;margin:0.75rem 0 1.5rem;flex-wrap:wrap;">
+          <button id="add-btn" onclick="addToList()" style="padding:11px 28px;background:var(--accent);color:#FAF7F2;border:none;border-radius:var(--radius-sm);font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;letter-spacing:0.01em;">Add to shopping list</button>
+          <button id="share-btn" onclick="shareRecipe()" style="padding:11px 20px;background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;letter-spacing:0.01em;">Share recipe</button>
+        </div>
         <div class="recipe-body">
           <div class="ingredients-col">
             <p class="section-label">Ingredients</p>
