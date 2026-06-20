@@ -712,18 +712,21 @@ main {
   .page-header h1     { font-size: 1.85rem; }
 }
 
-/* === PRINT (shopping list) === */
+/* === PRINT === */
 @media print {
-  .shopping-picker-panel,
-  .panel-header .panel-actions,
+  /* shared */
   nav,
+  .back-link,
+  .portions-control,
+  .recipe-banner-image,
+  #add-btn,
+  #share-btn,
+  #avg-rating,
+  #review-form,
+  #review-list,
+  .panel-header .panel-actions,
+  .shopping-picker-panel,
   .page-header p      { display: none !important; }
-
-  .page-header h1 {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-  }
 
   body {
     background: #fff;
@@ -731,16 +734,37 @@ main {
     font-size: 11pt;
   }
 
+  main { padding: 1rem; max-width: 100%; }
+
+  /* recipe page */
+  .recipe-title       { font-size: 1.5rem; margin-bottom: 0.5rem; color: #000; }
+  .recipe-hero-top    { margin-bottom: 0.5rem; }
+  .recipe-meta        { margin-bottom: 0.75rem; color: #555; }
+  .macros-strip       { grid-template-columns: repeat(4,1fr); margin-bottom: 1.25rem; border: 1px solid #ccc; background: #ccc; }
+  .macro-item         { background: #fff; padding: 0.75rem 0.5rem; }
+  .macro-value        { font-size: 1.25rem; color: #000; }
+  .macro-label        { color: #555; }
+  .recipe-body        { grid-template-columns: 200px 1fr; gap: 1.5rem; }
+  .section-label      { color: #000; border-bottom-color: #000; }
+  .ingredients-list li { border-bottom-color: #ddd; font-size: 0.85rem; padding: 0.4rem 0; }
+  .ing-qty            { color: #555; }
+  .step-num           { background: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .step-text          { font-size: 0.85rem; line-height: 1.6; }
+  .badge              { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* shopping list page */
   .shopping-layout    { display: block; }
   .panel              { border: none; box-shadow: none; background: none; }
-
-  .panel-header {
-    background: none;
-    border-bottom: 2px solid #000;
-    padding-left: 0;
-  }
-
+  .panel-header       { background: none; border-bottom: 2px solid #000; padding-left: 0; }
+  .panel-header h2    { color: #000; }
   .cat-title          { color: #000; border-bottom-color: #ccc; }
   .item-list li       { border-bottom-color: #ddd; }
   .list-content       { padding: 0; }
+
+  .page-header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: #000;
+  }
 }
