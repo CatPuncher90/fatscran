@@ -395,6 +395,7 @@ function updateNavAuth() {
       <button class="nav-avatar" onclick="toggleUserMenu()" title="${user.email}">${initial}</button>
       <div class="user-menu-dropdown" id="user-menu-dropdown" style="display:none;">
         <div class="user-menu-email">${user.email}</div>
+        <a class="user-menu-item" href="profile.html">My Profile</a>
         <button class="user-menu-item" onclick="handleSignOut()">Sign out</button>
       </div>
     </div>`;

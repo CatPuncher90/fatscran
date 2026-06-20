@@ -41,6 +41,7 @@
   </div>
   <div class="week-grid" id="week-grid"></div>
   <div class="batch-summary" id="batch-summary"></div>
+  <div id="weekly-overview"></div>
 </main>
 
 <div id="modal-overlay" class="modal-overlay" style="display:none;" onclick="closeModal(event)">
@@ -59,15 +60,17 @@
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/db.js"></script>
 <script>
 const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MEALS = ['breakfast','dinner','tea'];
 const MAX_WEEKS = 4;
 
 let currentWeekOffset = 0;
-let modalDay  = null;
-let modalMeal = null;
+let modalDay    = null;
+let modalMeal   = null;
 let currentPlan = {};
+let userProfile = null;
 
 function getMonday(offset) {
   const now    = new Date();
@@ -101,6 +104,14 @@ function updateNav() {
   document.getElementById('next-btn').disabled = currentWeekOffset >= MAX_WEEKS;
 }
 
+function dayTotalsClass(calories) {
+  if (!userProfile?.target_calories || !calories) return '';
+  const pct = calories / userProfile.target_calories * 100;
+  if (pct > 120) return 'day-totals--red';
+  if (pct >= 80) return 'day-totals--green';
+  return 'day-totals--amber';
+}
+
 function renderWeek() {
   updateNav();
   const plan     = currentPlan;
@@ -112,12 +123,13 @@ function renderWeek() {
     const date = new Date(monday);
     date.setDate(monday.getDate() + di);
     let dayCalories = 0, dayProtein = 0;
+    let filledSlots = 0;
 
     const slots = MEALS.map(meal => {
       const key      = `${day}-${meal}`;
       const recipeId = plan[key];
       const recipe   = recipeId ? recipes.find(r => r.id === recipeId) : null;
-      if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; }
+      if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; filledSlots++; }
       return `
         <div class="meal-slot" onclick="openModal('${day}','${meal}')">
           <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
@@ -130,20 +142,79 @@ function renderWeek() {
         </div>`;
     }).join('');
 
+    const tlClass  = dayTotalsClass(dayCalories);
+    const progPct  = Math.min(filledSlots / MEALS.length * 100, 100);
+
     return `
       <div class="day-col">
         <div class="day-header ${di === todayIdx ? 'day-header--today' : ''}">${day}</div>
         <div class="day-date">${formatDate(date)}</div>
         ${slots}
         ${dayCalories > 0 ? `
-          <div class="day-totals">
+          <div class="day-totals ${tlClass}">
             <div><div class="day-total-val">${dayCalories}</div><div class="day-total-lbl">kcal</div></div>
             <div><div class="day-total-val">${dayProtein}g</div><div class="day-total-lbl">protein</div></div>
-          </div>` : ''}
+          </div>
+          <div class="day-progress-bar"><div class="day-progress-fill" style="width:${progPct}%"></div></div>` : ''}
       </div>`;
   }).join('');
 
   renderBatchSummary(plan);
+  renderWeeklyOverview(plan);
+}
+
+function renderWeeklyOverview(plan) {
+  const el = document.getElementById('weekly-overview');
+  if (!el) return;
+  if (!userProfile?.target_calories) { el.innerHTML = ''; return; }
+
+  let totalCal = 0, totalProt = 0, totalCarbs = 0, totalFat = 0;
+  for (const [, id] of Object.entries(plan)) {
+    if (!id) continue;
+    const r = recipes.find(r => r.id === id);
+    if (!r) continue;
+    totalCal   += r.macrosPerPortion.calories;
+    totalProt  += r.macrosPerPortion.protein;
+    totalCarbs += r.macrosPerPortion.carbs;
+    totalFat   += r.macrosPerPortion.fat;
+  }
+  if (!totalCal) { el.innerHTML = ''; return; }
+
+  const tc  = userProfile.target_calories * 7;
+  const tp  = (userProfile.target_protein || 0) * 7;
+  const tch = (userProfile.target_carbs   || 0) * 7;
+  const tf  = (userProfile.target_fat     || 0) * 7;
+
+  function tlClass(actual, target) {
+    if (!target) return '';
+    const pct = actual / target * 100;
+    if (pct > 120) return 'tl-red';
+    if (pct >= 80) return 'tl-green';
+    return 'tl-amber';
+  }
+
+  el.innerHTML = `
+    <div class="weekly-overview">
+      <p class="section-label">Weekly macro overview</p>
+      <div class="weekly-totals__grid">
+        <div class="weekly-total-item ${tlClass(totalCal,tc)}">
+          <div class="weekly-total-value">${Math.round(totalCal).toLocaleString()}</div>
+          <div class="weekly-total-label">kcal${tc ? ' / '+tc.toLocaleString() : ''}</div>
+        </div>
+        ${tp ? `<div class="weekly-total-item ${tlClass(totalProt,tp)}">
+          <div class="weekly-total-value">${Math.round(totalProt)}g</div>
+          <div class="weekly-total-label">protein / ${tp}g</div>
+        </div>` : ''}
+        ${tch ? `<div class="weekly-total-item ${tlClass(totalCarbs,tch)}">
+          <div class="weekly-total-value">${Math.round(totalCarbs)}g</div>
+          <div class="weekly-total-label">carbs / ${tch}g</div>
+        </div>` : ''}
+        ${tf ? `<div class="weekly-total-item ${tlClass(totalFat,tf)}">
+          <div class="weekly-total-value">${Math.round(totalFat)}g</div>
+          <div class="weekly-total-label">fat / ${tf}g</div>
+        </div>` : ''}
+      </div>
+    </div>`;
 }
 
 function renderBatchSummary(plan) {
@@ -253,13 +324,17 @@ async function clearSlotFromModal() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
 
 async function onAuthStateChange() {
+  if (isLoggedIn()) userProfile = await getProfile();
   currentPlan = await getPlanSync(weekKey(currentWeekOffset));
   renderWeek();
 }
 
 async function init() {
   await initAuth();
-  currentPlan = await getPlanSync(weekKey(currentWeekOffset));
+  [currentPlan, userProfile] = await Promise.all([
+    getPlanSync(weekKey(currentWeekOffset)),
+    isLoggedIn() ? getProfile() : Promise.resolve(null)
+  ]);
   renderWeek();
 }
 

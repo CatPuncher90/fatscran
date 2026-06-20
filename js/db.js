@@ -178,6 +178,41 @@ async function uploadRecipeImage(file) {
 }
 
 // ---------------------------------------------------------------------------
+// Profile
+// ---------------------------------------------------------------------------
+
+async function getProfile() {
+  const session = typeof getSession === 'function' ? getSession() : null;
+  if (!session) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${session.user.id}&select=*`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows.length ? rows[0] : null;
+  } catch(e) { return null; }
+}
+
+async function saveProfile(data) {
+  const session = typeof getSession === 'function' ? getSession() : null;
+  if (!session) throw new Error('Not logged in');
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: 'POST', headers, body: JSON.stringify({ user_id: session.user.id, ...data }) });
+  if (!res.ok) throw new Error('Failed to save profile: ' + await res.text());
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows[0] : rows;
+}
+
+async function uploadAvatar(file) {
+  const session = typeof getSession === 'function' ? getSession() : null;
+  if (!session) throw new Error('Must be logged in to upload avatar');
+  const ext      = file.name.split('.').pop().toLowerCase();
+  const filename = `${session.user.id}/avatar.${ext}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${filename}`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' }, body: file });
+  if (!res.ok) throw new Error('Avatar upload failed: ' + await res.text());
+  return `${SUPABASE_URL}/storage/v1/object/public/avatars/${filename}`;
+}
+
+// ---------------------------------------------------------------------------
 // Admin check
 // ---------------------------------------------------------------------------
 

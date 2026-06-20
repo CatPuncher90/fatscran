@@ -34,8 +34,11 @@
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/db.js"></script>
 <script>
 const CATEGORY_ORDER = ['meat','fish','dairy','veg','fruit','carbs','tins','sauces','spices','other'];
+
+let userProfile = null;
 
 function calcTotals(list) {
   let calories = 0, protein = 0, carbs = 0, fat = 0;
@@ -122,6 +125,76 @@ async function clearAll() {
   await render();
 }
 
+function barClass(pct) {
+  if (pct > 110) return 'macro-bar-fill--red';
+  if (pct >= 90)  return 'macro-bar-fill--green';
+  return 'macro-bar-fill--amber';
+}
+
+function macroProgressHTML(totals) {
+  if (!userProfile) return '';
+  const { target_calories: tc, target_protein: tp, target_carbs: tch, target_fat: tf } = userProfile;
+  if (!tc && !tp && !tch && !tf) return '';
+  const weeklyTargets = { calories: (tc||0)*7, protein: (tp||0)*7, carbs: (tch||0)*7, fat: (tf||0)*7 };
+
+  function bar(label, actual, target) {
+    if (!target) return '';
+    const pct   = Math.round(actual / target * 100);
+    const width = Math.min(pct, 110);
+    const cls   = barClass(pct);
+    return `
+      <div class="macro-bar-row">
+        <div class="macro-bar-header">
+          <span>${label}</span>
+          <span>${actual.toLocaleString()} / ${target.toLocaleString()} (${pct}%)</span>
+        </div>
+        <div class="macro-bar-track">
+          <div class="macro-bar-fill ${cls}" style="width:${width}%"></div>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="macro-progress-section">
+      <p class="weekly-totals__label">Weekly macro progress</p>
+      <div class="macro-bars">
+        ${bar('Calories', totals.calories, weeklyTargets.calories)}
+        ${bar('Protein', totals.protein, weeklyTargets.protein)}
+        ${bar('Carbs', totals.carbs, weeklyTargets.carbs)}
+        ${bar('Fat', totals.fat, weeklyTargets.fat)}
+      </div>
+    </div>`;
+}
+
+function suggestionsHTML(list) {
+  if (!userProfile) return '';
+  const listedIds = new Set(list.map(i => i.id));
+  const candidates = recipes
+    .filter(r => !listedIds.has(r.id))
+    .sort((a, b) => b.macrosPerPortion.protein - a.macrosPerPortion.protein)
+    .slice(0, 5);
+  if (!candidates.length) return '';
+  return `
+    <div class="suggestions-section">
+      <p class="weekly-totals__label">High-protein suggestions</p>
+      <div class="suggestion-list">
+        ${candidates.map(r => `
+          <div class="suggestion-card">
+            <div class="suggestion-info">
+              <div class="suggestion-title">${r.title}</div>
+              <div class="suggestion-meta">${r.macrosPerPortion.protein}g protein &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.section}</div>
+            </div>
+            <button class="btn-sm btn-primary" onclick="addSuggestion(${r.id})">Add</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function addSuggestion(id) {
+  await addToListSync(id, 1);
+  await render();
+}
+
 async function render() {
   const layout = document.getElementById('shopping-layout');
   const list   = await getListSync();
@@ -175,6 +248,8 @@ async function render() {
           <div class="weekly-total-item"><div class="weekly-total-value">${totals.fat}g</div><div class="weekly-total-label">fat</div></div>
         </div>
       </div>
+      ${macroProgressHTML(totals)}
+      ${suggestionsHTML(list)}
     </div>
     <div class="panel">
       <div class="panel-header">
@@ -189,10 +264,14 @@ async function render() {
   renderIngredientList();
 }
 
-async function onAuthStateChange() { await render(); }
+async function onAuthStateChange() {
+  if (isLoggedIn()) userProfile = await getProfile();
+  await render();
+}
 
 async function init() {
   await initAuth();
+  if (isLoggedIn()) userProfile = await getProfile();
   await render();
 }
 

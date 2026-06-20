@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — FatScran</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/fatscran/sw.js');</script>
+  <link rel="icon" type="image/png" href="fatscran-icon.png">
+  <link rel="apple-touch-icon" href="fatscran-icon.png">
+</head>
+<body>
+<nav id="main-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">☰</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Recipes</a></li>
+      <li><a href="shopping.html">Shopping List</a></li>
+      <li><a href="planner.html">Planner</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>My Profile</h1>
+    <p>Set your details and daily macro targets.</p>
+  </div>
+  <div id="profile-content"><p style="color:var(--muted)">Loading...</p></div>
+</main>
+
+<script src="recipes.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/db.js"></script>
+<script>
+
+const ACTIVITY_MULTIPLIERS = { sedentary: 1.2, lightly_active: 1.375, moderately_active: 1.55, very_active: 1.725, athlete: 1.9 };
+
+let currentTab   = 'tdee';
+let avatarUrl    = null;
+let uploadingAvatar = false;
+
+// ---------------------------------------------------------------------------
+// TDEE calculation
+// ---------------------------------------------------------------------------
+
+function recalc() {
+  if (currentTab !== 'tdee') return;
+  const age    = parseFloat(document.getElementById('prof-age')?.value);
+  const weight = parseFloat(document.getElementById('prof-weight')?.value);
+  const height = parseFloat(document.getElementById('prof-height')?.value);
+  const sex    = document.getElementById('prof-sex')?.value || 'male';
+  const act    = document.getElementById('prof-activity')?.value || 'sedentary';
+  const goal   = document.getElementById('prof-goal')?.value || 'maintain';
+  const deficit = parseInt(document.getElementById('prof-deficit')?.value) || 500;
+  const mult   = parseFloat(document.querySelector('input[name="prof-protein"]:checked')?.value) || 2.0;
+
+  if (!age || !weight || !height) return;
+
+  const sexAdj    = sex === 'male' ? 5 : -161;
+  const bmr       = 10 * weight + 6.25 * height - 5 * age + sexAdj;
+  const tdee      = Math.round(bmr * (ACTIVITY_MULTIPLIERS[act] || 1.2));
+
+  let targetCals  = tdee;
+  if (goal === 'lose')  targetCals = tdee - deficit;
+  if (goal === 'build') targetCals = tdee + deficit;
+
+  const protein   = Math.round(weight * mult);
+  const fat       = Math.round(weight * 0.8);
+  const carbs     = Math.max(0, Math.round((targetCals - protein * 4 - fat * 9) / 4));
+
+  setVal('prof-target-cal',     targetCals);
+  setVal('prof-target-protein', protein);
+  setVal('prof-target-fat',     fat);
+  setVal('prof-target-carbs',   carbs);
+}
+
+function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+
+function onGoalChange() {
+  const goal = document.getElementById('prof-goal')?.value;
+  const dg   = document.getElementById('deficit-group');
+  if (dg) dg.style.display = goal === 'maintain' ? 'none' : 'block';
+  updateDeficitLabel();
+  recalc();
+}
+
+function updateDeficitLabel() {
+  const goal  = document.getElementById('prof-goal')?.value;
+  const val   = document.getElementById('prof-deficit')?.value;
+  const el    = document.getElementById('deficit-label');
+  if (el && val) el.textContent = `${goal === 'lose' ? 'Deficit' : 'Surplus'}: ${val} kcal`;
+}
+
+function onSliderChange() { updateDeficitLabel(); recalc(); }
+
+// ---------------------------------------------------------------------------
+// Tab toggle
+// ---------------------------------------------------------------------------
+
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-tdee').classList.toggle('active', tab === 'tdee');
+  document.getElementById('tab-manual').classList.toggle('active', tab === 'manual');
+  const sec = document.getElementById('tdee-section');
+  if (sec) sec.style.display = tab === 'tdee' ? 'block' : 'none';
+  if (tab === 'tdee') recalc();
+}
+
+// ---------------------------------------------------------------------------
+// Avatar upload
+// ---------------------------------------------------------------------------
+
+async function handleAvatarUpload(e) {
+  const file = e.target.files[0];
+  if (!file || uploadingAvatar) return;
+  uploadingAvatar = true;
+  const statusEl = document.getElementById('avatar-status');
+  if (statusEl) statusEl.textContent = 'Uploading...';
+  try {
+    avatarUrl = await uploadAvatar(file);
+    const img = document.getElementById('avatar-img');
+    const ph  = document.getElementById('avatar-ph');
+    if (img) { img.src = avatarUrl; img.style.display = 'block'; }
+    if (ph)  ph.style.display = 'none';
+    if (statusEl) statusEl.textContent = 'Photo updated';
+  } catch(err) {
+    if (statusEl) statusEl.textContent = 'Upload failed';
+  }
+  uploadingAvatar = false;
+}
+
+// ---------------------------------------------------------------------------
+// Save
+// ---------------------------------------------------------------------------
+
+async function saveProfileData() {
+  const btn    = document.getElementById('save-btn');
+  const status = document.getElementById('save-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  if (status) { status.textContent = ''; status.className = 'profile-save-status'; }
+  try {
+    await saveProfile({
+      display_name:       document.getElementById('prof-display-name')?.value?.trim() || null,
+      avatar_url:         avatarUrl,
+      age:                parseFloat(document.getElementById('prof-age')?.value) || null,
+      weight_kg:          parseFloat(document.getElementById('prof-weight')?.value) || null,
+      height_cm:          parseFloat(document.getElementById('prof-height')?.value) || null,
+      sex:                document.getElementById('prof-sex')?.value || null,
+      activity_level:     document.getElementById('prof-activity')?.value || null,
+      goal:               document.getElementById('prof-goal')?.value || null,
+      deficit_surplus:    parseInt(document.getElementById('prof-deficit')?.value) || null,
+      protein_multiplier: parseFloat(document.querySelector('input[name="prof-protein"]:checked')?.value) || null,
+      target_calories:    parseInt(document.getElementById('prof-target-cal')?.value) || null,
+      target_protein:     parseInt(document.getElementById('prof-target-protein')?.value) || null,
+      target_carbs:       parseInt(document.getElementById('prof-target-carbs')?.value) || null,
+      target_fat:         parseInt(document.getElementById('prof-target-fat')?.value) || null,
+      use_tdee_calc:      currentTab === 'tdee'
+    });
+    if (status) { status.textContent = 'Saved!'; status.className = 'profile-save-status profile-save-status--success'; }
+  } catch(err) {
+    if (status) { status.textContent = 'Could not save: ' + err.message; status.className = 'profile-save-status profile-save-status--error'; }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save profile'; }
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+
+function sel(val, opt) { return val === opt ? 'selected' : ''; }
+function chk(val, opt) { return parseFloat(val) === parseFloat(opt) ? 'checked' : ''; }
+
+function renderProfile(p) {
+  const user    = getUser();
+  const initial = p?.display_name ? p.display_name[0].toUpperCase() : (user?.email || 'U')[0].toUpperCase();
+  avatarUrl     = p?.avatar_url || null;
+  currentTab    = p?.use_tdee_calc === false ? 'manual' : 'tdee';
+
+  const goal       = p?.goal || 'maintain';
+  const defVal     = p?.deficit_surplus || 500;
+  const mult       = parseFloat(p?.protein_multiplier) || 2.0;
+  const showDef    = goal !== 'maintain';
+
+  document.getElementById('profile-content').innerHTML = `
+    <div class="profile-layout">
+
+      <div class="profile-avatar-row">
+        <div class="avatar-circle">
+          ${avatarUrl
+            ? `<img id="avatar-img" src="${avatarUrl}" alt="avatar">`
+            : `<span id="avatar-ph">${initial}</span><img id="avatar-img" src="" alt="avatar" style="display:none;">`}
+        </div>
+        <div class="profile-avatar-info">
+          <button class="btn-secondary btn-sm" onclick="document.getElementById('avatar-file').click()">Change photo</button>
+          <span class="profile-save-status" id="avatar-status"></span>
+          <input type="file" id="avatar-file" accept="image/*" onchange="handleAvatarUpload(event)" style="display:none;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="prof-display-name">Display name</label>
+        <input type="text" id="prof-display-name" class="form-input" placeholder="Your name" value="${p?.display_name || ''}">
+      </div>
+
+      <div class="profile-tab-toggle">
+        <button class="profile-tab ${currentTab === 'tdee' ? 'active' : ''}" id="tab-tdee" onclick="setTab('tdee')">TDEE Calculator</button>
+        <button class="profile-tab ${currentTab === 'manual' ? 'active' : ''}" id="tab-manual" onclick="setTab('manual')">Manual targets</button>
+      </div>
+
+      <div id="tdee-section" ${currentTab !== 'tdee' ? 'style="display:none;"' : ''}>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="prof-age">Age</label>
+            <input type="number" id="prof-age" class="form-input" min="1" max="120" placeholder="30" value="${p?.age || ''}" oninput="recalc()">
+          </div>
+          <div class="form-group">
+            <label for="prof-weight">Weight (kg)</label>
+            <input type="number" id="prof-weight" class="form-input" min="1" step="0.1" placeholder="80" value="${p?.weight_kg || ''}" oninput="recalc()">
+          </div>
+          <div class="form-group">
+            <label for="prof-height">Height (cm)</label>
+            <input type="number" id="prof-height" class="form-input" min="1" placeholder="175" value="${p?.height_cm || ''}" oninput="recalc()">
+          </div>
+          <div class="form-group">
+            <label for="prof-sex">Sex</label>
+            <select id="prof-sex" class="form-input" onchange="recalc()">
+              <option value="male"   ${sel(p?.sex || 'male','male')}>Male</option>
+              <option value="female" ${sel(p?.sex,'female')}>Female</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="prof-activity">Activity level</label>
+          <select id="prof-activity" class="form-input" onchange="recalc()">
+            <option value="sedentary"         ${sel(p?.activity_level || 'sedentary','sedentary')}>Sedentary (little or no exercise)</option>
+            <option value="lightly_active"    ${sel(p?.activity_level,'lightly_active')}>Lightly active (1–3 days/week)</option>
+            <option value="moderately_active" ${sel(p?.activity_level,'moderately_active')}>Moderately active (3–5 days/week)</option>
+            <option value="very_active"       ${sel(p?.activity_level,'very_active')}>Very active (6–7 days/week)</option>
+            <option value="athlete"           ${sel(p?.activity_level,'athlete')}>Athlete (twice daily)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="prof-goal">Goal</label>
+          <select id="prof-goal" class="form-input" onchange="onGoalChange()">
+            <option value="maintain" ${sel(goal,'maintain')}>Maintain weight</option>
+            <option value="lose"     ${sel(goal,'lose')}>Lose weight</option>
+            <option value="build"    ${sel(goal,'build')}>Build muscle</option>
+            <option value="custom"   ${sel(goal,'custom')}>Custom</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="deficit-group" ${showDef ? '' : 'style="display:none;"'}>
+          <label id="deficit-label">${goal === 'lose' ? 'Deficit' : 'Surplus'}: ${defVal} kcal</label>
+          <input type="range" class="range-slider" id="prof-deficit" min="100" max="1000" step="50" value="${defVal}" oninput="onSliderChange()">
+        </div>
+
+        <div class="form-group">
+          <label>Protein multiplier</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="prof-protein" value="1.6" ${chk(mult,1.6)} onchange="recalc()"> 1.6 g/kg &mdash; minimum</label>
+            <label class="radio-label"><input type="radio" name="prof-protein" value="2.0" ${chk(mult,2.0) || (!p?.protein_multiplier ? 'checked' : '')} onchange="recalc()"> 2 g/kg &mdash; recommended</label>
+            <label class="radio-label"><input type="radio" name="prof-protein" value="2.4" ${chk(mult,2.4)} onchange="recalc()"> 2.4 g/kg &mdash; high</label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="targets-section">
+        <p class="section-label">Daily targets</p>
+        <div class="targets-grid">
+          <div class="form-group">
+            <label for="prof-target-cal">Calories</label>
+            <input type="number" id="prof-target-cal" class="form-input" min="0" value="${p?.target_calories || ''}">
+          </div>
+          <div class="form-group">
+            <label for="prof-target-protein">Protein (g)</label>
+            <input type="number" id="prof-target-protein" class="form-input" min="0" value="${p?.target_protein || ''}">
+          </div>
+          <div class="form-group">
+            <label for="prof-target-carbs">Carbs (g)</label>
+            <input type="number" id="prof-target-carbs" class="form-input" min="0" value="${p?.target_carbs || ''}">
+          </div>
+          <div class="form-group">
+            <label for="prof-target-fat">Fat (g)</label>
+            <input type="number" id="prof-target-fat" class="form-input" min="0" value="${p?.target_fat || ''}">
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-save-row">
+        <button class="btn-primary" id="save-btn" onclick="saveProfileData()">Save profile</button>
+        <span class="profile-save-status" id="save-status"></span>
+      </div>
+
+    </div>`;
+
+  if (currentTab === 'tdee') recalc();
+}
+
+async function init() {
+  await initAuth();
+  if (!isLoggedIn()) { window.location.href = 'index.html'; return; }
+  renderProfile(await getProfile());
+}
+
+init();
+</script>
+</body>
+</html>
