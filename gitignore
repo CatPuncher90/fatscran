@@ -1,0 +1,6 @@
+# Windows metadata files (created when downloading files from the internet on Windows)
+*:Zone.Identifier
+
+# OS files
+.DS_Store
+Thumbs.db

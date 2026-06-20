@@ -5,58 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meal Planner — FatScran</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-    .week-nav h2 { font-size: 1rem; font-weight: 600; color: var(--text); }
-    .week-nav button { padding: 6px 14px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.875rem; }
-    .week-nav button:disabled { opacity: 0.3; cursor: default; }
-    .week-nav .today-btn { background: var(--accent); color: #FAF7F2; border-color: var(--accent); }
-    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 2rem; }
-    .day-col { display: flex; flex-direction: column; gap: 6px; }
-    .day-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: center; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-    .day-header.today { color: var(--accent); }
-    .day-date { font-size: 0.65rem; color: var(--muted); text-align: center; margin-top: -2px; }
-    .meal-slot { min-height: 64px; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); padding: 6px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
-    .meal-slot:hover { background: var(--bg-card); border-color: var(--accent); }
-    .meal-slot-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-    .slot-recipe { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 5px 24px 5px 7px; font-size: 0.7rem; font-weight: 600; color: var(--text); position: relative; line-height: 1.3; }
-    .slot-recipe .slot-macros { font-size: 0.62rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
-    .slot-recipe .remove-slot { position: absolute; top: 4px; right: 5px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
-    .slot-recipe .remove-slot:hover { color: #9B3A20; }
-    .day-totals { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-    .day-total-val { font-size: 0.78rem; font-weight: 700; color: var(--text); text-align: center; }
-    .day-total-lbl { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); text-align: center; }
-    .batch-summary { margin-bottom: 2rem; }
-    .batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 0.75rem; }
-    .batch-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
-    .batch-card-title { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-    .batch-card-meta { font-size: 0.72rem; color: var(--muted); }
-    .planner-actions { display: flex; gap: 8px; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
-
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-    .modal { background: var(--bg-card); border-radius: var(--radius-lg, 12px); width: 100%; max-width: 480px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
-    .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; }
-    .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; padding: 0; line-height: 1; }
-    .modal-search { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); }
-    .modal-search input { width: 100%; box-sizing: border-box; }
-    .modal-list { overflow-y: auto; flex: 1; padding: 0.5rem; }
-    .modal-recipe { padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; border: 1px solid transparent; margin-bottom: 4px; }
-    .modal-recipe:hover { background: var(--bg); border-color: var(--border); }
-    .modal-recipe-title { font-size: 0.875rem; font-weight: 600; color: var(--text); }
-    .modal-recipe-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
-    .modal-remove { padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; border: 1px solid #F5C5B8; background: #FDF0EB; color: #9B3A20; margin-bottom: 4px; font-size: 0.875rem; font-weight: 600; }
-    .modal-remove:hover { background: #FAE0D8; }
-
-    @media (max-width: 700px) {
-      .week-grid { grid-template-columns: repeat(2, 1fr); }
-      .week-nav h2 { font-size: 0.875rem; }
-    }
-  </style>
+  <link rel="manifest" href="manifest.json">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/fatscran/sw.js');</script>
+  <link rel="icon" type="image/png" href="fatscran-icon.png">
+  <link rel="apple-touch-icon" href="fatscran-icon.png">
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
@@ -75,13 +29,13 @@
   </div>
 
   <div class="week-nav">
-    <button id="prev-btn" onclick="changeWeek(-1)">← Prev</button>
-    <div style="text-align:center;">
+    <button id="prev-btn" onclick="changeWeek(-1)" class="week-nav__btn">&#8592; Prev</button>
+    <div class="week-nav__label">
       <h2 id="week-label"></h2>
     </div>
-    <div style="display:flex;gap:8px;">
-      <button class="today-btn" onclick="goToToday()">Today</button>
-      <button id="next-btn" onclick="changeWeek(1)">Next →</button>
+    <div class="week-nav__right">
+      <button class="week-nav__btn week-nav__btn--today" onclick="goToToday()">Today</button>
+      <button id="next-btn" onclick="changeWeek(1)" class="week-nav__btn">Next &#8594;</button>
     </div>
   </div>
 
@@ -97,7 +51,7 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
       <h3 id="modal-title">Pick a recipe</h3>
-      <button class="modal-close" onclick="closeModalDirect()">×</button>
+      <button class="modal-close" onclick="closeModalDirect()">&#215;</button>
     </div>
     <div class="modal-search">
       <input type="text" placeholder="Search recipes..." oninput="filterModal(this.value)" id="modal-search-input">
@@ -107,220 +61,236 @@
 </div>
 
 <script src="recipes.js"></script>
+<script src="js/utils.js"></script>
 <script>
-  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const MEALS = ['breakfast','dinner','tea'];
-  const MAX_WEEKS = 4;
+const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MEALS = ['breakfast','dinner','tea'];
+const MAX_WEEKS = 4;
 
-  let currentWeekOffset = 0;
-  let activeSlot = null;
+let currentWeekOffset = 0;
+let modalDay  = null;
+let modalMeal = null;
+let modalQuery = '';
 
-  function getMonday(offset) {
-    const now = new Date();
-    const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
-    monday.setHours(0,0,0,0);
-    return monday;
-  }
+function getMonday(offset) {
+  const now    = new Date();
+  const day    = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
 
-  function weekKey(offset) {
-    const m = getMonday(offset);
-    return `week-${m.getFullYear()}-${m.getMonth()}-${m.getDate()}`;
-  }
+function weekKey(offset) {
+  const m = getMonday(offset);
+  return `week-${m.getFullYear()}-${m.getMonth()}-${m.getDate()}`;
+}
 
-  function getPlan(offset) {
-    try { return JSON.parse(localStorage.getItem(weekKey(offset)) || '{}'); } catch(e) { return {}; }
-  }
+function getPlan(offset) {
+  try { return JSON.parse(localStorage.getItem(weekKey(offset)) || '{}'); } catch(e) { return {}; }
+}
 
-  function savePlan(offset, plan) {
-    localStorage.setItem(weekKey(offset), JSON.stringify(plan));
-  }
+function savePlan(offset, plan) {
+  localStorage.setItem(weekKey(offset), JSON.stringify(plan));
+}
 
-  function formatDate(date) {
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-  }
+function formatDate(date) {
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
-  function getTodayDayIndex() {
-    const d = new Date().getDay();
-    return d === 0 ? 6 : d - 1;
-  }
+function getTodayDayIndex() {
+  const d = new Date().getDay();
+  return d === 0 ? 6 : d - 1;
+}
 
-  function isCurrentWeek() { return currentWeekOffset === 0; }
+function isCurrentWeek() { return currentWeekOffset === 0; }
 
-  function updateNav() {
-    const monday = getMonday(currentWeekOffset);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    document.getElementById('week-label').textContent = `${formatDate(monday)} – ${formatDate(sunday)}`;
-    document.getElementById('prev-btn').disabled = currentWeekOffset <= -MAX_WEEKS;
-    document.getElementById('next-btn').disabled = currentWeekOffset >= MAX_WEEKS;
-  }
+function updateNav() {
+  const monday = getMonday(currentWeekOffset);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  document.getElementById('week-label').textContent = `${formatDate(monday)} \u2013 ${formatDate(sunday)}`;
+  document.getElementById('prev-btn').disabled = currentWeekOffset <= -MAX_WEEKS;
+  document.getElementById('next-btn').disabled = currentWeekOffset >= MAX_WEEKS;
+}
 
-  function renderWeek() {
-    updateNav();
-    const plan = getPlan(currentWeekOffset);
-    const monday = getMonday(currentWeekOffset);
-    const todayIdx = isCurrentWeek() ? getTodayDayIndex() : -1;
-    const grid = document.getElementById('week-grid');
+function renderWeek() {
+  updateNav();
+  const plan     = getPlan(currentWeekOffset);
+  const monday   = getMonday(currentWeekOffset);
+  const todayIdx = isCurrentWeek() ? getTodayDayIndex() : -1;
+  const grid     = document.getElementById('week-grid');
 
-    grid.innerHTML = DAYS.map((day, di) => {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + di);
-      let dayCalories = 0, dayProtein = 0;
+  grid.innerHTML = DAYS.map((day, di) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + di);
 
-      const slots = MEALS.map(meal => {
-        const key = `${day}-${meal}`;
-        const recipeId = plan[key];
-        const recipe = recipeId ? recipes.find(r => r.id === recipeId) : null;
-        if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; }
-        return `
-          <div class="meal-slot" onclick="openModal('${day}','${meal}')">
-            <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
-            ${recipe ? `
-              <div class="slot-recipe" onclick="event.stopPropagation()">
-                <button class="remove-slot" onclick="removeFromSlot('${day}','${meal}')">×</button>
-                ${recipe.title}
-                <div class="slot-macros">${recipe.macrosPerPortion.calories} kcal · ${recipe.macrosPerPortion.protein}g</div>
-              </div>` : ''}
-          </div>`;
-      }).join('');
+    let dayCalories = 0, dayProtein = 0;
+
+    const slots = MEALS.map(meal => {
+      const key      = `${day}-${meal}`;
+      const recipeId = plan[key];
+      const recipe   = recipeId ? recipes.find(r => r.id === recipeId) : null;
+      if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; }
 
       return `
-        <div class="day-col">
-          <div class="day-header ${di === todayIdx ? 'today' : ''}">${day}</div>
-          <div class="day-date">${formatDate(date)}</div>
-          ${slots}
-          ${dayCalories > 0 ? `
-            <div class="day-totals">
-              <div><div class="day-total-val">${dayCalories}</div><div class="day-total-lbl">kcal</div></div>
-              <div><div class="day-total-val">${dayProtein}g</div><div class="day-total-lbl">protein</div></div>
+        <div class="meal-slot" onclick="openModal('${day}','${meal}')">
+          <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
+          ${recipe ? `
+            <div class="slot-recipe" onclick="event.stopPropagation()">
+              <button class="remove-slot" onclick="removeFromSlot('${day}','${meal}')">&#215;</button>
+              ${recipe.title}
+              <div class="slot-macros">${recipe.macrosPerPortion.calories} kcal &middot; ${recipe.macrosPerPortion.protein}g</div>
             </div>` : ''}
         </div>`;
     }).join('');
 
-    renderBatchSummary(plan);
-  }
-
-  function renderBatchSummary(plan) {
-    const recipeDays = {};
-    for (const [key, recipeId] of Object.entries(plan)) {
-      if (!recipeId) continue;
-      const [day] = key.split('-');
-      if (!recipeDays[recipeId]) recipeDays[recipeId] = [];
-      if (!recipeDays[recipeId].includes(day)) recipeDays[recipeId].push(day);
-    }
-    const el = document.getElementById('batch-summary');
-    const ids = Object.keys(recipeDays);
-    if (!ids.length) { el.innerHTML = ''; return; }
-    el.innerHTML = `
-      <p class="section-label">What to batch cook this week</p>
-      <div class="batch-grid">
-        ${ids.map(id => {
-          const recipe = recipes.find(r => r.id === parseInt(id));
-          if (!recipe) return '';
-          const days = recipeDays[id];
-          return `
-            <div class="batch-card">
-              <div class="batch-card-title">${recipe.title}</div>
-              <div class="batch-card-meta">Needed: ${days.join(', ')}</div>
-              <div class="batch-card-meta">${recipe.cookTime} · ${days.length} day${days.length !== 1 ? 's' : ''}</div>
-            </div>`;
-        }).join('')}
+    return `
+      <div class="day-col">
+        <div class="day-header ${di === todayIdx ? 'day-header--today' : ''}">${day}</div>
+        <div class="day-date">${formatDate(date)}</div>
+        ${slots}
+        ${dayCalories > 0 ? `
+          <div class="day-totals">
+            <div><div class="day-total-val">${dayCalories}</div><div class="day-total-lbl">kcal</div></div>
+            <div><div class="day-total-val">${dayProtein}g</div><div class="day-total-lbl">protein</div></div>
+          </div>` : ''}
       </div>`;
+  }).join('');
+
+  renderBatchSummary(plan);
+}
+
+function renderBatchSummary(plan) {
+  const recipeDays = {};
+  for (const [key, recipeId] of Object.entries(plan)) {
+    if (!recipeId) continue;
+    const [day] = key.split('-');
+    if (!recipeDays[recipeId]) recipeDays[recipeId] = [];
+    if (!recipeDays[recipeId].includes(day)) recipeDays[recipeId].push(day);
   }
 
-  function removeFromSlot(day, meal) {
-    const plan = getPlan(currentWeekOffset);
-    delete plan[`${day}-${meal}`];
-    savePlan(currentWeekOffset, plan);
-    renderWeek();
-  }
+  const el  = document.getElementById('batch-summary');
+  const ids = Object.keys(recipeDays);
+  if (!ids.length) { el.innerHTML = ''; return; }
 
-  function changeWeek(dir) {
-    const next = currentWeekOffset + dir;
-    if (next < -MAX_WEEKS || next > MAX_WEEKS) return;
-    currentWeekOffset = next;
-    renderWeek();
-  }
+  el.innerHTML = `
+    <p class="section-label">What to batch cook this week</p>
+    <div class="batch-grid">
+      ${ids.map(id => {
+        const recipe = recipes.find(r => r.id === parseInt(id));
+        if (!recipe) return '';
+        const days = recipeDays[id];
+        return `
+          <div class="batch-card">
+            <div class="batch-card-title">${recipe.title}</div>
+            <div class="batch-card-meta">Needed: ${days.join(', ')}</div>
+            <div class="batch-card-meta">${recipe.cookTime} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
 
-  function goToToday() {
-    currentWeekOffset = 0;
-    renderWeek();
-  }
-
-  function addWeekToShoppingList() {
-    const plan = getPlan(currentWeekOffset);
-    const list = JSON.parse(localStorage.getItem('fatscran-list') || '[]');
-    for (const recipeId of Object.values(plan)) {
-      if (!recipeId) continue;
-      const id = parseInt(recipeId);
-      const existing = list.find(i => i.id === id);
-      const recipe = recipes.find(r => r.id === id);
-      if (!recipe) continue;
-      if (existing) { existing.portions += 1; } else { list.push({ id, portions: 1 }); }
-    }
-    localStorage.setItem('fatscran-list', JSON.stringify(list));
-    window.location.href = 'shopping.html';
-  }
-
-  // Modal
-  let modalDay = null, modalMeal = null, modalQuery = '';
-
-  function openModal(day, meal) {
-    modalDay = day;
-    modalMeal = meal;
-    modalQuery = '';
-    document.getElementById('modal-search-input').value = '';
-    document.getElementById('modal-title').textContent = `${day} – ${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
-    filterModal('');
-    document.getElementById('modal-overlay').style.display = 'flex';
-    setTimeout(() => document.getElementById('modal-search-input').focus(), 50);
-  }
-
-  function closeModal(event) {
-    if (event.target === document.getElementById('modal-overlay')) closeModalDirect();
-  }
-
-  function closeModalDirect() {
-    document.getElementById('modal-overlay').style.display = 'none';
-    modalDay = null;
-    modalMeal = null;
-  }
-
-  function filterModal(query) {
-    modalQuery = query.toLowerCase();
-    const plan = getPlan(currentWeekOffset);
-    const currentId = plan[`${modalDay}-${modalMeal}`];
-    const filtered = recipes.filter(r => !modalQuery || r.title.toLowerCase().includes(modalQuery) || r.section.toLowerCase().includes(modalQuery));
-    const list = document.getElementById('modal-list');
-    list.innerHTML = (currentId ? `<div class="modal-remove" onclick="clearSlotFromModal()">Remove recipe</div>` : '') +
-      filtered.map(r => `
-        <div class="modal-recipe ${r.id === currentId ? 'selected' : ''}" onclick="selectRecipe(${r.id})" style="${r.id === currentId ? 'border-color:var(--accent);background:var(--bg);' : ''}">
-          <div class="modal-recipe-title">${r.title}</div>
-          <div class="modal-recipe-meta">${r.section} · ${r.macrosPerPortion.calories} kcal · ${r.macrosPerPortion.protein}g protein · ${r.cookTime}</div>
-        </div>`).join('');
-  }
-
-  function selectRecipe(id) {
-    const plan = getPlan(currentWeekOffset);
-    plan[`${modalDay}-${modalMeal}`] = id;
-    savePlan(currentWeekOffset, plan);
-    closeModalDirect();
-    renderWeek();
-  }
-
-  function clearSlotFromModal() {
-    const plan = getPlan(currentWeekOffset);
-    delete plan[`${modalDay}-${modalMeal}`];
-    savePlan(currentWeekOffset, plan);
-    closeModalDirect();
-    renderWeek();
-  }
-
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
-
+function removeFromSlot(day, meal) {
+  const plan = getPlan(currentWeekOffset);
+  delete plan[`${day}-${meal}`];
+  savePlan(currentWeekOffset, plan);
   renderWeek();
+}
+
+function changeWeek(dir) {
+  const next = currentWeekOffset + dir;
+  if (next < -MAX_WEEKS || next > MAX_WEEKS) return;
+  currentWeekOffset = next;
+  renderWeek();
+}
+
+function goToToday() {
+  currentWeekOffset = 0;
+  renderWeek();
+}
+
+function addWeekToShoppingList() {
+  const plan = getPlan(currentWeekOffset);
+  const list = getList();
+
+  // Collect unique recipe IDs from the week plan
+  const uniqueIds = [...new Set(Object.values(plan).filter(Boolean).map(id => parseInt(id)))];
+
+  for (const id of uniqueIds) {
+    const recipe   = recipes.find(r => r.id === id);
+    if (!recipe) continue;
+    const existing = list.find(i => i.id === id);
+    if (existing) { existing.portions += 1; } else { list.push({ id, portions: 1 }); }
+  }
+
+  saveList(list);
+  window.location.href = 'shopping.html';
+}
+
+// ---------------------------------------------------------------------------
+// Modal
+// ---------------------------------------------------------------------------
+
+function openModal(day, meal) {
+  modalDay  = day;
+  modalMeal = meal;
+  modalQuery = '';
+  document.getElementById('modal-search-input').value = '';
+  document.getElementById('modal-title').textContent  = `${day} \u2013 ${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
+  filterModal('');
+  document.getElementById('modal-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-search-input').focus(), 50);
+}
+
+function closeModal(event) {
+  if (event.target === document.getElementById('modal-overlay')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  modalDay  = null;
+  modalMeal = null;
+}
+
+function filterModal(query) {
+  modalQuery = query.toLowerCase();
+  const plan      = getPlan(currentWeekOffset);
+  const currentId = plan[`${modalDay}-${modalMeal}`];
+  const filtered  = recipes.filter(r =>
+    !modalQuery ||
+    r.title.toLowerCase().includes(modalQuery) ||
+    r.section.toLowerCase().includes(modalQuery)
+  );
+
+  document.getElementById('modal-list').innerHTML =
+    (currentId ? `<div class="modal-remove" onclick="clearSlotFromModal()">Remove recipe</div>` : '') +
+    filtered.map(r => `
+      <div class="modal-recipe ${r.id === currentId ? 'modal-recipe--selected' : ''}" onclick="selectRecipe(${r.id})">
+        <div class="modal-recipe-title">${r.title}</div>
+        <div class="modal-recipe-meta">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.cookTime}</div>
+      </div>`).join('');
+}
+
+function selectRecipe(id) {
+  const plan = getPlan(currentWeekOffset);
+  plan[`${modalDay}-${modalMeal}`] = id;
+  savePlan(currentWeekOffset, plan);
+  closeModalDirect();
+  renderWeek();
+}
+
+function clearSlotFromModal() {
+  const plan = getPlan(currentWeekOffset);
+  delete plan[`${modalDay}-${modalMeal}`];
+  savePlan(currentWeekOffset, plan);
+  closeModalDirect();
+  renderWeek();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+
+renderWeek();
 </script>
 </body>
 </html>

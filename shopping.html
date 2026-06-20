@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FatScran — High Protein Meal Prep</title>
+  <title>FatScran — Shopping List</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/fatscran/sw.js');</script>
@@ -11,7 +11,6 @@
   <link rel="apple-touch-icon" href="fatscran-icon.png">
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
@@ -32,192 +31,172 @@
 </main>
 
 <script src="recipes.js"></script>
+<script src="js/utils.js"></script>
 <script>
-  const CATEGORY_ORDER = ['meat','fish','dairy','veg','fruit','carbs','tins','sauces','spices','other'];
+const CATEGORY_ORDER = ['meat','fish','dairy','veg','fruit','carbs','tins','sauces','spices','other'];
 
-  function getList() { try { return JSON.parse(localStorage.getItem('fatscran-list') || '[]'); } catch(e) { return []; } }
-  function saveList(list) { localStorage.setItem('fatscran-list', JSON.stringify(list)); }
-  function getChecked() { try { return JSON.parse(localStorage.getItem('fatscran-checked') || '[]'); } catch(e) { return []; } }
-  function saveChecked(checked) { localStorage.setItem('fatscran-checked', JSON.stringify(checked)); }
-
-  function guessCategory(name) {
-    const n = name.toLowerCase();
-    if (/chicken|beef|lamb|mince|bacon|sausage|pepperoni/.test(n)) return 'meat';
-    if (/salmon|fish|tuna/.test(n)) return 'fish';
-    if (/cheese|yogurt|yoghurt|milk|cream|butter|egg/.test(n)) return 'dairy';
-    if (/onion|garlic|pepper|carrot|broccoli|spinach|lettuce|tomato|celery|coleslaw|beans|peas|cucumber|mushroom/.test(n)) return 'veg';
-    if (/lime|lemon/.test(n)) return 'fruit';
-    if (/rice|pasta|noodle|tortilla|muffin|bun|flour|cornflake/.test(n)) return 'carbs';
-    if (/can|tin|passata|coconut|evaporated|stock/.test(n)) return 'tins';
-    if (/sauce|paste|ketchup|mayo|relish|vinegar|honey|ketjap|teriyaki|harissa|chipotle|pizza/.test(n)) return 'sauces';
-    if (/powder|spice|cumin|paprika|chili|chilli|salt|oregano|basil|thyme|garam|coriander|herb|seasoning|sesame|yeast/.test(n)) return 'spices';
-    return 'other';
+function calcTotals(list) {
+  let calories = 0, protein = 0, carbs = 0, fat = 0;
+  for (const item of list) {
+    const recipe = recipes.find(r => r.id === item.id);
+    if (!recipe) continue;
+    calories += recipe.macrosPerPortion.calories * item.portions;
+    protein  += recipe.macrosPerPortion.protein  * item.portions;
+    carbs    += recipe.macrosPerPortion.carbs     * item.portions;
+    fat      += recipe.macrosPerPortion.fat       * item.portions;
   }
+  return {
+    calories: Math.round(calories),
+    protein:  Math.round(protein),
+    carbs:    Math.round(carbs),
+    fat:      Math.round(fat)
+  };
+}
 
-  function calcTotals(list) {
-    let calories = 0, protein = 0, carbs = 0, fat = 0;
-    for (const item of list) {
-      const recipe = recipes.find(r => r.id === item.id);
-      if (!recipe) continue;
-      calories += recipe.macrosPerPortion.calories * item.portions;
-      protein += recipe.macrosPerPortion.protein * item.portions;
-      carbs += recipe.macrosPerPortion.carbs * item.portions;
-      fat += recipe.macrosPerPortion.fat * item.portions;
+function buildIngredients(list) {
+  const merged = {};
+  for (const item of list) {
+    const recipe = recipes.find(r => r.id === item.id);
+    if (!recipe) continue;
+    const scale = item.portions / recipe.basePortions;
+    for (const ing of recipe.ingredients) {
+      const key = ing.name.toLowerCase();
+      if (!merged[key]) merged[key] = { name: ing.name, category: guessCategory(ing.name), unit: ing.unit, total: 0, isToTaste: ing.amount === null };
+      if (ing.amount !== null) merged[key].total += ing.amount * scale;
     }
-    return { calories: Math.round(calories), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat) };
+  }
+  const byCategory = {};
+  for (const item of Object.values(merged)) {
+    const cat = item.category;
+    if (!byCategory[cat]) byCategory[cat] = [];
+    const qty = item.isToTaste ? 'to taste' : (Math.round(item.total * 10) / 10) + ' ' + item.unit;
+    byCategory[cat].push({ name: item.name, qty, key: item.name.toLowerCase() });
+  }
+  return byCategory;
+}
+
+function toggleCheck(key) {
+  const checked = getChecked();
+  const idx     = checked.indexOf(key);
+  if (idx === -1) { checked.push(key); } else { checked.splice(idx, 1); }
+  saveChecked(checked);
+  renderIngredientList();
+}
+
+function renderIngredientList() {
+  const byCategory  = buildIngredients(getList());
+  const checked     = getChecked();
+  const el          = document.getElementById('ingredient-list');
+  if (!el) return;
+
+  const keys = Object.keys(byCategory);
+  if (keys.length === 0) {
+    el.innerHTML = '<div class="empty-state"><p>No ingredients yet.</p></div>';
+    return;
   }
 
-  function buildIngredients(list) {
-    const merged = {};
-    for (const item of list) {
-      const recipe = recipes.find(r => r.id === item.id);
-      if (!recipe) continue;
-      const scale = item.portions / recipe.basePortions;
-      for (const ing of recipe.ingredients) {
-        const key = ing.name.toLowerCase();
-        if (!merged[key]) merged[key] = { name: ing.name, category: guessCategory(ing.name), unit: ing.unit, total: 0, isToTaste: ing.amount === null };
-        if (ing.amount !== null) merged[key].total += ing.amount * scale;
-      }
-    }
-    const byCategory = {};
-    for (const item of Object.values(merged)) {
-      const cat = item.category;
-      if (!byCategory[cat]) byCategory[cat] = [];
-      const qty = item.isToTaste ? 'to taste' : (Math.round(item.total * 10) / 10) + ' ' + item.unit;
-      byCategory[cat].push({ name: item.name, qty, key: item.name.toLowerCase() });
-    }
-    return byCategory;
-  }
+  const orderedKeys = CATEGORY_ORDER.filter(c => byCategory[c]).concat(keys.filter(k => !CATEGORY_ORDER.includes(k)));
 
-  function toggleCheck(key) {
-    const checked = getChecked();
-    const idx = checked.indexOf(key);
-    if (idx === -1) { checked.push(key); } else { checked.splice(idx, 1); }
-    saveChecked(checked);
-    renderIngredientList();
-  }
+  el.innerHTML = orderedKeys.map(cat => `
+    <div class="category-group">
+      <p class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</p>
+      <ul class="item-list">
+        ${byCategory[cat].map(item => `
+          <li onclick="toggleCheck('${item.key}')" class="ingredient-row ${checked.includes(item.key) ? 'ingredient-row--checked' : ''}">
+            <span class="ingredient-checkbox ${checked.includes(item.key) ? 'ingredient-checkbox--checked' : ''}">${checked.includes(item.key) ? '&#10003;' : ''}</span>
+            <span class="ingredient-name">${item.name}</span>
+            <span class="item-qty">${item.qty}</span>
+          </li>`).join('')}
+      </ul>
+    </div>`).join('');
+}
 
-  function renderIngredientList() {
-    const byCategory = buildIngredients(getList());
-    const checked = getChecked();
-    const el = document.getElementById('ingredient-list');
-    if (!el) return;
-    const keys = Object.keys(byCategory);
-    if (keys.length === 0) { el.innerHTML = '<div class="empty-state"><p>No ingredients yet.</p></div>'; return; }
-    const orderedKeys = CATEGORY_ORDER.filter(c => byCategory[c]).concat(keys.filter(k => !CATEGORY_ORDER.includes(k)));
-    el.innerHTML = orderedKeys.map(cat => `
-      <div class="category-group">
-        <p class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</p>
-        <ul class="item-list">
-          ${byCategory[cat].map(item => `
-            <li onclick="toggleCheck('${item.key}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;${checked.includes(item.key) ? 'opacity:0.4;' : ''}">
-              <span style="flex-shrink:0;width:18px;height:18px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;background:${checked.includes(item.key) ? 'var(--accent)' : 'transparent'};color:#fff;font-size:11px;">${checked.includes(item.key) ? '✓' : ''}</span>
-              <span style="flex:1;${checked.includes(item.key) ? 'text-decoration:line-through;' : ''}">${item.name}</span>
-              <span class="item-qty">${item.qty}</span>
-            </li>`).join('')}
-        </ul>
-      </div>`).join('');
-  }
+function removeItem(id) {
+  saveList(getList().filter(i => i.id !== id));
+  render();
+}
 
-  function removeItem(id) {
-    const list = getList().filter(i => i.id !== id);
-    saveList(list);
-    render();
-  }
+function updatePortions(id, val) {
+  const list = getList();
+  const item = list.find(i => i.id === id);
+  if (item) { item.portions = Math.max(1, parseInt(val) || 1); saveList(list); }
+  render();
+}
 
-  function updatePortions(id, val) {
-    const list = getList();
-    const item = list.find(i => i.id === id);
-    if (item) { item.portions = Math.max(1, parseInt(val) || 1); saveList(list); }
-    render();
-  }
+function clearAll() {
+  saveList([]);
+  saveChecked([]);
+  render();
+}
 
-  function clearAll() {
-    saveList([]);
-    saveChecked([]);
-    render();
-  }
+function render() {
+  const layout = document.getElementById('shopping-layout');
+  const list   = getList();
 
-  function render() {
-    const layout = document.getElementById('shopping-layout');
-    const list = getList();
-
-    if (list.length === 0) {
-      layout.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;color:var(--muted)">
-          <p style="font-size:1.05rem;font-weight:700;margin-bottom:0.4rem">No recipes added yet</p>
-          <p>Open a recipe and press "Add to shopping list".</p>
-          <a href="index.html" style="display:inline-block;margin-top:1rem;padding:10px 24px;background:var(--accent);color:#FAF7F2;border-radius:var(--radius-sm);text-decoration:none;font-weight:600;font-family:'DM Sans',sans-serif;font-size:0.875rem;">Browse recipes</a>
-        </div>`;
-      return;
-    }
-
-    const totals = calcTotals(list);
-
-    const recipeRows = list.map(item => {
-      const recipe = recipes.find(r => r.id === item.id);
-      if (!recipe) return '';
-      return `
-        <div class="picker-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-          <a href="recipe.html?id=${recipe.id}" style="text-decoration:none;color:inherit;flex:1;min-width:0;">
-            <span class="picker-name" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${recipe.title}</span>
-            <span class="picker-detail">${recipe.section} &middot; ${item.portions} portion${item.portions !== 1 ? 's' : ''} &middot; ${Math.round(recipe.macrosPerPortion.calories * item.portions)} kcal &middot; ${Math.round(recipe.macrosPerPortion.protein * item.portions)}g protein</span>
-          </a>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-            <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">−</button>
-            <span style="font-size:0.875rem;font-weight:700;min-width:20px;text-align:center;color:var(--text);">${item.portions}</span>
-            <button onclick="updatePortions(${recipe.id}, ${item.portions + 1})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;cursor:pointer;line-height:1;">+</button>
-            <span style="font-size:0.75rem;color:var(--muted);">portions</span>
-            <button onclick="removeItem(${recipe.id})" style="padding:4px 10px;border:1px solid #F5C5B8;background:#FDF0EB;color:#9B3A20;border-radius:var(--radius-sm);font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;">Remove</button>
-          </div>
-        </div>`;
-    }).join('');
-
+  if (list.length === 0) {
     layout.innerHTML = `
-      <div class="panel shopping-picker-panel">
-        <div class="panel-header">
-          <h2>This week</h2>
-          <div class="panel-actions">
-            <button class="btn-sm" style="color:#9B3A20;border-color:#F5C5B8;" onclick="clearAll()">Clear list</button>
-          </div>
+      <div class="shopping-empty">
+        <p class="shopping-empty__title">No recipes added yet</p>
+        <p class="shopping-empty__body">Open a recipe and press "Add to shopping list".</p>
+        <a href="index.html" class="btn-primary-sm">Browse recipes</a>
+      </div>`;
+    return;
+  }
+
+  const totals     = calcTotals(list);
+  const recipeRows = list.map(item => {
+    const recipe = recipes.find(r => r.id === item.id);
+    if (!recipe) return '';
+    return `
+      <div class="picker-item">
+        <a href="recipe.html?id=${recipe.id}" class="picker-item__link">
+          <span class="picker-name">${recipe.title}</span>
+          <span class="picker-detail">${recipe.section} &middot; ${item.portions} portion${item.portions !== 1 ? 's' : ''} &middot; ${Math.round(recipe.macrosPerPortion.calories * item.portions)} kcal &middot; ${Math.round(recipe.macrosPerPortion.protein * item.portions)}g protein</span>
+        </a>
+        <div class="picker-item__controls">
+          <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" class="portion-btn">&#8722;</button>
+          <span class="portion-count">${item.portions}</span>
+          <button onclick="updatePortions(${recipe.id}, ${item.portions + 1})" class="portion-btn">+</button>
+          <span class="portion-label">portions</span>
+          <button onclick="removeItem(${recipe.id})" class="remove-btn">Remove</button>
         </div>
-        <div class="recipe-picker">${recipeRows}</div>
-        <div style="margin-top:1rem;padding:1rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
-          <p style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Weekly totals</p>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
-            <div>
-              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.calories.toLocaleString()}</div>
-              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">kcal</div>
-            </div>
-            <div>
-              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.protein}g</div>
-              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">protein</div>
-            </div>
-            <div>
-              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.carbs}g</div>
-              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">carbs</div>
-            </div>
-            <div>
-              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${totals.fat}g</div>
-              <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">fat</div>
-            </div>
-          </div>
+      </div>`;
+  }).join('');
+
+  layout.innerHTML = `
+    <div class="panel shopping-picker-panel">
+      <div class="panel-header">
+        <h2>This week</h2>
+        <div class="panel-actions">
+          <button class="btn-sm btn-danger" onclick="clearAll()">Clear list</button>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-header">
-          <h2>Your shopping list</h2>
-          <div class="panel-actions">
-            <button class="btn-sm btn-primary" onclick="window.print()">Print</button>
-          </div>
+      <div class="recipe-picker">${recipeRows}</div>
+      <div class="weekly-totals">
+        <p class="weekly-totals__label">Weekly totals</p>
+        <div class="weekly-totals__grid">
+          <div class="weekly-total-item"><div class="weekly-total-value">${totals.calories.toLocaleString()}</div><div class="weekly-total-label">kcal</div></div>
+          <div class="weekly-total-item"><div class="weekly-total-value">${totals.protein}g</div><div class="weekly-total-label">protein</div></div>
+          <div class="weekly-total-item"><div class="weekly-total-value">${totals.carbs}g</div><div class="weekly-total-label">carbs</div></div>
+          <div class="weekly-total-item"><div class="weekly-total-value">${totals.fat}g</div><div class="weekly-total-label">fat</div></div>
         </div>
-        <div class="list-content" id="ingredient-list"></div>
-      </div>`;
+      </div>
+    </div>
 
-    renderIngredientList();
-  }
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Your shopping list</h2>
+        <div class="panel-actions">
+          <button class="btn-sm btn-primary" onclick="window.print()">Print</button>
+        </div>
+      </div>
+      <div class="list-content" id="ingredient-list"></div>
+    </div>`;
 
-  render();
+  renderIngredientList();
+}
+
+render();
 </script>
 </body>
 </html>
