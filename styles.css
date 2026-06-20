@@ -2386,3 +2386,9 @@ main {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* Override original #add-btn rule so it works inside .recipe-actions flex container */
+#add-btn {
+  display: inline-flex;
+  margin: 0;
+}
