@@ -2956,12 +2956,15 @@ main {
   box-sizing: border-box;
   padding: 11px 16px;
   text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 @media (max-width: 640px) {
   .recipe-actions {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
   .recipe-actions > :first-child {
-    flex: 0 0 100%;
+    grid-column: 1 / -1;
   }
 }
