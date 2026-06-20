@@ -2,8 +2,8 @@
 // All recipe reads/writes go through here.
 // Falls back to local recipes array if Supabase fails.
 
-const SUPABASE_URL = 'https://qtvlctyyjjxmrpbchchl.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dmxjdHl5amp4bXJwYmNoY2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTI0ODYsImV4cCI6MjA5NjY4ODQ4Nn0.CVmRoT3gWc6cLwvGO2m2yMdkdfTKbftyNRLc7EQCcSs';
+// SUPABASE_URL defined in auth.js
+// SUPABASE_KEY defined in auth.js
 const STORAGE_URL  = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
 
 const dbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
