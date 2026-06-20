@@ -1,12 +1,10 @@
 // FatScran — Recipe Database Layer
 // All recipe reads/writes go through here.
 // Falls back to local recipes array if Supabase fails.
+// Note: SUPABASE_URL and SUPABASE_KEY are declared in auth.js which loads first.
 
-const SUPABASE_URL = 'https://qtvlctyyjjxmrpbchchl.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dmxjdHl5amp4bXJwYmNoY2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTI0ODYsImV4cCI6MjA5NjY4ODQ4Nn0.CVmRoT3gWc6cLwvGO2m2yMdkdfTKbftyNRLc7EQCcSs';
-const STORAGE_URL  = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
-
-const dbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+const STORAGE_URL = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
+const dbHeaders   = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
 function authedHeaders() {
   const session = typeof getSession === 'function' ? getSession() : null;
@@ -74,7 +72,6 @@ async function saveRecipe(data, existingId) {
   const headers = authedHeaders();
   const isEdit  = !!existingId;
 
-  // 1. Upsert recipe row
   const recipePayload = { title: data.title, section: data.section, base_portions: data.basePortions, cook_time: data.cookTime, image_url: data.imageUrl || null };
 
   let recipeId;
@@ -89,12 +86,10 @@ async function saveRecipe(data, existingId) {
     recipeId   = rows[0].id;
   }
 
-  // 2. Macros — delete and re-insert
   await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
   const macroRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros`, { method: 'POST', headers, body: JSON.stringify({ recipe_id: recipeId, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, fiber: data.fiber || null }) });
   if (!macroRes.ok) throw new Error('Failed to save macros: ' + await macroRes.text());
 
-  // 3. Ingredients — delete and re-insert
   await fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
   if (data.ingredients.length) {
     const ingPayload = data.ingredients.map((ing, i) => ({ recipe_id: recipeId, name: ing.name, amount: ing.amount === '' || ing.amount === null ? null : parseFloat(ing.amount), unit: ing.unit, sort_order: i }));
@@ -102,7 +97,6 @@ async function saveRecipe(data, existingId) {
     if (!ingRes.ok) throw new Error('Failed to save ingredients: ' + await ingRes.text());
   }
 
-  // 4. Steps — delete and re-insert
   await fetch(`${SUPABASE_URL}/rest/v1/recipe_steps?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
   if (data.steps.length) {
     const stepPayload = data.steps.map((step, i) => ({ recipe_id: recipeId, title: step.title, description: step.description, sort_order: i }));
@@ -115,7 +109,6 @@ async function saveRecipe(data, existingId) {
 
 async function deleteRecipe(id) {
   const headers = authedHeaders();
-  // RLS cascade handles related rows
   const res = await fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${id}`, { method: 'DELETE', headers });
   if (!res.ok) throw new Error('Failed to delete recipe: ' + await res.text());
   return true;
