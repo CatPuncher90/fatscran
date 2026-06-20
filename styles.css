@@ -2974,3 +2974,13 @@ main {
   .admin-ing-unit   { flex: 1; }
   .admin-list-actions { flex-direction: row; }
 }
+
+@media (max-width: 640px) {
+  .recipe-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .recipe-actions > :first-child {
+    grid-column: 1 / -1;
+  }
+}
