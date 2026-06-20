@@ -80,7 +80,7 @@
         ? `<div style="width:100%;aspect-ratio:16/9;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:0.75rem;"><img src="${r.image}" alt="${r.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`
         : '';
       return `
-      <a class="recipe-card" href="recipe.html?id=${r.id}">
+      <a class="recipe-card" href="recipe.html?id=${r.id}" style="display:flex;flex-direction:column;">
         ${imageBlock}
         <div class="card-top">
           <span class="card-name">${r.title}</span>
@@ -95,8 +95,9 @@
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.carbs}g</span><span class="stat-label">carbs</span></div>
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.fat}g</span><span class="stat-label">fat</span></div>
         </div>
-        <div style="text-align:center;padding:6px 8px;background:var(--bg);border-radius:var(--radius-sm);margin-top:6px;"><span class="stat-value">${r.cookTime}</span><span class="stat-label" style="margin-left:4px;">cook time</span></div>
-      </a>`}).join('');
+        <div style="text-align:center;padding:6px 8px;background:var(--bg);border-radius:var(--radius-sm);margin-top:auto;"><span class="stat-value">${r.cookTime}</span><span class="stat-label" style="margin-left:4px;">cook time</span></div>
+      </a>`;
+    }).join('');
   }
 
   let activeSection = 'all';
