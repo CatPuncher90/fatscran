@@ -2992,3 +2992,16 @@ main {
     justify-content: center;
   }
 }
+
+/* Align recipe action buttons to same height on desktop */
+.recipe-actions {
+  align-items: stretch;
+}
+.recipe-actions .btn-primary,
+.recipe-actions .btn-secondary,
+.recipe-actions a.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
