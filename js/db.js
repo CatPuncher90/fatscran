@@ -196,7 +196,7 @@ async function saveProfile(data) {
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) throw new Error('Not logged in');
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' };
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, { method: 'POST', headers, body: JSON.stringify({ user_id: session.user.id, ...data }) });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, { method: 'POST', headers, body: JSON.stringify({ id: session.user.id, ...data }) });
   if (!res.ok) throw new Error('Failed to save profile: ' + await res.text());
   const rows = await res.json();
   return Array.isArray(rows) ? rows[0] : rows;
