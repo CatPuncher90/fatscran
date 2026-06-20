@@ -127,7 +127,7 @@ function renderCards(list) {
   grid.innerHTML = list.map(r => {
     const isFav     = currentFavs.includes(r.id);
     const imageBlock = r.image ? `<div class="card-image"><img src="${r.image}" alt="${r.title}" loading="lazy"></div>` : '';
-    const adminBtn   = isAdmin ? `<a href="admin.html?edit=${r.id}" onclick="event.stopPropagation()" class="card-admin-btn" title="Edit recipe">&#9998;</a>` : '';
+    const adminBtn   = isAdmin ? `<button onclick="event.preventDefault();event.stopPropagation();window.location='admin.html?edit=${r.id}'" class="card-admin-btn" title="Edit recipe">&#9998;</button>` : '';
     return `
       <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()">
         ${imageBlock}

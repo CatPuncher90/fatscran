@@ -148,3 +148,43 @@ async function checkIsAdmin() {
     return rows.length ? rows[0].is_admin === true : false;
   } catch(e) { return false; }
 }
+
+// ---------------------------------------------------------------------------
+// Fetch single recipe efficiently (no need to load all 85)
+// ---------------------------------------------------------------------------
+
+async function fetchRecipeByIdDirect(id) {
+  try {
+    const [recipeRes, macroRes, ingRes, stepRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${id}&select=*`, { headers: dbHeaders }),
+      fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?recipe_id=eq.${id}&select=*`, { headers: dbHeaders }),
+      fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients?recipe_id=eq.${id}&select=*&order=sort_order.asc`, { headers: dbHeaders }),
+      fetch(`${SUPABASE_URL}/rest/v1/recipe_steps?recipe_id=eq.${id}&select=*&order=sort_order.asc`, { headers: dbHeaders })
+    ]);
+
+    if (!recipeRes.ok) throw new Error('recipe fetch failed');
+
+    const [rows, macros, ingredients, steps] = await Promise.all([
+      recipeRes.json(), macroRes.json(), ingRes.json(), stepRes.json()
+    ]);
+
+    if (!rows.length) return null;
+    const r = rows[0];
+    const m = macros[0] || {};
+
+    return {
+      id:           r.id,
+      title:        r.title,
+      section:      r.section,
+      basePortions: r.base_portions,
+      cookTime:     r.cook_time,
+      image:        r.image_url || null,
+      macrosPerPortion: { calories: m.calories || 0, protein: m.protein || 0, carbs: m.carbs || 0, fat: m.fat || 0, fiber: m.fiber || null },
+      ingredients:  ingredients.map(i => ({ name: i.name, amount: i.amount, unit: i.unit })),
+      steps:        steps.map(s => ({ title: s.title, description: s.description }))
+    };
+  } catch(e) {
+    console.warn('fetchRecipeByIdDirect failed, trying local:', e);
+    return typeof recipes !== 'undefined' ? (recipes.find(r => r.id === id) || null) : null;
+  }
+}

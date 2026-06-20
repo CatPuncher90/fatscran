@@ -200,7 +200,7 @@ function changePortion(delta) {
 
 async function init() {
   await initAuth();
-  [recipe, isAdmin] = await Promise.all([fetchRecipeById(recipeId), checkIsAdmin()]);
+  [recipe, isAdmin] = await Promise.all([fetchRecipeByIdDirect(recipeId), checkIsAdmin()]);
 
   if (!recipe) {
     document.title = 'Not Found — FatScran';
