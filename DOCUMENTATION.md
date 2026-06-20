@@ -90,7 +90,7 @@ A derived array of unique section names prefixed with "all", built from the reci
 | dinner | Lunch-style wraps, sandwiches, flatbreads |
 | tea | Hot evening meals |
 | dessert | Treats, Ninja Creami, baked goods |
-| sauces | Sauces (currently empty in live data) |
+| sauces | Sauces (currently empty in live data, filter button hidden until recipes exist) |
 
 ### Adding a new recipe
 
@@ -115,31 +115,46 @@ A derived array of unique section names prefixed with "all", built from the reci
 
 ### What it does
 
-Renders all recipes as a filterable, searchable grid of cards. Each card links to `recipe.html?id={id}`.
+Renders all recipes as a filterable, searchable, sortable grid of cards. Each card links to `recipe.html?id={id}`.
 
 ### Features
 
 - **Search:** Filters by recipe title and ingredient names in real time as the user types.
-- **Section filters:** Pill buttons for All, Breakfast, Dinner, Tea, Dessert, Sauces, Favourites. Only one active at a time.
+- **Sort dropdown:** Sits inline with the search bar. Options: No sort (default), Highest protein, Lowest calories, Quickest cook time. Sorting is always applied within section groups, never across them. Cook time sort parses the string value (e.g. "1 hr 20 mins") into minutes for accurate ordering.
+- **Section filters:** Pill buttons for All, Breakfast, Dinner, Tea, Dessert, Favourites. Sauces button is hidden automatically if no sauce recipes exist. Only one active at a time.
+- **Default order:** When sort is set to "No sort" and the All filter is active, recipes are grouped by section in this order: Breakfast, Dinner, Tea, Sauces, Dessert.
+- **Result count:** Displays "Showing X recipes" above the grid, updates live on every filter and search change.
 - **Favourites:** Heart icon on each card. Toggled via `localStorage` key `fatscran-favs` (array of IDs). The Favourites filter shows only hearted recipes.
-- **Recipe cards:** Show an image (if present), title, section badge, macros per portion (kcal, protein, carbs, fat), and cook time.
+- **Recipe cards:** Show image (if present), title, section badge, cook time with clock icon (above macros), macros per portion (kcal, protein, carbs, fat), and a "per portion" label at the bottom.
 - **Card title height:** `.card-name` uses `min-height: calc(1.1rem * 1.35 * 2)` to always reserve two lines of height, keeping all cards consistent regardless of title length.
+- **Back button state:** When clicking through to a recipe, the active section filter, search query, and sort option are saved to `sessionStorage`. On returning to index.html they are restored automatically.
 
 ### Key JS functions
 
 | Function | Description |
 |---|---|
-| `applyFilters()` | Re-renders the grid based on active section and search query |
+| `applyFilters()` | Re-renders the grid based on active section, search query, and sort |
 | `renderCards(list)` | Builds and injects the card HTML from a recipe array |
 | `toggleFav(id, event)` | Adds/removes a recipe ID from localStorage favourites |
 | `recipeMatchesSearch(recipe, query)` | Returns true if the recipe title or any ingredient name includes the query |
 | `badgeClass(section)` | Returns the CSS class string for a section badge |
+| `parseCookTime(str)` | Parses a cook time string into total minutes for sorting |
+| `sortWithinGroups(list, sortBy)` | Sorts recipes within their section groups by the given sort key |
+| `groupBySection(list)` | Groups and orders recipes by section for the default view |
+| `saveState()` | Saves active filter, search, and sort to sessionStorage |
+| `restoreState()` | Restores filter, search, and sort from sessionStorage on page load |
 
 ### localStorage keys used
 
 | Key | Value |
 |---|---|
 | `fatscran-favs` | JSON array of favourite recipe IDs |
+
+### sessionStorage keys used
+
+| Key | Value |
+|---|---|
+| `fatscran-state` | JSON object with `section`, `query`, and `sort` fields |
 
 ---
 
@@ -155,9 +170,11 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 - **Portions selector:** +/- buttons that re-render the page with scaled ingredient amounts and scaled macros. Starts at 1 portion.
 - **Macros strip:** Shows calories, protein, carbs, fat scaled to the selected number of portions.
 - **Add to shopping list button:** Adds or updates the recipe in `localStorage` `fatscran-list`. Button text changes to "Update shopping list" if already in the list.
+- **Share button:** Sits next to the add to shopping list button. On mobile uses the Web Share API (native share sheet). On desktop copies the URL to clipboard and briefly shows "Copied!" before resetting.
 - **Ingredients list:** Amounts scaled to selected portions using `basePortions` ratio. "to taste" ingredients show their unit string instead.
 - **Method steps:** Numbered list with a terracotta circle number badge.
 - **Ratings and reviews:** Fetched from and submitted to Supabase. Star picker (1-5), optional text review. Reviews displayed in reverse chronological order with average rating shown.
+- **Print view:** Printing a recipe page hides nav, back link, portions control, action buttons, banner image, and ratings. Shows title, macros, ingredients, and method cleanly in black and white.
 - **Not found state:** If the `id` param doesn't match any recipe, shows a "Recipe not found" message.
 
 ### Supabase integration
@@ -176,6 +193,7 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 | `changePortion(delta)` | Increments/decrements portions (min 1) and re-renders |
 | `addToList()` | Saves recipe + portions to localStorage shopping list |
 | `updateBtn()` | Updates the add/update button label and colour |
+| `shareRecipe()` | Shares via Web Share API on mobile, copies URL to clipboard on desktop |
 | `fetchRatings()` | GET request to Supabase ratings table |
 | `submitRating()` | POST request to Supabase ratings table |
 | `loadRatings()` | Fetches and renders average rating + review list |
@@ -304,7 +322,11 @@ Single stylesheet shared across all pages.
 
 ### Print styles
 
-Applied when `window.print()` is called from shopping.html. Hides the recipe picker panel, nav, and action buttons. Strips backgrounds and borders for clean black-and-white output.
+Applied when printing from either shopping.html or recipe.html.
+
+**Shopping list:** Hides the recipe picker panel, nav, and action buttons. Strips backgrounds and borders for clean black-and-white output.
+
+**Recipe page:** Hides nav, back link, portions control, share and add-to-list buttons, banner image, and ratings section. Shows title, macros strip, ingredients list, and method steps in black and white.
 
 ---
 
@@ -375,6 +397,12 @@ Only used for the ratings/reviews feature on recipe pages.
 
 All data is stored client-side only. Clearing browser data or localStorage resets everything.
 
+## sessionStorage Summary
+
+| Key | Used by | Description |
+|---|---|---|
+| `fatscran-state` | index.html | JSON object storing active section filter, search query, and sort option. Restored on page load to preserve state when returning from a recipe page. |
+
 ---
 
 ## Development Workflow
@@ -408,4 +436,5 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 - **Section "tea"** is used for hot cooked evening meals.
 - **Prep steps always come before cooking steps** in the method.
 - **Recipe images** are optional. Cards without images just have no image block — there is no placeholder.
-- **The Sauces section** exists as a filter button but currently has no recipes in the data.
+- **The Sauces section** exists in the data schema but currently has no recipes. The filter button is hidden automatically until at least one sauce recipe is added.
+- **Cook times** are stored as strings (e.g. "35 mins", "1 hr 20 mins"). The `parseCookTime()` function in index.html converts these to minutes for sorting. If cook time filtering is added in future, this function should be the single source of that logic.
