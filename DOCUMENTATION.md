@@ -23,6 +23,7 @@ fatscran/
 ├── recipe.html         # Individual recipe page
 ├── shopping.html       # Shopping list page
 ├── planner.html        # Weekly meal planner page
+├── profile.html        # User profile and macro targets page
 ├── admin.html          # Admin page for adding/editing recipes
 ├── styles.css          # All site styles
 ├── recipes.js          # Recipe data array (client-side fallback)
@@ -174,7 +175,9 @@ These functions sync to Supabase tables when the user is signed in, and fall bac
 
 ## js/db.js — Recipe Database
 
-Loaded only by pages that need to read or write recipes from Supabase (`recipe.html`, `admin.html`). Depends on `SUPABASE_URL` and `SUPABASE_KEY` defined in `auth.js`.
+Loaded by pages that need to read or write recipes or user profiles from Supabase (`recipe.html`, `admin.html`, `shopping.html`, `planner.html`, `profile.html`). Depends on `SUPABASE_URL` and `SUPABASE_KEY` defined in `auth.js`.
+
+### Recipe functions
 
 | Function | Description |
 |---|---|
@@ -185,6 +188,14 @@ Loaded only by pages that need to read or write recipes from Supabase (`recipe.h
 | `deleteRecipe(id)` | Deletes a recipe and all its related rows in the 4 tables. |
 | `uploadRecipeImage(file)` | Uploads an image file to the `recipe-images` Supabase Storage bucket and returns the public URL. |
 | `checkIsAdmin()` | Checks the `profiles` table for the current user and returns true if `is_admin` is set. Returns false if not signed in. |
+
+### Profile functions
+
+| Function | Description |
+|---|---|
+| `getProfile()` | Calls `ensureSession()` then fetches the current user's row from the `profiles` table (`?id=eq.{userId}`). Returns the profile object or `null` if not signed in or not found. |
+| `saveProfile(data)` | Calls `ensureSession()` then upserts the profile row using POST with `Prefer: resolution=merge-duplicates`. The `id` field (matching the auth user ID) is always included in the payload as the primary key. |
+| `uploadAvatar(file)` | Uploads an image file to the `avatars` Supabase Storage bucket at path `{userId}/avatar.{ext}` with `x-upsert: true`. Returns the public URL. |
 
 ---
 
@@ -212,7 +223,8 @@ The array and its schema are unchanged. See the recipe object schema below.
     protein: Number,
     carbs: Number,
     fat: Number,
-    fiber: Number              // Optional
+    sugar: Number | null,      // Optional, shown conditionally on recipe page
+    fiber: Number | null       // Optional, shown conditionally on recipe page
   },
   ingredients: [
     {
@@ -313,7 +325,7 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 
 - **Banner image:** If `recipe.image` is set, shows a HelloFresh-style image banner with the title/badge overlapping it from below. If no image, shows the title/badge/meta inline.
 - **Portions selector:** +/- buttons that re-render the page with scaled ingredient amounts and scaled macros. Starts at 1 portion.
-- **Macros strip:** Shows calories, protein, carbs, fat scaled to the selected number of portions.
+- **Macros strip:** Shows calories, protein, carbs, fat scaled to the selected number of portions. Sugar and fiber are shown conditionally if present on the recipe (`!= null` check). The strip uses `repeat(auto-fit, minmax(0, 1fr))` to adapt from 4 to 6 columns depending on which optional macros are present.
 - **Add to shopping list button:** Calls `addToListSync()` to save the recipe to the shopping list (Supabase when signed in, localStorage when not). Button text changes to "Update list" if already in the list.
 - **Share button:** On mobile uses the Web Share API (native share sheet). On desktop copies the URL to clipboard and briefly shows "Copied!" before resetting. Both the add and share buttons use inline SVG icons with a `.btn-label` span for the text so the icon is preserved during state changes.
 - **Ingredients list:** Amounts scaled to selected portions using `basePortions` ratio. "to taste" ingredients show their unit string instead.
@@ -349,6 +361,8 @@ Fully JavaScript-rendered. Reads the shopping list via `getListSync()` (Supabase
 
 - **Recipe list (left panel):** Shows each added recipe with its title, section, portion count, total kcal and protein. Has +/- portion controls and a Remove button per recipe.
 - **Weekly nutrition totals:** Below the recipe list, shows the summed calories, protein, carbs, and fat across all recipes and portions.
+- **Weekly macro progress bars:** If the user is signed in and has daily targets set in their profile, coloured progress bars appear below the weekly totals showing actual vs target (×7) for calories, protein, carbs, and fat. Colour logic: green = 90–110% of target, amber = under 90%, red = over 110%.
+- **High-protein suggestions:** If the user is signed in and has a profile, the top 5 recipes by protein content that are not already in the list are shown with an Add button. Excludes already-listed recipes.
 - **Ingredient list (right panel):** Aggregates and merges all ingredients across all added recipes, scaled by portions. Groups them by food category. Shows quantities with units.
 - **Tick boxes:** Each ingredient can be ticked off. Ticked state persists in `localStorage` (`fatscran-checked`). Ticked items appear faded with strikethrough and a filled checkbox.
 - **Clear list:** Calls `saveListSync([])` to remove all recipes and resets ticked state.
@@ -378,8 +392,10 @@ A weekly calendar view showing Monday to Sunday with three meal slots per day (B
 - **Week navigation:** Prev/Next buttons move one week at a time. A "Today" button returns to the current week. Prev/Next disable at the ±4 week limit.
 - **Meal slots:** Each slot shows the assigned recipe title and its macros. Clicking a slot opens the recipe picker modal.
 - **Modal picker:** Searchable list of all recipes. Clicking a recipe assigns it to the slot. Includes a "Remove recipe" option if a recipe is already assigned.
-- **Day totals:** If any slots are filled, each day column shows a total kcal and protein for that day.
+- **Day totals:** If any slots are filled, each day column shows a total kcal and protein for that day. If the user has a calorie target set, the totals row is colour-coded: green = 80–120% of daily target, amber = under 80%, red = over 120%.
+- **Day progress bar:** A thin bar below the day totals shows how many of the 3 meal slots are filled (proportion filled = slots with recipes / 3).
 - **Batch cook summary:** Below the grid, lists all recipes planned for the week with the days they're needed and cook time.
+- **Weekly macro overview:** Below the batch summary, if the user has targets set in their profile, shows a totals grid comparing the week's planned macros (calories, protein, carbs, fat) against weekly targets (daily target × 7). Each value is coloured green/amber/red using the same 80–120% thresholds as the day totals.
 - **Add week to shopping list:** Calls `addToListSync()` for each unique planned recipe, then redirects to shopping.html.
 - **Today highlight:** Current day column header is highlighted in the accent colour.
 - **Keyboard:** Pressing Escape closes the modal.
@@ -389,6 +405,45 @@ A weekly calendar view showing Monday to Sunday with three meal slots per day (B
 Plan data is synced via `getPlanSync(weekKey)` and `savePlanSlot(weekKey, slotKey, recipeId)`. When signed in these read/write the `meal_plans` Supabase table. When signed out they fall back to localStorage.
 
 The week key format is `week-{year}-{month}-{date of Monday}` e.g. `week-2026-5-15`. Slot keys are `{Day}-{meal}` e.g. `Mon-breakfast`.
+
+---
+
+## profile.html — User Profile
+
+**URL:** `/fatscran/profile.html`
+
+Redirects to `index.html` if the user is not signed in. The page content is fully JavaScript-rendered into `<div id="profile-content">` by `renderProfile(profile)` after `getProfile()` is called on load. Loads `js/db.js` in addition to the standard script stack.
+
+### Features
+
+- **Avatar:** Displays a circle with the user's initial if no avatar is set. Clicking "Change photo" triggers a hidden file input; the selected image is uploaded to the `avatars` Supabase Storage bucket via `uploadAvatar()` and the preview updates immediately.
+- **Display name:** Free-text input saved to the `display_name` column in `profiles`.
+- **Tab toggle — TDEE Calculator / Manual targets:** Switching tabs shows or hides the TDEE calculator section. The chosen mode is saved as `use_tdee_calc` (bool) in the profile.
+- **TDEE calculator:** Takes age, weight (kg), height (cm), sex, and activity level. Calculates BMR using Mifflin-St Jeor, then multiplies by an activity factor to get TDEE. A goal selector (Maintain / Lose weight / Build muscle / Custom) applies a deficit or surplus. A slider sets the deficit/surplus amount (100–1000 kcal, default 500). The label updates live to show "Deficit: X kcal" or "Surplus: X kcal".
+- **Protein multiplier:** Radio buttons for 1.6 / 2.0 / 2.4 g/kg. Default 2.0. Protein = `weight × multiplier`. Fat = `weight × 0.8 g/kg`. Carbs = `(targetCalories - protein×4 - fat×9) / 4`.
+- **Daily targets:** Four editable number inputs (calories, protein, carbs, fat) that are auto-filled by the TDEE calculator but can be overridden manually. These are always saved regardless of which tab is active.
+- **Save:** Upserts to the `profiles` table via `saveProfile()`. Shows "Saved!" or an error message inline.
+
+### TDEE formula
+
+| Variable | Formula |
+|---|---|
+| BMR (male) | `10 × weight + 6.25 × height - 5 × age + 5` |
+| BMR (female) | `10 × weight + 6.25 × height - 5 × age - 161` |
+| TDEE | `BMR × activity_multiplier` |
+
+Activity multipliers: sedentary = 1.2, lightly active = 1.375, moderately active = 1.55, very active = 1.725, athlete = 1.9.
+
+### Key JS functions
+
+| Function | Description |
+|---|---|
+| `recalc()` | Reads all TDEE inputs and recalculates the four target fields. No-ops if not on TDEE tab or if age/weight/height are empty. |
+| `setTab(tab)` | Switches between `'tdee'` and `'manual'` modes, shows/hides the TDEE section, and triggers `recalc()`. |
+| `onGoalChange()` | Shows/hides the deficit/surplus slider based on the selected goal. Updates the label. |
+| `handleAvatarUpload(e)` | Calls `uploadAvatar()`, updates the preview image, and shows status text. |
+| `saveProfileData()` | Collects all form values and calls `saveProfile()`. Disables the save button during the request. |
+| `renderProfile(p)` | Builds the full profile form HTML from an existing profile object (or defaults if new). |
 
 ---
 
@@ -466,10 +521,23 @@ Single stylesheet shared across all pages.
 
 - **`.btn-primary`** — Filled accent colour button. Used for primary actions.
 - **`.btn-secondary`** — Outlined/transparent button. Used for secondary actions (Preview, Share, Cancel, Edit).
-- **`.btn-sm`** — Small button variant for panel headers and planner actions.
+- **`.btn-sm`** — Small button variant for panel headers, planner actions, and profile page secondary actions.
 - **`.recipe-actions`** — Flex row of action buttons on the recipe page. Goes 2-column grid at ≤640px.
 - **`.admin-form-actions`** — Flex row containing Preview, Publish/Save, and Cancel buttons on the admin page.
 - **`.nav-hamburger`** — Hidden on desktop, visible at ≤640px. Toggles `.is-open` on `.nav-links` via `js/utils.js`.
+- **`.profile-layout`** — Max-width 640px flex column wrapper for the profile page form.
+- **`.avatar-circle`** — 72px circle showing either the user's initial or their avatar photo.
+- **`.profile-tab-toggle` / `.profile-tab`** — Toggle bar for switching between TDEE Calculator and Manual targets modes. Active tab styled with accent background.
+- **`.form-group`** / **`.form-input`** — Standard label + input layout used on the profile page. `.form-input` applies to text, number, and select elements.
+- **`.form-grid-2`** — Two-column grid for the TDEE input fields (age/weight/height/sex).
+- **`.targets-grid`** — Two-column grid for the four daily target inputs.
+- **`label.radio-label`** — Flex row for protein multiplier radio options. Uses `label.radio-label` selector (specificity 0-2-0) to override `.form-group label` styles. Input sized with `width: auto; flex-shrink: 0`.
+- **`.range-slider`** — Full-width range input for the deficit/surplus slider.
+- **`.macro-progress-section`** / **`.macro-bars`** / **`.macro-bar-row`** — Weekly macro progress bars on the shopping list. Bar fill classes: `.macro-bar-fill--green`, `--amber`, `--red`.
+- **`.day-totals--green`** / `--amber` / `--red` — Left border traffic light colours on planner day total rows.
+- **`.day-progress-bar`** / **`.day-progress-fill`** — Thin accent bar below day totals showing meal slot fill proportion.
+- **`.weekly-overview`** — Card below the batch summary on the planner showing weekly macro totals vs targets. Value colour classes: `.tl-green`, `.tl-amber`, `.tl-red` on `.weekly-total-item`.
+- **`.suggestions-section`** / **`.suggestion-card`** — High-protein recipe suggestion cards on the shopping list page.
 
 ### Print styles
 
@@ -515,7 +583,7 @@ This approach ensures users always receive fresh recipe data and assets. The pre
 |---|---|
 | Project URL | `https://qtvlctyyjjxmrpbchchl.supabase.co` |
 | Auth methods | Email/password, Google OAuth |
-| Storage bucket | `recipe-images` (public) |
+| Storage buckets | `recipe-images` (public), `avatars` (public) |
 
 ### Auth
 
@@ -549,7 +617,8 @@ Sessions are stored in localStorage as `fatscran-session`. `initAuth()` checks t
 | `protein` | int4 | Per portion (g) |
 | `carbs` | int4 | Per portion (g) |
 | `fat` | int4 | Per portion (g) |
-| `fiber` | numeric | Nullable. Per portion (g). |
+| `sugar` | numeric | Nullable. Per portion (g). Shown conditionally on recipe page. |
+| `fiber` | numeric | Nullable. Per portion (g). Shown conditionally on recipe page. |
 
 #### recipe_ingredients
 
@@ -624,15 +693,31 @@ RLS: users can only read and write their own rows.
 
 | Column | Type | Notes |
 |---|---|---|
-| `user_id` | uuid | Primary key, FK → auth.users |
+| `id` | uuid | Primary key, FK → auth.users |
 | `is_admin` | bool | Default false |
+| `display_name` | text | Nullable. User's chosen display name. |
+| `avatar_url` | text | Nullable. Full public URL from Supabase Storage `avatars` bucket. |
+| `age` | int4 | Nullable. Used for TDEE calculation. |
+| `weight_kg` | numeric | Nullable. Used for TDEE and macro calculations. |
+| `height_cm` | numeric | Nullable. Used for TDEE calculation. |
+| `sex` | text | Nullable. `'male'` or `'female'`. Used for TDEE calculation. |
+| `activity_level` | text | Nullable. One of: `sedentary`, `lightly_active`, `moderately_active`, `very_active`, `athlete`. |
+| `goal` | text | Nullable. One of: `maintain`, `lose`, `build`, `custom`. |
+| `deficit_surplus` | int4 | Nullable. Kcal deficit (lose) or surplus (build/custom). Default 500 in UI. |
+| `protein_multiplier` | numeric | Nullable. g/kg multiplier: `1.6`, `2.0`, or `2.4`. |
+| `target_calories` | int4 | Nullable. Daily calorie target. |
+| `target_protein` | int4 | Nullable. Daily protein target (g). |
+| `target_carbs` | int4 | Nullable. Daily carbs target (g). |
+| `target_fat` | int4 | Nullable. Daily fat target (g). |
+| `use_tdee_calc` | bool | Nullable. Whether the TDEE tab was active when last saved. |
 | `created_at` | timestamptz | Default now() |
 
-RLS: users can read their own row. Only service-role or direct DB access should set `is_admin = true`.
+RLS: users can read and write their own row (matched on `id = auth.uid()`). Only service-role or direct DB access should set `is_admin = true`.
 
 ### RLS notes
 
-- `user_id` is **never passed in the request body** from the client. Supabase sets it automatically via RLS using `auth.uid()`. Do not include `user_id` in POST/PATCH payloads.
+- For most user-scoped tables (`favourites`, `shopping_list`, `meal_plans`), `user_id` is **never passed in the request body** — Supabase RLS sets it automatically via `auth.uid()`.
+- The `profiles` table is an exception: the `id` column is the primary key and must be included in the POST body when upserting, because it is used as the conflict resolution key (`Prefer: resolution=merge-duplicates`). `saveProfile()` always includes `id: session.user.id` in the payload.
 - The `sb` object in `auth.js` uses `authedHeaders()` to attach the user JWT, which is what triggers the RLS `auth.uid()` function.
 
 ---
@@ -693,4 +778,6 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 - **The Sauces section** exists in the data schema but currently has no recipes. The filter button is hidden automatically until at least one sauce recipe is added.
 - **Cook times** are stored as strings (e.g. "35 mins", "1 hr 20 mins"). The `parseCookTime()` function in `js/utils.js` converts these to minutes for sorting.
 - **Admin access** is granted by setting `is_admin = true` in the `profiles` table directly in the Supabase dashboard. There is no self-serve way to become an admin.
-- **`user_id` is never sent in request payloads.** Supabase RLS sets it automatically. If a request to a user-scoped table fails with an auth error, the most likely cause is a missing or expired JWT in the `Authorization` header — check that `initAuth()` completed before the request was made.
+- **`user_id` is never sent in request payloads** for `favourites`, `shopping_list`, and `meal_plans` — Supabase RLS sets it automatically. The `profiles` table is the exception: its PK column is `id` (not `user_id`) and must be included in POST upsert payloads as the conflict key.
+- **`ensureSession()` before profile fetches.** `getProfile()` and `saveProfile()` both call `ensureSession()` before reading the session object, ensuring the access token is refreshed if expired. If a profile request returns a 401, check that `ensureSession` is resolving correctly.
+- **My Profile nav link** appears in the signed-in user dropdown (above Sign out), added by `updateNavAuth()` in `js/auth.js`. It links to `profile.html`.
