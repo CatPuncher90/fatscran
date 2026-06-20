@@ -45,16 +45,21 @@
     <button class="filter-btn" data-section="favourites">&#9825; Favourites</button>
   </div>
   <p id="result-count" class="result-count"></p>
-  <div class="recipe-grid" id="recipe-grid"></div>
+  <div class="recipe-grid" id="recipe-grid">
+    <div class="no-results" style="font-style:normal;">Loading recipes...</div>
+  </div>
 </main>
 
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/db.js"></script>
 <script>
 const SECTION_ORDER = ['breakfast','dinner','tea','sauces','dessert'];
 let activeSection = 'all';
 let currentFavs   = [];
+let allRecipes    = [];
+let isAdmin       = false;
 
 async function toggleFav(id, event) {
   event.preventDefault();
@@ -122,12 +127,14 @@ function renderCards(list) {
   grid.innerHTML = list.map(r => {
     const isFav     = currentFavs.includes(r.id);
     const imageBlock = r.image ? `<div class="card-image"><img src="${r.image}" alt="${r.title}" loading="lazy"></div>` : '';
+    const adminBtn   = isAdmin ? `<a href="admin.html?edit=${r.id}" onclick="event.stopPropagation()" class="card-admin-btn" title="Edit recipe">&#9998;</a>` : '';
     return `
       <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()">
         ${imageBlock}
         <div class="card-top">
           <span class="card-name">${r.title}</span>
           <div class="card-top-actions">
+            ${adminBtn}
             <button onclick="toggleFav(${r.id}, event)" class="fav-btn ${isFav ? 'fav-btn--active' : ''}" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}">${isFav ? '&#9829;' : '&#9825;'}</button>
             <span class="${badgeClass(r.section)}">${r.section}</span>
           </div>
@@ -153,7 +160,7 @@ function setSection(section) {
 function applyFilters() {
   const query  = document.getElementById('search-input').value;
   const sortBy = document.getElementById('sort-select').value;
-  let filtered = recipes.filter(r =>
+  let filtered = allRecipes.filter(r =>
     (activeSection === 'all' || (activeSection === 'favourites' ? currentFavs.includes(r.id) : r.section === activeSection)) &&
     recipeMatchesSearch(r, query)
   );
@@ -167,21 +174,36 @@ document.getElementById('filters').addEventListener('click', e => {
   setSection(btn.dataset.section);
 });
 
-if (!recipes.some(r => r.section === 'sauces')) {
-  const saucesBtn = document.querySelector('.filter-btn[data-section="sauces"]');
-  if (saucesBtn) saucesBtn.style.display = 'none';
+async function onAuthStateChange() {
+  isAdmin     = await checkIsAdmin();
+  currentFavs = await getFavs();
+  // Show/hide admin nav link
+  updateAdminNav();
+  applyFilters();
 }
 
-// Called by auth.js after sign in / sign out
-async function onAuthStateChange() {
-  currentFavs = await getFavs();
-  applyFilters();
+function updateAdminNav() {
+  const existing = document.getElementById('admin-nav-link');
+  if (isAdmin && !existing) {
+    const nav = document.querySelector('.nav-links');
+    const li  = document.createElement('li');
+    li.id = 'admin-nav-link';
+    li.innerHTML = `<a href="admin.html">+ New Recipe</a>`;
+    nav.insertBefore(li, nav.lastElementChild);
+  } else if (!isAdmin && existing) {
+    existing.remove();
+  }
 }
 
 async function init() {
   await initAuth();
   restoreState();
-  currentFavs = await getFavs();
+  [allRecipes, currentFavs, isAdmin] = await Promise.all([fetchAllRecipes(), getFavs(), checkIsAdmin()]);
+  if (!allRecipes.some(r => r.section === 'sauces')) {
+    const saucesBtn = document.querySelector('.filter-btn[data-section="sauces"]');
+    if (saucesBtn) saucesBtn.style.display = 'none';
+  }
+  updateAdminNav();
   applyFilters();
 }
 

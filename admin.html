@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — FatScran</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="fatscran-icon.png">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Recipes</a></li>
+      <li><a href="admin.html" class="active">Admin</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="admin-main">
+  <div class="admin-loading">Checking permissions...</div>
+</main>
+
+<script src="recipes.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/db.js"></script>
+<script>
+const SECTIONS = ['breakfast','dinner','tea','dessert','sauces'];
+let editingId   = null;
+let ingredients = [];
+let steps       = [];
+let imageUrl    = null;
+let previewMode = false;
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+
+async function init() {
+  await initAuth();
+  const isAdmin = await checkIsAdmin();
+  if (!isAdmin) {
+    document.getElementById('admin-main').innerHTML = `
+      <div class="not-found-state">
+        <p class="not-found-state__title">Access denied</p>
+        <p>You need admin permissions to view this page.</p>
+        <a href="index.html" class="btn-primary-sm" style="margin-top:1rem;display:inline-block;">Go home</a>
+      </div>`;
+    return;
+  }
+
+  // Check for ?edit=id
+  const params = new URLSearchParams(window.location.search);
+  const editId = params.get('edit');
+  if (editId) {
+    const recipe = await fetchRecipeById(parseInt(editId));
+    if (recipe) loadRecipeForEdit(recipe);
+    else renderForm();
+  } else {
+    renderForm();
+  }
+}
+
+function loadRecipeForEdit(recipe) {
+  editingId   = recipe.id;
+  ingredients = recipe.ingredients.map(i => ({ ...i }));
+  steps       = recipe.steps.map(s => ({ ...s }));
+  imageUrl    = recipe.image || null;
+  renderForm(recipe);
+}
+
+// ---------------------------------------------------------------------------
+// Form render
+// ---------------------------------------------------------------------------
+
+function renderForm(recipe) {
+  const r = recipe || {};
+  document.getElementById('admin-main').innerHTML = `
+    <div class="admin-header">
+      <h1>${editingId ? 'Edit Recipe' : 'New Recipe'}</h1>
+      ${editingId ? `<button class="btn-sm btn-danger" onclick="confirmDelete()">Delete recipe</button>` : ''}
+    </div>
+
+    <div class="admin-form">
+      <div class="admin-section">
+        <h2 class="admin-section-title">Basic Info</h2>
+        <div class="admin-grid-2">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="f-title" value="${r.title || ''}" placeholder="e.g. Chicken Tikka Curry">
+          </div>
+          <div class="form-group">
+            <label>Section</label>
+            <select id="f-section">
+              ${SECTIONS.map(s => `<option value="${s}" ${(r.section || 'tea') === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cook Time</label>
+            <input type="text" id="f-cooktime" value="${r.cookTime || ''}" placeholder="e.g. 35 mins">
+          </div>
+          <div class="form-group">
+            <label>Base Portions</label>
+            <input type="number" id="f-portions" value="${r.basePortions || 1}" min="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <h2 class="admin-section-title">Macros <span class="admin-section-sub">(per portion)</span></h2>
+        <div class="admin-grid-5">
+          <div class="form-group">
+            <label>Calories</label>
+            <input type="number" id="f-calories" value="${r.macrosPerPortion ? r.macrosPerPortion.calories : ''}">
+          </div>
+          <div class="form-group">
+            <label>Protein (g)</label>
+            <input type="number" id="f-protein" value="${r.macrosPerPortion ? r.macrosPerPortion.protein : ''}">
+          </div>
+          <div class="form-group">
+            <label>Carbs (g)</label>
+            <input type="number" id="f-carbs" value="${r.macrosPerPortion ? r.macrosPerPortion.carbs : ''}">
+          </div>
+          <div class="form-group">
+            <label>Fat (g)</label>
+            <input type="number" id="f-fat" value="${r.macrosPerPortion ? r.macrosPerPortion.fat : ''}">
+          </div>
+          <div class="form-group">
+            <label>Fiber (g)</label>
+            <input type="number" id="f-fiber" value="${r.macrosPerPortion && r.macrosPerPortion.fiber ? r.macrosPerPortion.fiber : ''}">
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <h2 class="admin-section-title">Image</h2>
+        <div class="image-upload-area" id="image-upload-area" onclick="document.getElementById('f-image').click()">
+          ${imageUrl
+            ? `<img src="${imageUrl}" class="image-preview-thumb" alt="Recipe image"><p class="image-upload-hint">Click to change</p>`
+            : `<div class="image-upload-placeholder"><span>+</span><p>Click to upload image</p></div>`}
+        </div>
+        <input type="file" id="f-image" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
+        ${imageUrl ? `<button class="admin-remove-image" onclick="removeImage()">Remove image</button>` : ''}
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Ingredients</h2>
+          <button class="btn-sm btn-primary" onclick="addIngredient()">+ Add ingredient</button>
+        </div>
+        <div id="ingredients-list" class="admin-list"></div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Method</h2>
+          <button class="btn-sm btn-primary" onclick="addStep()">+ Add step</button>
+        </div>
+        <div id="steps-list" class="admin-list"></div>
+      </div>
+
+      <div id="form-error" class="auth-error" style="display:none;"></div>
+
+      <div class="admin-form-actions">
+        <button class="btn-secondary" onclick="showPreview()">Preview recipe</button>
+        <button class="btn-primary" id="publish-btn" onclick="publishRecipe()">${editingId ? 'Save changes' : 'Publish recipe'}</button>
+      </div>
+    </div>
+
+    <div id="preview-overlay" class="preview-overlay" style="display:none;">
+      <div class="preview-bar">
+        <span class="preview-bar-label">Preview</span>
+        <button class="btn-secondary" onclick="closePreview()">Back to editing</button>
+        <button class="btn-primary" id="preview-publish-btn" onclick="publishRecipe()">${editingId ? 'Save changes' : 'Publish recipe'}</button>
+      </div>
+      <div id="preview-content" class="preview-content"></div>
+    </div>`;
+
+  renderIngredients();
+  renderSteps();
+}
+
+// ---------------------------------------------------------------------------
+// Ingredients
+// ---------------------------------------------------------------------------
+
+function renderIngredients() {
+  const el = document.getElementById('ingredients-list');
+  if (!el) return;
+  if (!ingredients.length) { el.innerHTML = '<p class="admin-empty">No ingredients yet.</p>'; return; }
+  el.innerHTML = ingredients.map((ing, i) => `
+    <div class="admin-list-item">
+      <span class="admin-list-num">${i + 1}</span>
+      <input type="text" class="admin-ing-name" value="${ing.name}" placeholder="Ingredient name" oninput="ingredients[${i}].name = this.value">
+      <input type="number" class="admin-ing-amount" value="${ing.amount !== null ? ing.amount : ''}" placeholder="Amount" oninput="ingredients[${i}].amount = this.value === '' ? null : parseFloat(this.value)">
+      <input type="text" class="admin-ing-unit" value="${ing.unit}" placeholder="Unit" oninput="ingredients[${i}].unit = this.value">
+      <div class="admin-list-actions">
+        ${i > 0 ? `<button class="admin-move-btn" onclick="moveIngredient(${i}, -1)" title="Move up">↑</button>` : '<span class="admin-move-btn-placeholder"></span>'}
+        ${i < ingredients.length - 1 ? `<button class="admin-move-btn" onclick="moveIngredient(${i}, 1)" title="Move down">↓</button>` : '<span class="admin-move-btn-placeholder"></span>'}
+        <button class="admin-remove-btn" onclick="removeIngredient(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addIngredient() {
+  ingredients.push({ name: '', amount: null, unit: '' });
+  renderIngredients();
+  const inputs = document.querySelectorAll('.admin-ing-name');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeIngredient(i) {
+  ingredients.splice(i, 1);
+  renderIngredients();
+}
+
+function moveIngredient(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= ingredients.length) return;
+  [ingredients[i], ingredients[j]] = [ingredients[j], ingredients[i]];
+  renderIngredients();
+}
+
+// ---------------------------------------------------------------------------
+// Steps
+// ---------------------------------------------------------------------------
+
+function renderSteps() {
+  const el = document.getElementById('steps-list');
+  if (!el) return;
+  if (!steps.length) { el.innerHTML = '<p class="admin-empty">No steps yet.</p>'; return; }
+  el.innerHTML = steps.map((step, i) => `
+    <div class="admin-list-item admin-step-item">
+      <span class="step-num">${i + 1}</span>
+      <div class="admin-step-fields">
+        <input type="text" value="${step.title}" placeholder="Step title e.g. Cook the chicken" oninput="steps[${i}].title = this.value">
+        <textarea placeholder="Full instructions..." oninput="steps[${i}].description = this.value">${step.description}</textarea>
+      </div>
+      <div class="admin-list-actions">
+        ${i > 0 ? `<button class="admin-move-btn" onclick="moveStep(${i}, -1)" title="Move up">↑</button>` : '<span class="admin-move-btn-placeholder"></span>'}
+        ${i < steps.length - 1 ? `<button class="admin-move-btn" onclick="moveStep(${i}, 1)" title="Move down">↓</button>` : '<span class="admin-move-btn-placeholder"></span>'}
+        <button class="admin-remove-btn" onclick="removeStep(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addStep() {
+  steps.push({ title: '', description: '' });
+  renderSteps();
+  const textareas = document.querySelectorAll('.admin-step-fields input');
+  if (textareas.length) textareas[textareas.length - 1].focus();
+}
+
+function removeStep(i) {
+  steps.splice(i, 1);
+  renderSteps();
+}
+
+function moveStep(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= steps.length) return;
+  [steps[i], steps[j]] = [steps[j], steps[i]];
+  renderSteps();
+}
+
+// ---------------------------------------------------------------------------
+// Image
+// ---------------------------------------------------------------------------
+
+async function handleImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const area = document.getElementById('image-upload-area');
+  area.innerHTML = '<p style="color:var(--muted);font-size:0.875rem;">Uploading...</p>';
+  try {
+    imageUrl = await uploadRecipeImage(file);
+    area.innerHTML = `<img src="${imageUrl}" class="image-preview-thumb" alt="Recipe image"><p class="image-upload-hint">Click to change</p>`;
+  } catch(e) {
+    area.innerHTML = `<div class="image-upload-placeholder"><span>+</span><p>Upload failed: ${e.message}</p></div>`;
+  }
+}
+
+function removeImage() {
+  imageUrl = null;
+  renderForm(collectFormData());
+}
+
+// ---------------------------------------------------------------------------
+// Collect form data
+// ---------------------------------------------------------------------------
+
+function collectFormData() {
+  return {
+    title:        document.getElementById('f-title')?.value.trim(),
+    section:      document.getElementById('f-section')?.value,
+    cookTime:     document.getElementById('f-cooktime')?.value.trim(),
+    basePortions: parseInt(document.getElementById('f-portions')?.value) || 1,
+    imageUrl:     imageUrl,
+    calories:     parseInt(document.getElementById('f-calories')?.value) || 0,
+    protein:      parseInt(document.getElementById('f-protein')?.value) || 0,
+    carbs:        parseInt(document.getElementById('f-carbs')?.value) || 0,
+    fat:          parseInt(document.getElementById('f-fat')?.value) || 0,
+    fiber:        parseFloat(document.getElementById('f-fiber')?.value) || null,
+    ingredients,
+    steps,
+    // For preview rendering
+    macrosPerPortion: {
+      calories: parseInt(document.getElementById('f-calories')?.value) || 0,
+      protein:  parseInt(document.getElementById('f-protein')?.value) || 0,
+      carbs:    parseInt(document.getElementById('f-carbs')?.value) || 0,
+      fat:      parseInt(document.getElementById('f-fat')?.value) || 0,
+      fiber:    parseFloat(document.getElementById('f-fiber')?.value) || null
+    },
+    image: imageUrl
+  };
+}
+
+function validateForm(data) {
+  if (!data.title)            return 'Title is required.';
+  if (!data.cookTime)         return 'Cook time is required.';
+  if (!data.calories)         return 'Calories are required.';
+  if (!ingredients.length)    return 'Add at least one ingredient.';
+  if (!steps.length)          return 'Add at least one step.';
+  const emptyIng = ingredients.find(i => !i.name.trim());
+  if (emptyIng)               return 'All ingredients must have a name.';
+  const emptyStep = steps.find(s => !s.title.trim() || !s.description.trim());
+  if (emptyStep)              return 'All steps must have a title and description.';
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Preview
+// ---------------------------------------------------------------------------
+
+function showPreview() {
+  const data  = collectFormData();
+  const error = validateForm(data);
+  if (error) { showFormError(error); return; }
+  hideFormError();
+
+  const ingredientRows = ingredients.map(ing => `<li><span>${ing.name}</span><span class="ing-qty">${ing.amount === null || ing.amount === '' ? ing.unit : ing.amount + ' ' + ing.unit}</span></li>`).join('');
+  const methodSteps    = steps.map((step, i) => `<li><span class="step-num">${i + 1}</span><span class="step-text"><strong>${step.title}:</strong> ${step.description}</span></li>`).join('');
+
+  document.getElementById('preview-content').innerHTML = `
+    ${data.image ? `<div class="recipe-banner-wrap"><div class="recipe-banner-image"><img src="${data.image}" alt="${data.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div><div class="recipe-hero-card"><div class="recipe-hero-top"><span class="${badgeClass(data.section)}">${data.section}</span></div><h1 class="recipe-title">${data.title}</h1><div class="recipe-meta"><span class="recipe-meta-item">${clockIconSvg(16)} ${data.cookTime}</span><span class="recipe-meta-item">${portionIconSvg(16)} 1 portion</span></div></div></div>` : `<div class="recipe-hero-top"><span class="${badgeClass(data.section)}">${data.section}</span></div><h1 class="recipe-title">${data.title}</h1><div class="recipe-meta"><span class="recipe-meta-item">${clockIconSvg(16)} ${data.cookTime}</span><span class="recipe-meta-item">${portionIconSvg(16)} 1 portion</span></div>`}
+    <div class="macros-strip" style="margin-top:1.5rem;">
+      <div class="macro-item"><span class="macro-value">${data.calories}</span><span class="macro-label">Calories</span></div>
+      <div class="macro-item"><span class="macro-value">${data.protein}g</span><span class="macro-label">Protein</span></div>
+      <div class="macro-item"><span class="macro-value">${data.carbs}g</span><span class="macro-label">Carbs</span></div>
+      <div class="macro-item"><span class="macro-value">${data.fat}g</span><span class="macro-label">Fat</span></div>
+    </div>
+    <div class="recipe-body" style="margin-top:2rem;">
+      <div class="ingredients-col"><p class="section-label">Ingredients</p><ul class="ingredients-list">${ingredientRows}</ul></div>
+      <div class="method-col"><p class="section-label">Method</p><ol class="method-list">${methodSteps}</ol></div>
+    </div>`;
+
+  document.getElementById('preview-overlay').style.display = 'block';
+  document.getElementById('preview-overlay').scrollTop = 0;
+}
+
+function closePreview() {
+  document.getElementById('preview-overlay').style.display = 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Publish
+// ---------------------------------------------------------------------------
+
+async function publishRecipe() {
+  const data  = collectFormData();
+  const error = validateForm(data);
+  if (error) { closePreview(); showFormError(error); return; }
+
+  const btn  = document.getElementById('publish-btn') || document.getElementById('preview-publish-btn');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  try {
+    const id = await saveRecipe(data, editingId);
+    window.location.href = `recipe.html?id=${id}`;
+  } catch(e) {
+    closePreview();
+    showFormError('Save failed: ' + e.message);
+    if (btn) { btn.textContent = orig; btn.disabled = false; }
+  }
+}
+
+async function confirmDelete() {
+  if (!confirm(`Delete "${document.getElementById('f-title').value}"? This cannot be undone.`)) return;
+  try {
+    await deleteRecipe(editingId);
+    window.location.href = 'index.html';
+  } catch(e) {
+    showFormError('Delete failed: ' + e.message);
+  }
+}
+
+function showFormError(msg) {
+  const el = document.getElementById('form-error');
+  if (!el) return;
+  el.textContent   = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideFormError() {
+  const el = document.getElementById('form-error');
+  if (el) el.style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>

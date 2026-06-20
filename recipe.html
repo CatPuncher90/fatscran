@@ -22,22 +22,24 @@
   </div>
 </nav>
 
-<main id="page-content"></main>
+<main id="page-content"><div class="no-results" style="font-style:normal;padding:4rem 1rem;">Loading...</div></main>
 
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/db.js"></script>
 <script>
 const SUPABASE_URL = 'https://qtvlctyyjjxmrpbchchl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dmxjdHl5amp4bXJwYmNoY2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTI0ODYsImV4cCI6MjA5NjY4ODQ4Nn0.CVmRoT3gWc6cLwvGO2m2yMdkdfTKbftyNRLc7EQCcSs';
 
-const params  = new URLSearchParams(window.location.search);
-const id      = parseInt(params.get('id'));
-const recipe  = recipes.find(r => r.id === id);
-const main    = document.getElementById('page-content');
+const urlParams = new URLSearchParams(window.location.search);
+const recipeId  = parseInt(urlParams.get('id'));
+const mainEl    = document.getElementById('page-content');
 
+let recipe        = null;
 let portions      = 1;
 let selectedStars = 0;
+let isAdmin       = false;
 
 async function addToList() {
   await addToListSync(recipe.id, portions);
@@ -61,7 +63,7 @@ function shareRecipe() {
   } else {
     navigator.clipboard.writeText(url).then(() => {
       const original = shareBtn.textContent;
-      shareBtn.textContent   = 'Copied!';
+      shareBtn.textContent = 'Copied!';
       shareBtn.style.background  = 'var(--accent)';
       shareBtn.style.color       = '#FAF7F2';
       shareBtn.style.borderColor = 'var(--accent)';
@@ -72,7 +74,7 @@ function shareRecipe() {
 
 async function fetchRatings() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ratings?recipe_id=eq.${id}&select=stars,review,created_at&order=created_at.desc`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ratings?recipe_id=eq.${recipeId}&select=stars,review,created_at&order=created_at.desc`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
     if (!res.ok) return [];
     return res.json();
   } catch(e) { return []; }
@@ -85,22 +87,10 @@ async function submitRating() {
   btn.textContent = 'Submitting...';
   btn.disabled    = true;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ratings`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ recipe_id: id, stars: selectedStars, review: review || null }) });
-    if (res.ok) {
-      document.getElementById('review-form').innerHTML = '<p class="review-thanks">Thanks for your review!</p>';
-      loadRatings();
-    } else {
-      btn.textContent = 'Submit review';
-      btn.disabled    = false;
-      alert('Something went wrong, try again.');
-    }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ratings`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ recipe_id: recipeId, stars: selectedStars, review: review || null }) });
+    if (res.ok) { document.getElementById('review-form').innerHTML = '<p class="review-thanks">Thanks for your review!</p>'; loadRatings(); }
+    else { btn.textContent = 'Submit review'; btn.disabled = false; alert('Something went wrong, try again.'); }
   } catch(e) { btn.textContent = 'Submit review'; btn.disabled = false; alert('Network error, try again.'); }
-}
-
-function starsHtml(rating, count) {
-  let s = '';
-  for (let i = 1; i <= 5; i++) s += `<span class="star ${i <= Math.round(rating) ? 'star--filled' : 'star--empty'}">&#9733;</span>`;
-  return `<div class="avg-rating-row">${s}<span class="avg-rating-label">${rating.toFixed(1)} (${count} review${count !== 1 ? 's' : ''})</span></div>`;
 }
 
 async function loadRatings() {
@@ -112,7 +102,9 @@ async function loadRatings() {
     avgEl.innerHTML = '<p class="reviews-empty">No reviews yet. Be the first!</p>';
   } else {
     const avg = ratings.reduce((s, r) => s + r.stars, 0) / ratings.length;
-    avgEl.innerHTML = starsHtml(avg, ratings.length);
+    let s = '';
+    for (let i = 1; i <= 5; i++) s += `<span class="star ${i <= Math.round(avg) ? 'star--filled' : 'star--empty'}">&#9733;</span>`;
+    avgEl.innerHTML = `<div class="avg-rating-row">${s}<span class="avg-rating-label">${avg.toFixed(1)} (${ratings.length} review${ratings.length !== 1 ? 's' : ''})</span></div>`;
   }
   if (listEl) listEl.innerHTML = ratings.map(r => `
     <div class="review-item">
@@ -130,97 +122,96 @@ function setStars(n) {
   }
 }
 
-if (!recipe) {
-  document.title = 'Not Found — FatScran';
-  main.innerHTML = `<a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
-} else {
+function renderPage() {
   document.title = recipe.title + ' — FatScran';
 
-  async function renderPage() {
-    const ingredientRows = recipe.ingredients.map(ing => `<li><span>${ing.name}</span><span class="ing-qty">${ing.amount === null ? ing.unit : (Math.round(ing.amount * (portions / recipe.basePortions) * 100) / 100) + ' ' + ing.unit}</span></li>`).join('');
-    const methodSteps    = recipe.steps.map((step, i) => `<li><span class="step-num">${i + 1}</span><span class="step-text"><strong>${step.title}:</strong> ${step.description}</span></li>`).join('');
+  const ingredientRows = recipe.ingredients.map(ing => `<li><span>${ing.name}</span><span class="ing-qty">${ing.amount === null ? ing.unit : (Math.round(ing.amount * (portions / recipe.basePortions) * 100) / 100) + ' ' + ing.unit}</span></li>`).join('');
+  const methodSteps    = recipe.steps.map((step, i) => `<li><span class="step-num">${i + 1}</span><span class="step-text"><strong>${step.title}:</strong> ${step.description}</span></li>`).join('');
+  const adminEditBtn   = isAdmin ? `<a href="admin.html?edit=${recipe.id}" class="btn-secondary" style="text-decoration:none;">&#9998; Edit recipe</a>` : '';
 
-    main.innerHTML = `
-      <a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a>
+  mainEl.innerHTML = `
+    <a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a>
 
-      ${recipe.image ? `
-        <div class="recipe-banner-wrap">
-          <div class="recipe-banner-image"><img src="${recipe.image}" alt="${recipe.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
-          <div class="recipe-hero-card">
-            <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${recipe.section}</span></div>
-            <h1 class="recipe-title">${recipe.title}</h1>
-            <div class="recipe-meta">
-              <span class="recipe-meta-item">${clockIconSvg(16)} ${recipe.cookTime}</span>
-              <span class="recipe-meta-item">${portionIconSvg(16)} ${portions} portion${portions !== 1 ? 's' : ''}</span>
-            </div>
+    ${recipe.image ? `
+      <div class="recipe-banner-wrap">
+        <div class="recipe-banner-image"><img src="${recipe.image}" alt="${recipe.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+        <div class="recipe-hero-card">
+          <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${recipe.section}</span></div>
+          <h1 class="recipe-title">${recipe.title}</h1>
+          <div class="recipe-meta">
+            <span class="recipe-meta-item">${clockIconSvg(16)} ${recipe.cookTime}</span>
+            <span class="recipe-meta-item">${portionIconSvg(16)} ${portions} portion${portions !== 1 ? 's' : ''}</span>
           </div>
-        </div>` : `
-        <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${recipe.section}</span></div>
-        <h1 class="recipe-title">${recipe.title}</h1>
-        <div class="recipe-meta">
-          <span class="recipe-meta-item">${clockIconSvg(16)} ${recipe.cookTime}</span>
-          <span class="recipe-meta-item">${portionIconSvg(16)} ${portions} portion${portions !== 1 ? 's' : ''}</span>
-        </div>`}
-
-      <div id="avg-rating"><span class="ratings-loading">Loading reviews...</span></div>
-
-      <div class="portions-control">
-        <label>Portions:</label>
-        <button onclick="changePortion(-1)">&#8722;</button>
-        <span id="portion-count">${portions}</span>
-        <button onclick="changePortion(1)">+</button>
-      </div>
-
-      <div class="macros-strip">
-        <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.calories * portions)}</span><span class="macro-label">Calories</span></div>
-        <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.protein  * portions)}g</span><span class="macro-label">Protein</span></div>
-        <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs    * portions)}g</span><span class="macro-label">Carbs</span></div>
-        <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fat      * portions)}g</span><span class="macro-label">Fat</span></div>
-      </div>
-
-      <div class="recipe-actions">
-        <button id="add-btn" onclick="addToList()" class="btn-primary">Add to list</button>
-        <button id="share-btn" onclick="shareRecipe()" class="btn-secondary">Share recipe</button>
-      </div>
-
-      <div class="recipe-body">
-        <div class="ingredients-col">
-          <p class="section-label">Ingredients</p>
-          <ul class="ingredients-list">${ingredientRows}</ul>
         </div>
-        <div class="method-col">
-          <p class="section-label">Method</p>
-          <ol class="method-list">${methodSteps}</ol>
-        </div>
+      </div>` : `
+      <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${recipe.section}</span></div>
+      <h1 class="recipe-title">${recipe.title}</h1>
+      <div class="recipe-meta">
+        <span class="recipe-meta-item">${clockIconSvg(16)} ${recipe.cookTime}</span>
+        <span class="recipe-meta-item">${portionIconSvg(16)} ${portions} portion${portions !== 1 ? 's' : ''}</span>
+      </div>`}
+
+    <div id="avg-rating"><span class="ratings-loading">Loading reviews...</span></div>
+
+    <div class="portions-control">
+      <label>Portions:</label>
+      <button onclick="changePortion(-1)">&#8722;</button>
+      <span id="portion-count">${portions}</span>
+      <button onclick="changePortion(1)">+</button>
+    </div>
+
+    <div class="macros-strip">
+      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.calories * portions)}</span><span class="macro-label">Calories</span></div>
+      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.protein  * portions)}g</span><span class="macro-label">Protein</span></div>
+      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs    * portions)}g</span><span class="macro-label">Carbs</span></div>
+      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fat      * portions)}g</span><span class="macro-label">Fat</span></div>
+    </div>
+
+    <div class="recipe-actions">
+      <button id="add-btn" onclick="addToList()" class="btn-primary">Add to list</button>
+      <button id="share-btn" onclick="shareRecipe()" class="btn-secondary">Share recipe</button>
+      ${adminEditBtn}
+    </div>
+
+    <div class="recipe-body">
+      <div class="ingredients-col"><p class="section-label">Ingredients</p><ul class="ingredients-list">${ingredientRows}</ul></div>
+      <div class="method-col"><p class="section-label">Method</p><ol class="method-list">${methodSteps}</ol></div>
+    </div>
+
+    <div class="reviews-section">
+      <p class="section-label">Reviews</p>
+      <div id="review-list" class="review-list"></div>
+      <div id="review-form" class="review-form">
+        <p class="review-form-label">Leave a review</p>
+        <div class="star-picker">${[1,2,3,4,5].map(i => `<span id="star-${i}" class="star-picker-star star--empty" onclick="setStars(${i})">&#9733;</span>`).join('')}</div>
+        <textarea id="review-text" placeholder="Write a review (optional)"></textarea>
+        <button id="submit-btn" onclick="submitRating()">Submit review</button>
       </div>
+    </div>`;
 
-      <div class="reviews-section">
-        <p class="section-label">Reviews</p>
-        <div id="review-list" class="review-list"></div>
-        <div id="review-form" class="review-form">
-          <p class="review-form-label">Leave a review</p>
-          <div class="star-picker">${[1,2,3,4,5].map(i => `<span id="star-${i}" class="star-picker-star star--empty" onclick="setStars(${i})">&#9733;</span>`).join('')}</div>
-          <textarea id="review-text" placeholder="Write a review (optional)"></textarea>
-          <button id="submit-btn" onclick="submitRating()">Submit review</button>
-        </div>
-      </div>`;
-
-    updateBtn();
-    loadRatings();
-  }
-
-  async function changePortion(delta) {
-    portions = Math.max(1, portions + delta);
-    await renderPage();
-  }
-
-  async function init() {
-    await initAuth();
-    await renderPage();
-  }
-
-  init();
+  updateBtn();
+  loadRatings();
 }
+
+function changePortion(delta) {
+  portions = Math.max(1, portions + delta);
+  renderPage();
+}
+
+async function init() {
+  await initAuth();
+  [recipe, isAdmin] = await Promise.all([fetchRecipeById(recipeId), checkIsAdmin()]);
+
+  if (!recipe) {
+    document.title = 'Not Found — FatScran';
+    mainEl.innerHTML = `<a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
+    return;
+  }
+
+  renderPage();
+}
+
+init();
 </script>
 </body>
 </html>
