@@ -2371,3 +2371,18 @@ main {
   .week-grid { grid-template-columns: repeat(2, 1fr); }
   .week-nav__label h2 { font-size: 0.875rem; }
 }
+
+/* Fix recipe action buttons staying inline */
+.recipe-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0.75rem 0 1.5rem;
+  flex-wrap: nowrap;
+}
+.recipe-actions .btn-primary,
+.recipe-actions .btn-secondary {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
