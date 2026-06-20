@@ -168,6 +168,7 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
   gap: 1.25rem;
+  align-items: stretch;
 }
 
 .no-results {
@@ -181,7 +182,8 @@ main {
 
 /* === RECIPE CARD === */
 .recipe-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -195,6 +197,10 @@ main {
 .recipe-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+}
+
+.recipe-card .cook-time-bar {
+  margin-top: auto;
 }
 
 .card-top {
