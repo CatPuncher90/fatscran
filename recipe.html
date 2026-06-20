@@ -50,7 +50,7 @@ function updateBtn() {
   const btn    = document.getElementById('add-btn');
   if (!btn) return;
   const inList = getList().find(i => i.id === recipe.id);
-  btn.textContent       = inList ? 'Update shopping list' : 'Add to shopping list';
+  btn.textContent       = inList ? 'Update list' : 'Add to list';
   btn.style.background  = inList ? '#964517' : '#B8561E';
 }
 
@@ -231,7 +231,7 @@ if (!recipe) {
       </div>
 
       <div class="recipe-actions">
-        <button id="add-btn" onclick="addToList()" class="btn-primary">Add to shopping list</button>
+        <button id="add-btn" onclick="addToList()" class="btn-primary">Add to list</button>
         <button id="share-btn" onclick="shareRecipe()" class="btn-secondary">Share recipe</button>
       </div>
 
