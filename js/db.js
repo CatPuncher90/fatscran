@@ -42,7 +42,7 @@ async function fetchAllRecipes() {
       image:        r.image_url || null,
       macrosPerPortion: (() => {
         const m = macros.find(m => m.recipe_id === r.id);
-        return m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+        return m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, sugar: m.sugar || null, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
       })(),
       ingredients: ingredients.filter(i => i.recipe_id === r.id).map(i => ({ name: i.name, amount: i.amount, unit: i.unit })),
       steps:       steps.filter(s => s.recipe_id === r.id).map(s => ({ title: s.title, description: s.description }))
@@ -83,7 +83,7 @@ async function fetchRecipeByIdDirect(id) {
       basePortions: r.base_portions,
       cookTime:     r.cook_time,
       image:        r.image_url || null,
-      macrosPerPortion: m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      macrosPerPortion: m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, sugar: m.sugar || null, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
       ingredients:  ingredients.map(i => ({ name: i.name, amount: i.amount, unit: i.unit })),
       steps:        steps.map(s => ({ title: s.title, description: s.description }))
     };
