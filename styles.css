@@ -1014,13 +1014,6 @@ main {
   gap: 5px;
 }
 
-.recipe-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin: 0.75rem 0 1.5rem;
-  flex-wrap: wrap;
-}
 
 .btn-primary {
   padding: 11px 28px;
@@ -1826,13 +1819,6 @@ main {
   gap: 5px;
 }
 
-.recipe-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin: 0.75rem 0 1.5rem;
-  flex-wrap: wrap;
-}
 
 .btn-primary {
   padding: 11px 28px;
@@ -2431,27 +2417,7 @@ main {
   .week-nav__label h2 { font-size: 0.875rem; }
 }
 
-/* Fix recipe action buttons staying inline */
-.recipe-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 0.75rem;
-  align-items: center;
-  margin: 0.75rem 0 1.5rem;
-  flex-wrap: nowrap;
-}
-.recipe-actions .btn-primary,
-.recipe-actions .btn-secondary,
-.recipe-actions a.btn-secondary {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-  margin: 0;
-  text-decoration: none;
-}
+
 /* ==========================================================================
    Auth styles — append to styles.css
    ========================================================================== */
@@ -2993,14 +2959,17 @@ main {
   }
 }
 
-/* Recipe action buttons - desktop grid */
+/* Recipe action buttons */
 .recipe-actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
   align-items: stretch;
+  margin: 0.75rem 0 1.5rem;
 }
 .recipe-actions > * {
-  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 .recipe-actions .btn-primary,
 .recipe-actions .btn-secondary,
@@ -3009,4 +2978,5 @@ main {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  text-decoration: none;
 }

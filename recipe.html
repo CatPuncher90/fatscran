@@ -169,6 +169,7 @@ function renderPage() {
       <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.protein  * portions)}g</span><span class="macro-label">Protein</span></div>
       <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs    * portions)}g</span><span class="macro-label">Carbs</span></div>
       <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fat      * portions)}g</span><span class="macro-label">Fat</span></div>
+      ${recipe.macrosPerPortion.sugar != null ? `<div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.sugar * portions)}g</span><span class="macro-label">Sugar</span></div>` : ''}
       ${recipe.macrosPerPortion.fiber != null ? `<div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fiber * portions)}g</span><span class="macro-label">Fiber</span></div>` : ''}
     </div>
 
