@@ -2941,42 +2941,27 @@ main {
   .admin-list-actions { flex-direction: row; }
 }
 
-/* Recipe action buttons - mobile layout */
-@media (max-width: 640px) {
-  .recipe-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-  .recipe-actions .btn-primary {
-    grid-column: 1 / -1;
-  }
-  .recipe-actions .btn-secondary,
-  .recipe-actions a.btn-secondary {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-  }
-}
-
 /* Recipe action buttons */
 .recipe-actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   align-items: stretch;
-  margin: 0.75rem 0 1.5rem;
 }
 .recipe-actions > * {
   width: 100%;
   box-sizing: border-box;
-}
-.recipe-actions .btn-primary,
-.recipe-actions .btn-secondary,
-.recipe-actions a.btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  text-decoration: none;
+  height: 100%;
+}
+@media (max-width: 640px) {
+  .recipe-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+  .recipe-actions .btn-primary {
+    grid-column: 1 / -1;
+  }
 }
