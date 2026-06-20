@@ -172,6 +172,7 @@ async function toggleFavSync(id) {
     if (rows.length) {
       await sb.delete('favourites', `id=eq.${rows[0].id}`);
     } else {
+      console.log('posting fav with:', JSON.stringify({ recipe_id: id, user_id: getSession()?.user?.id }));
       await sb.post('favourites', { recipe_id: id });
     }
     return getFavs();
