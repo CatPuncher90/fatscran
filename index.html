@@ -27,8 +27,14 @@
     <p>High protein, batch-friendly meals to fuel your week.</p>
   </div>
 
-  <div style="padding:0 0 1rem;">
-    <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="applyFilters()" style="width:100%;box-sizing:border-box;">
+  <div style="padding:0 0 1rem;display:flex;gap:0.75rem;align-items:center;">
+    <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="applyFilters()" style="flex:1;box-sizing:border-box;">
+    <select id="sort-select" onchange="applyFilters()" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.875rem;font-family:'DM Sans',sans-serif;background:var(--bg-card);color:var(--text);cursor:pointer;outline:none;flex-shrink:0;">
+      <option value="default">No sort</option>
+      <option value="protein">Highest protein</option>
+      <option value="calories">Lowest calories</option>
+      <option value="cooktime">Quickest cook time</option>
+    </select>
   </div>
 
   <div class="filters" id="filters">
@@ -69,6 +75,31 @@
   }
 
   function badgeClass(section) { return 'badge badge-' + section.toLowerCase(); }
+
+  function parseCookTime(str) {
+    if (!str) return 9999;
+    const hrs = (str.match(/(\d+)\s*hr/) || [0,0])[1];
+    const mins = (str.match(/(\d+)\s*min/) || [0,0])[1];
+    return parseInt(hrs) * 60 + parseInt(mins);
+  }
+
+  function sortWithinGroups(list, sortBy) {
+    if (sortBy === 'default') return list;
+    return list.slice().sort((a, b) => {
+      if (a.section !== b.section) return SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section);
+      if (sortBy === 'protein') return b.macrosPerPortion.protein - a.macrosPerPortion.protein;
+      if (sortBy === 'calories') return a.macrosPerPortion.calories - b.macrosPerPortion.calories;
+      if (sortBy === 'cooktime') return parseCookTime(a.cookTime) - parseCookTime(b.cookTime);
+      return 0;
+    });
+  }
+
+  function groupBySection(list) {
+    const groups = {};
+    SECTION_ORDER.forEach(s => groups[s] = []);
+    list.forEach(r => { if (groups[r.section]) groups[r.section].push(r); else groups[r.section] = [r]; });
+    return SECTION_ORDER.flatMap(s => groups[s] || []);
+  }
 
   function renderCards(list) {
     const grid = document.getElementById('recipe-grid');
@@ -115,21 +146,22 @@
 
   let activeSection = 'all';
 
-  function groupAndSort(list) {
-    const groups = {};
-    SECTION_ORDER.forEach(s => groups[s] = []);
-    list.forEach(r => { if (groups[r.section]) groups[r.section].push(r); else groups[r.section] = [r]; });
-    return SECTION_ORDER.flatMap(s => groups[s] || []);
-  }
-
   function applyFilters() {
     const query = document.getElementById('search-input').value;
+    const sortBy = document.getElementById('sort-select').value;
     const favs = getFavourites();
+
     let filtered = recipes.filter(r =>
       (activeSection === 'all' || (activeSection === 'favourites' ? favs.includes(r.id) : r.section === activeSection)) &&
       recipeMatchesSearch(r, query)
     );
-    if (activeSection === 'all') filtered = groupAndSort(filtered);
+
+    if (sortBy === 'default') {
+      filtered = groupBySection(filtered);
+    } else {
+      filtered = sortWithinGroups(filtered, sortBy);
+    }
+
     renderCards(filtered);
   }
 
@@ -141,7 +173,6 @@
     applyFilters();
   });
 
-  // hide sauces filter if no sauce recipes exist
   if (!recipes.some(r => r.section === 'sauces')) {
     const saucesBtn = document.querySelector('.filter-btn[data-section="sauces"]');
     if (saucesBtn) saucesBtn.style.display = 'none';
