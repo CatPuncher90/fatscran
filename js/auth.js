@@ -15,34 +15,31 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = {
   headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
 
-  async get(table, params) {
+  authedHeaders() {
     const session = getSession();
-    const headers = session ? { ...this.headers, 'Authorization': 'Bearer ' + session.access_token } : this.headers;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
+    return session ? { ...this.headers, 'Authorization': 'Bearer ' + session.access_token } : this.headers;
+  },
+
+  async get(table, params) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: this.authedHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async post(table, body) {
-    const session = getSession();
-    const headers = session ? { ...this.headers, 'Authorization': 'Bearer ' + session.access_token } : this.headers;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: 'POST', headers: this.authedHeaders(), body: JSON.stringify(body) });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async delete(table, params) {
-    const session = getSession();
-    const headers = session ? { ...this.headers, 'Authorization': 'Bearer ' + session.access_token } : this.headers;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { method: 'DELETE', headers });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { method: 'DELETE', headers: this.authedHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return true;
   },
 
   async patch(table, params, body) {
-    const session = getSession();
-    const headers = session ? { ...this.headers, 'Authorization': 'Bearer ' + session.access_token } : this.headers;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { method: 'PATCH', headers: this.authedHeaders(), body: JSON.stringify(body) });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -169,14 +166,12 @@ async function toggleFavSync(id) {
     saveFavourites(favs);
     return favs;
   }
-  const s = await ensureSession();
-  console.log('toggleFavSync session:', JSON.stringify(s));
+  await ensureSession();
   try {
     const rows = await sb.get('favourites', `select=id&recipe_id=eq.${id}`);
     if (rows.length) {
       await sb.delete('favourites', `id=eq.${rows[0].id}`);
     } else {
-      console.log('toggleFavSync posting: user_id from session =', s && s.user && s.user.id);
       await sb.post('favourites', { recipe_id: id });
     }
     return getFavs();
