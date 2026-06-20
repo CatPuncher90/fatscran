@@ -182,6 +182,7 @@ async function uploadRecipeImage(file) {
 // ---------------------------------------------------------------------------
 
 async function getProfile() {
+  if (typeof ensureSession === 'function') await ensureSession();
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) return null;
   try {
@@ -193,6 +194,7 @@ async function getProfile() {
 }
 
 async function saveProfile(data) {
+  if (typeof ensureSession === 'function') await ensureSession();
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) throw new Error('Not logged in');
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' };
