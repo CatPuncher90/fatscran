@@ -101,6 +101,25 @@
     return SECTION_ORDER.flatMap(s => groups[s] || []);
   }
 
+  function saveState() {
+    sessionStorage.setItem('fatscran-state', JSON.stringify({
+      section: activeSection,
+      query: document.getElementById('search-input').value,
+      sort: document.getElementById('sort-select').value
+    }));
+  }
+
+  function restoreState() {
+    try {
+      const state = JSON.parse(sessionStorage.getItem('fatscran-state') || 'null');
+      if (!state) return;
+      activeSection = state.section || 'all';
+      document.getElementById('search-input').value = state.query || '';
+      document.getElementById('sort-select').value = state.sort || 'default';
+      document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
+    } catch(e) {}
+  }
+
   function renderCards(list) {
     const grid = document.getElementById('recipe-grid');
     const favs = getFavourites();
@@ -120,7 +139,7 @@
         ? `<div style="width:100%;aspect-ratio:16/9;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:0.75rem;"><img src="${r.image}" alt="${r.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`
         : '';
       return `
-      <a class="recipe-card" href="recipe.html?id=${r.id}" style="display:flex;flex-direction:column;">
+      <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()" style="display:flex;flex-direction:column;">
         ${imageBlock}
         <div class="card-top">
           <span class="card-name">${r.title}</span>
@@ -178,6 +197,7 @@
     if (saucesBtn) saucesBtn.style.display = 'none';
   }
 
+  restoreState();
   applyFilters();
 </script>
 </body>
