@@ -27,6 +27,7 @@ const sb = {
   },
 
   async post(table, body) {
+    console.log('sb.post headers auth:', this.authedHeaders()['Authorization']?.slice(0, 30));
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: 'POST', headers: this.authedHeaders(), body: JSON.stringify(body) });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
