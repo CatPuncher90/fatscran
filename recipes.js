@@ -1837,8 +1837,430 @@ const recipes = [
       { title: "Make the mash", description: "Mash the boiled potatoes with the butter and milk until smooth." },
       { title: "Serve", description: "Divide the mash between bowls and top with the mince." }
     ]
-  }
+  },
 
+
+  // ─── SECOND BATCH (MacroFactor import) ─────────────────────────────────────
+
+  {
+    id: 71,
+    title: "Creamy Mustard Chicken & Rice",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 559, protein: 59, carbs: 47, fat: 12, fiber: 0.4 },
+    ingredients: [
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" },
+      { name: "Echalion shallots", amount: 250, unit: "g" },
+      { name: "50% reduced fat soft cream cheese", amount: 400, unit: "g" },
+      { name: "Chicken stock", amount: 1000, unit: "ml" },
+      { name: "Unsalted butter", amount: 60, unit: "g" },
+      { name: "Wholegrain mustard", amount: 60, unit: "g" },
+      { name: "Jasmine rice", amount: 1500, unit: "g" },
+      { name: "Tenderstem broccoli", amount: 1000, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the chicken breast and finely chop the shallots." },
+      { title: "Cook the rice", description: "Cook jasmine rice in boiling salted water for 12-13 minutes. Drain and set aside." },
+      { title: "Cook the chicken", description: "Fry the chicken in a dry pan until golden and cooked through. Set aside." },
+      { title: "Cook the shallots", description: "In the same pan, cook the shallots until softened." },
+      { title: "Make the sauce", description: "Add the chicken stock, wholegrain mustard, and butter. Simmer for a few minutes, then stir in the cream cheese until smooth." },
+      { title: "Combine", description: "Add the chicken back into the sauce and stir through." },
+      { title: "Cook the broccoli", description: "Steam or roast the tenderstem broccoli until tender." },
+      { title: "Serve", description: "Divide the rice between bowls, top with the creamy mustard chicken, and add the broccoli on the side." }
+    ]
+  },
+
+  {
+    id: 72,
+    title: "Umami Chicken Rice Bowl",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 508, protein: 41, carbs: 59, fat: 13, fiber: 0.4 },
+    ingredients: [
+      { name: "Chicken mince", amount: 2000, unit: "g" },
+      { name: "Baby corn", amount: 400, unit: "g" },
+      { name: "Red bell peppers", amount: 700, unit: "g" },
+      { name: "Basmati rice", amount: 1500, unit: "g" },
+      { name: "Thai sweet chilli sauce", amount: 220, unit: "g" },
+      { name: "Light soy sauce", amount: 100, unit: "g" },
+      { name: "Dark soy sauce", amount: 100, unit: "g" },
+      { name: "Ketjap manis", amount: 70, unit: "g" },
+      { name: "Garden peas", amount: 315, unit: "g" },
+      { name: "Toasted sesame oil", amount: 70, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the red bell peppers." },
+      { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10-12 minutes. Drain and set aside." },
+      { title: "Cook the chicken mince", description: "Fry the chicken mince in a hot pan until browned and cooked through." },
+      { title: "Add the veg", description: "Add the diced peppers and baby corn to the pan and cook for a few minutes." },
+      { title: "Add the sauce", description: "Stir in the light soy sauce, dark soy sauce, ketjap manis, sweet chilli sauce, and sesame oil." },
+      { title: "Add the peas", description: "Stir in the garden peas and cook for a few minutes." },
+      { title: "Serve", description: "Divide the rice between bowls and top with the chicken mixture." }
+    ]
+  },
+
+  {
+    id: 73,
+    title: "Ham & Cheese Wrap",
+    section: "dinner",
+    basePortions: 5,
+    cookTime: "5 mins",
+    macrosPerPortion: { calories: 292, protein: 30, carbs: 12, fat: 10, fiber: 2.9 },
+    ingredients: [
+      { name: "Carb Balance wraps", amount: 5, unit: "whole" },
+      { name: "Dairylea cheese spread", amount: 145, unit: "g" },
+      { name: "Lettuce", amount: 80, unit: "g" },
+      { name: "Honey roast ham slices", amount: 16, unit: "slices" }
+    ],
+    steps: [
+      { title: "Prep", description: "Wash and shred the lettuce." },
+      { title: "Spread the cheese", description: "Lay out the wraps and spread the Dairylea cheese spread evenly over each." },
+      { title: "Assemble", description: "Add the ham slices and lettuce to each wrap." },
+      { title: "Wrap and serve", description: "Fold tightly and wrap." }
+    ]
+  },
+
+  {
+    id: 74,
+    title: "Chicken & Tzatziki Burritos",
+    section: "dinner",
+    basePortions: 14,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 440, protein: 35, carbs: 38, fat: 13, fiber: 0.4 },
+    ingredients: [
+      { name: "Red bell peppers", amount: 675, unit: "g" },
+      { name: "White onion", amount: 450, unit: "g" },
+      { name: "Chicken breast fillets", amount: 1200, unit: "g" },
+      { name: "Fat free Greek yogurt", amount: 300, unit: "g" },
+      { name: "Tzatziki", amount: 300, unit: "g" },
+      { name: "Mild cheddar cheese", amount: 230, unit: "g" },
+      { name: "Wholemeal wraps", amount: 14, unit: "whole" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the peppers, onions, and chicken." },
+      { title: "Cook the veg", description: "Fry the peppers and onions until soft." },
+      { title: "Cook the chicken", description: "Add the diced chicken to the veg and cook until no pink remains." },
+      { title: "Make the sauce", description: "Turn off the heat and add the tzatziki and cheese, using the residual heat to melt and create a cohesive sauce." },
+      { title: "Assemble", description: "Smear a layer of Greek yoghurt on each wrap and divide the tzatziki chicken mixture evenly across all wraps." },
+      { title: "Wrap and store", description: "Fold tightly into burritos and wrap in aluminium foil." }
+    ]
+  },
+
+  {
+    id: 75,
+    title: "Chilli Chicken & Cous Cous",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 552, protein: 56, carbs: 64, fat: 8, fiber: 0.4 },
+    ingredients: [
+      { name: "Chicken breast fillets", amount: 2000, unit: "g" },
+      { name: "Fat free Greek style yogurt", amount: 500, unit: "g" },
+      { name: "Green courgettes", amount: 1550, unit: "g" },
+      { name: "Sundried tomato paste", amount: 185, unit: "g" },
+      { name: "Jalapeño chilli jam", amount: 200, unit: "g" },
+      { name: "Couscous (dry)", amount: 1000, unit: "g" },
+      { name: "Chicken stock paste", amount: 2, unit: "pots" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the chicken and chop the courgettes into rounds." },
+      { title: "Make the couscous", description: "Boil water according to the couscous package instructions. Add the dry couscous and chicken stock paste pots to a heat-safe bowl. Pour over the boiled water, stir, and cover with cling film. Set aside." },
+      { title: "Cook the courgettes", description: "Fry the courgette rounds on high heat until browned and charred. Set aside." },
+      { title: "Cook the chicken", description: "Fry the diced chicken until cooked through. Season to taste." },
+      { title: "Add the sauce", description: "Stir in the sundried tomato paste." },
+      { title: "Fluff the couscous", description: "Give the couscous a stir to ensure it is warm and soft." },
+      { title: "Serve", description: "Plate up the couscous, top with the chicken mixture and charred courgettes. Finish with a dollop of Greek yoghurt and chilli jam to taste." }
+    ]
+  },
+
+  {
+    id: 76,
+    title: "Turkey Burgers",
+    section: "dinner",
+    basePortions: 10,
+    cookTime: "20 mins",
+    macrosPerPortion: { calories: 501, protein: 50, carbs: 41, fat: 15, fiber: 0.2 },
+    ingredients: [
+      { name: "Golden breadcrumbs", amount: 150, unit: "g" },
+      { name: "Brioche buns", amount: 10, unit: "whole" },
+      { name: "Fat free Greek style yogurt", amount: 370, unit: "g" },
+      { name: "Turkey thigh mince", amount: 2000, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Mix the turkey mince, breadcrumbs, and Greek yogurt together in a bowl until combined. Season to taste." },
+      { title: "Form the patties", description: "Divide the mixture into 10 equal patties." },
+      { title: "Cook the patties", description: "Fry or grill the patties over medium-high heat for 4-5 minutes each side until cooked through." },
+      { title: "Assemble", description: "Place each patty in a brioche bun with your choice of toppings." }
+    ]
+  },
+
+  {
+    id: 77,
+    title: "Chicken Breakfast Muffins",
+    section: "breakfast",
+    basePortions: 14,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 399, protein: 36, carbs: 30, fat: 15, fiber: 1.6 },
+    ingredients: [
+      { name: "English muffins", amount: 14, unit: "whole" },
+      { name: "Baby spinach", amount: 250, unit: "g" },
+      { name: "American cheese slices", amount: 14, unit: "slices" },
+      { name: "Large eggs", amount: 16, unit: "whole" },
+      { name: "Chicken mince", amount: 1000, unit: "g" },
+      { name: "High protein cottage cheese", amount: 350, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Form small patties from the chicken mince, slightly bigger than the muffins as they will shrink during cooking." },
+      { title: "Cook the patties", description: "Air fry, pan fry, or oven cook the patties until no pink remains and fully cooked through." },
+      { title: "Make the egg mix", description: "Blend the cottage cheese and eggs together until smooth." },
+      { title: "Cook the egg mix", description: "Pan fry the cottage cheese and egg mixture. Use egg ring moulds if available, or cook like an omelette and portion with a knife once cooked." },
+      { title: "Assemble", description: "Cut the muffins in half horizontally. Layer a cheese slice, a handful of spinach, the egg, and the chicken patty into each muffin." },
+      { title: "Wrap", description: "Replace the muffin lid and wrap each breakfast muffin in foil." }
+    ]
+  },
+
+  {
+    id: 78,
+    title: "Turkey Breakfast Muffins",
+    section: "breakfast",
+    basePortions: 14,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 411, protein: 36, carbs: 30, fat: 16, fiber: 2.2 },
+    ingredients: [
+      { name: "English muffins", amount: 14, unit: "whole" },
+      { name: "Baby spinach", amount: 250, unit: "g" },
+      { name: "American cheese slices", amount: 14, unit: "slices" },
+      { name: "Large eggs", amount: 16, unit: "whole" },
+      { name: "Turkey mince", amount: 1000, unit: "g" },
+      { name: "High protein cottage cheese", amount: 350, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Form small patties from the turkey mince, slightly bigger than the muffins as they will shrink during cooking." },
+      { title: "Cook the patties", description: "Air fry, pan fry, or oven cook the patties until no pink remains and fully cooked through." },
+      { title: "Make the egg mix", description: "Blend the cottage cheese and eggs together until smooth." },
+      { title: "Cook the egg mix", description: "Pan fry the cottage cheese and egg mixture. Use egg ring moulds if available, or cook like an omelette and portion with a knife once cooked." },
+      { title: "Assemble", description: "Cut the muffins in half horizontally. Layer a cheese slice, a handful of spinach, the egg, and the turkey patty into each muffin." },
+      { title: "Wrap", description: "Replace the muffin lid and wrap each breakfast muffin in foil." }
+    ]
+  },
+
+  {
+    id: 79,
+    title: "Creamy Beef Pasta",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 529, protein: 45, carbs: 61, fat: 13, fiber: 0.6 },
+    ingredients: [
+      { name: "Baby button mushrooms", amount: 200, unit: "g" },
+      { name: "White onion", amount: 750, unit: "g" },
+      { name: "Fresh carrots", amount: 570, unit: "g" },
+      { name: "High protein cottage cheese", amount: 600, unit: "g" },
+      { name: "Tomato passata", amount: 1390, unit: "g" },
+      { name: "Steak mince 5% fat", amount: 1750, unit: "g" },
+      { name: "Wholewheat fusilli", amount: 910, unit: "g" },
+      { name: "Grated Italian hard cheese", amount: 120, unit: "g" },
+      { name: "Sundried tomato paste", amount: 60, unit: "g" },
+      { name: "Concentrated tomato purée", amount: 70, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Finely chop the onions, carrots, and mushrooms." },
+      { title: "Cook the pasta", description: "Cook the fusilli in boiling salted water. Reserve some pasta water before draining." },
+      { title: "Cook the beef", description: "Fry the beef mince in a large pan until browned. Drain excess fat." },
+      { title: "Cook the veg", description: "Add the onion, carrots, and mushrooms to the pan and cook until softened." },
+      { title: "Make the sauce", description: "Stir in the tomato purée, sundried tomato paste, and passata. Blend the cottage cheese until smooth and stir in. Simmer until thickened." },
+      { title: "Combine", description: "Add the pasta and toss to coat, adding a splash of pasta water to loosen if needed." },
+      { title: "Serve", description: "Finish with grated Italian hard cheese." }
+    ]
+  },
+
+  {
+    id: 80,
+    title: "Curried Beef Pilaf",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 584, protein: 38, carbs: 86, fat: 10, fiber: 0.6 },
+    ingredients: [
+      { name: "Garden peas", amount: 900, unit: "g" },
+      { name: "Chicken stock pots", amount: 4, unit: "whole" },
+      { name: "Korma paste", amount: 350, unit: "g" },
+      { name: "Mango chutney", amount: 280, unit: "g" },
+      { name: "Steak mince 5% fat", amount: 1750, unit: "g" },
+      { name: "Jasmine rice", amount: 1000, unit: "g" },
+      { name: "Fat free Greek yogurt", amount: 525, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dissolve the chicken stock pots in boiling water according to packet instructions." },
+      { title: "Cook the rice", description: "Cook jasmine rice in the chicken stock for 12-13 minutes. Drain and set aside." },
+      { title: "Cook the beef", description: "Fry the beef mince in a large pan until browned. Drain excess fat." },
+      { title: "Add the sauce", description: "Stir in the korma paste and mango chutney and cook for 1-2 minutes." },
+      { title: "Add the peas", description: "Stir in the garden peas and cook for a few minutes." },
+      { title: "Combine", description: "Stir the rice through the beef mixture until well combined." },
+      { title: "Serve", description: "Top with a dollop of Greek yogurt." }
+    ]
+  },
+
+  {
+    id: 81,
+    title: "Ham, Egg & Cheese Muffin",
+    section: "dinner",
+    basePortions: 1,
+    cookTime: "10 mins",
+    macrosPerPortion: { calories: 307, protein: 20, carbs: 30, fat: 11, fiber: 4.5 },
+    ingredients: [
+      { name: "Cheese slice", amount: 1, unit: "whole" },
+      { name: "Thin sliced smoked ham", amount: 1, unit: "slice" },
+      { name: "Large egg", amount: 1, unit: "whole" },
+      { name: "Wholemeal English muffin", amount: 1, unit: "whole" }
+    ],
+    steps: [
+      { title: "Prep", description: "Split the English muffin in half and toast until golden." },
+      { title: "Cook the egg", description: "Fry the egg to your preference." },
+      { title: "Assemble", description: "Layer the ham, fried egg, and cheese slice onto the muffin base." },
+      { title: "Serve", description: "Place the muffin lid on top and serve immediately." }
+    ]
+  },
+
+  {
+    id: 82,
+    title: "Beef & Bean Hotpot",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "50 mins",
+    macrosPerPortion: { calories: 591, protein: 39, carbs: 80, fat: 13, fiber: 1.1 },
+    ingredients: [
+      { name: "White onion", amount: 1050, unit: "g" },
+      { name: "Steak mince 5% fat", amount: 1000, unit: "g" },
+      { name: "Mixed beans", amount: 1260, unit: "g" },
+      { name: "Baking potatoes", amount: 3000, unit: "g" },
+      { name: "Tomato passata", amount: 1380, unit: "g" },
+      { name: "High protein mature cheddar", amount: 300, unit: "g" },
+      { name: "Sundried tomato paste", amount: 185, unit: "g" },
+      { name: "Garden peas", amount: 1500, unit: "g" },
+      { name: "Garlic", amount: null, unit: "to taste" }
+    ],
+    steps: [
+      { title: "Prep", description: "Chop the onion into chunks. Thinly slice the potatoes." },
+      { title: "Cook the onion", description: "Fry the onion in a pot until golden." },
+      { title: "Cook the beef", description: "Add the beef mince to the pot and cook until browned." },
+      { title: "Add the garlic", description: "Add garlic to taste and cook until fragrant." },
+      { title: "Add the sauce", description: "Stir in the tomato passata, sundried tomato paste, mixed beans, and garden peas. Cook until the beans and peas are heated through." },
+      { title: "Assemble", description: "Transfer the beefy bean mixture into a glass baking dish. Layer the sliced potatoes over the top." },
+      { title: "Bake", description: "Bake until the potatoes are cooked through." },
+      { title: "Add cheese", description: "Top with the cheddar and return to the oven until the cheese is melted and golden." }
+    ]
+  },
+
+  {
+    id: 83,
+    title: "Pulled Chicken Burger Bowl",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "30 mins",
+    macrosPerPortion: { calories: 542, protein: 54, carbs: 49, fat: 14, fiber: 0.3 },
+    ingredients: [
+      { name: "Romaine lettuce", amount: 1200, unit: "g" },
+      { name: "Red wine vinegar", amount: 90, unit: "ml" },
+      { name: "50% lighter mature cheese", amount: 210, unit: "g" },
+      { name: "Salad tomatoes", amount: 300, unit: "g" },
+      { name: "Basmati rice", amount: 1750, unit: "g" },
+      { name: "Red onion", amount: 440, unit: "g" },
+      { name: "Crispy fried onions", amount: 100, unit: "g" },
+      { name: "Burger sauce", amount: 270, unit: "g" },
+      { name: "Chicken breast fillet", amount: 2000, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Slice the red onion and tomatoes. Shred the romaine lettuce." },
+      { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10-12 minutes. Drain and set aside." },
+      { title: "Cook the chicken", description: "Simmer the chicken breast in water or stock until tender enough to shred with a fork, 15-20 minutes. Shred the meat and toss with a splash of red wine vinegar." },
+      { title: "Assemble", description: "Divide the rice between bowls. Top with the pulled chicken, lettuce, tomatoes, and red onion. Drizzle with burger sauce, sprinkle over the cheese and crispy fried onions." }
+    ]
+  },
+
+  {
+    id: 84,
+    title: "Beef Ragu & Pasta",
+    section: "tea",
+    basePortions: 12,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 697, protein: 53, carbs: 78, fat: 22, fiber: 0.9 },
+    ingredients: [
+      { name: "Steak mince 5% fat", amount: 1750, unit: "g" },
+      { name: "White onion", amount: 950, unit: "g" },
+      { name: "Fresh carrots", amount: 1000, unit: "g" },
+      { name: "Button mushrooms", amount: 250, unit: "g" },
+      { name: "Red wine stock pots", amount: 4, unit: "whole" },
+      { name: "Tomato passata", amount: 1400, unit: "g" },
+      { name: "Sundried tomato paste", amount: 175, unit: "g" },
+      { name: "Wholewheat fusilli", amount: 900, unit: "g" },
+      { name: "Grated Italian hard cheese", amount: 300, unit: "g" },
+      { name: "Nutritional yeast flakes", amount: 52, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Finely chop the onions, carrots, and mushrooms." },
+      { title: "Cook the pasta", description: "Cook the fusilli in boiling salted water. Reserve some pasta water before draining." },
+      { title: "Cook the beef", description: "Fry the beef mince in a large pan until browned. Drain excess fat." },
+      { title: "Cook the veg", description: "Add the onions, carrots, and mushrooms to the pan and cook until softened." },
+      { title: "Make the sauce", description: "Stir in the red wine stock pots, tomato passata, sundried tomato paste, and nutritional yeast. Simmer for 15-20 minutes until thickened and rich." },
+      { title: "Combine", description: "Add the pasta and toss to coat, adding a splash of pasta water to loosen if needed." },
+      { title: "Serve", description: "Finish with grated Italian hard cheese." }
+    ]
+  },
+
+  {
+    id: 85,
+    title: "Mexican Chicken & Bean Pilaf",
+    section: "tea",
+    basePortions: 14,
+    cookTime: "35 mins",
+    macrosPerPortion: { calories: 506, protein: 47, carbs: 64, fat: 5, fiber: 0.5 },
+    ingredients: [
+      { name: "Red bell peppers", amount: 850, unit: "g" },
+      { name: "White onion", amount: 996, unit: "g" },
+      { name: "Chicken stock pots", amount: 4, unit: "whole" },
+      { name: "Chipotle paste", amount: 140, unit: "g" },
+      { name: "Honey", amount: 105, unit: "g" },
+      { name: "Fat free Greek style yogurt", amount: 550, unit: "g" },
+      { name: "Chicken breast fillets", amount: 2000, unit: "g" },
+      { name: "Basmati rice", amount: 1750, unit: "g" },
+      { name: "Tomato passata", amount: 400, unit: "g" },
+      { name: "Mixed beans", amount: 1080, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Dice the chicken breast, peppers, and onion." },
+      { title: "Cook the chicken", description: "Fry the chicken in a pan until golden and cooked through. Set aside." },
+      { title: "Cook the veg", description: "In the same pan, fry the peppers and onion until softened." },
+      { title: "Make the sauce", description: "Stir in the chipotle paste, honey, tomato passata, and chicken stock pots. Add the mixed beans and simmer for a few minutes." },
+      { title: "Cook the rice", description: "Cook basmati rice in boiling salted water for 10-12 minutes. Drain, then stir through the sauce mixture to create the pilaf." },
+      { title: "Combine", description: "Add the chicken back in and stir through." },
+      { title: "Serve", description: "Top with a dollop of Greek yogurt." }
+    ]
+  },
+
+  {
+    id: 86,
+    title: "Breakfast Sausage & Egg Wrap",
+    section: "breakfast",
+    basePortions: 2,
+    cookTime: "15 mins",
+    macrosPerPortion: { calories: 304, protein: 22, carbs: 38, fat: 6, fiber: 4.5 },
+    ingredients: [
+      { name: "Chicken chipolatas", amount: 4, unit: "whole" },
+      { name: "Wholemeal wraps", amount: 2, unit: "whole" },
+      { name: "Brown sauce", amount: 30, unit: "g" },
+      { name: "Free range egg whites", amount: 130, unit: "g" }
+    ],
+    steps: [
+      { title: "Prep", description: "Lay out the wraps ready to assemble." },
+      { title: "Cook the sausages", description: "Cook the chicken chipolatas in a pan or air fryer until cooked through and browned." },
+      { title: "Cook the egg whites", description: "Fry or scramble the egg whites in a pan until cooked through." },
+      { title: "Assemble", description: "Spread brown sauce on each wrap, add the sausages and egg whites." },
+      { title: "Wrap and serve", description: "Fold tightly and wrap." }
+    ]
+  }
 
 ];
 
