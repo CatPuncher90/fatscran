@@ -37,14 +37,17 @@
     <button class="filter-btn" data-section="dinner">Dinner</button>
     <button class="filter-btn" data-section="tea">Tea</button>
     <button class="filter-btn" data-section="dessert">Dessert</button>
-    <button class="filter-btn" data-section="sauces">Sauces</button>
     <button class="filter-btn" data-section="favourites">♥ Favourites</button>
   </div>
+
+  <p id="result-count" style="font-size:0.8125rem;color:var(--muted);margin-bottom:1rem;"></p>
 
   <div class="recipe-grid" id="recipe-grid"></div>
 </main>
 <script src="recipes.js"></script>
 <script>
+  const SECTION_ORDER = ['breakfast', 'dinner', 'tea', 'sauces', 'dessert'];
+
   function getFavourites() { try { return JSON.parse(localStorage.getItem('fatscran-favs') || '[]'); } catch(e) { return []; } }
   function saveFavourites(favs) { localStorage.setItem('fatscran-favs', JSON.stringify(favs)); }
 
@@ -70,10 +73,16 @@
   function renderCards(list) {
     const grid = document.getElementById('recipe-grid');
     const favs = getFavourites();
+    const count = document.getElementById('result-count');
+
     if (list.length === 0) {
       grid.innerHTML = '<p class="no-results">No recipes found.</p>';
+      count.textContent = '';
       return;
     }
+
+    count.textContent = 'Showing ' + list.length + ' recipe' + (list.length === 1 ? '' : 's');
+
     grid.innerHTML = list.map(r => {
       const isFav = favs.includes(r.id);
       const imageBlock = r.image
@@ -89,26 +98,38 @@
             <span class="${badgeClass(r.section)}">${r.section}</span>
           </div>
         </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:0.9rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span style="font-size:0.8125rem;font-weight:600;color:var(--text);">${r.cookTime}</span>
+        </div>
         <div class="card-stats">
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.calories}</span><span class="stat-label">kcal</span></div>
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.protein}g</span><span class="stat-label">protein</span></div>
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.carbs}g</span><span class="stat-label">carbs</span></div>
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.fat}g</span><span class="stat-label">fat</span></div>
         </div>
-        <div style="text-align:center;padding:6px 8px;background:var(--bg);border-radius:var(--radius-sm);margin-top:auto;"><span class="stat-value">${r.cookTime}</span><span class="stat-label" style="margin-left:4px;">cook time</span></div>
+        <div style="text-align:center;margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border);"><span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);">per portion</span></div>
       </a>`;
     }).join('');
   }
 
   let activeSection = 'all';
 
+  function groupAndSort(list) {
+    const groups = {};
+    SECTION_ORDER.forEach(s => groups[s] = []);
+    list.forEach(r => { if (groups[r.section]) groups[r.section].push(r); else groups[r.section] = [r]; });
+    return SECTION_ORDER.flatMap(s => groups[s] || []);
+  }
+
   function applyFilters() {
     const query = document.getElementById('search-input').value;
     const favs = getFavourites();
-    const filtered = recipes.filter(r =>
+    let filtered = recipes.filter(r =>
       (activeSection === 'all' || (activeSection === 'favourites' ? favs.includes(r.id) : r.section === activeSection)) &&
       recipeMatchesSearch(r, query)
     );
+    if (activeSection === 'all') filtered = groupAndSort(filtered);
     renderCards(filtered);
   }
 
@@ -119,6 +140,12 @@
     document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
     applyFilters();
   });
+
+  // hide sauces filter if no sauce recipes exist
+  if (!recipes.some(r => r.section === 'sauces')) {
+    const saucesBtn = document.querySelector('.filter-btn[data-section="sauces"]');
+    if (saucesBtn) saucesBtn.style.display = 'none';
+  }
 
   applyFilters();
 </script>
