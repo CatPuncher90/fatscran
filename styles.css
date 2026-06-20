@@ -2943,24 +2943,25 @@ main {
 
 /* Recipe action buttons */
 .recipe-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 0.75rem;
+  align-items: stretch;
 }
 .recipe-actions > * {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
   box-sizing: border-box;
   padding: 11px 16px;
+  text-decoration: none;
 }
 @media (max-width: 640px) {
   .recipe-actions {
-    grid-template-columns: 1fr 1fr;
+    flex-wrap: wrap;
   }
-  .recipe-actions .btn-primary {
-    grid-column: 1 / -1;
+  .recipe-actions > :first-child {
+    flex: 0 0 100%;
   }
 }
