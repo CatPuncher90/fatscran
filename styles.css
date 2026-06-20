@@ -2441,15 +2441,16 @@ main {
   flex-wrap: nowrap;
 }
 .recipe-actions .btn-primary,
-.recipe-actions .btn-secondary {
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* Override original #add-btn rule so it works inside .recipe-actions flex container */
-#add-btn {
+.recipe-actions .btn-secondary,
+.recipe-actions a.btn-secondary {
+  flex: 1;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
   margin: 0;
+  text-decoration: none;
 }
 /* ==========================================================================
    Auth styles — append to styles.css
