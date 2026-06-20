@@ -197,7 +197,7 @@ if (!recipe) {
 
       ${recipe.image ? `
         <div class="recipe-banner-wrap">
-          <div class="recipe-banner-image"><img src="${recipe.image}" alt="${recipe.title}"></div>
+          <div class="recipe-banner-image"><img src="${recipe.image}" alt="${recipe.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
           <div class="recipe-hero-card">
             <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${recipe.section}</span></div>
             <h1 class="recipe-title">${recipe.title}</h1>
