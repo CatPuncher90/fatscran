@@ -169,12 +169,14 @@ async function toggleFavSync(id) {
     saveFavourites(favs);
     return favs;
   }
-  await ensureSession();
+  const s = await ensureSession();
+  console.log('toggleFavSync session:', JSON.stringify(s));
   try {
     const rows = await sb.get('favourites', `select=id&recipe_id=eq.${id}`);
     if (rows.length) {
       await sb.delete('favourites', `id=eq.${rows[0].id}`);
     } else {
+      console.log('toggleFavSync posting: user_id from session =', s && s.user && s.user.id);
       await sb.post('favourites', { recipe_id: id });
     }
     return getFavs();
