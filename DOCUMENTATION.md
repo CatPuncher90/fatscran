@@ -2,7 +2,7 @@
 
 ## Overview
 
-FatScran is a static high-protein meal prep recipe website hosted on GitHub Pages at `catpuncher90.github.io/fatscran`. It is built with vanilla HTML, CSS, and JavaScript — no framework, no build step. Backend functionality (ratings and reviews) is handled by Supabase. The site is installable as a Progressive Web App (PWA).
+FatScran is a high-protein meal prep recipe website hosted on GitHub Pages at `catpuncher90.github.io/fatscran`. It is built with vanilla HTML, CSS, and JavaScript — no framework, no build step. Recipe data, user data, and images are stored in Supabase. The site supports user accounts (email/password and Google OAuth) and syncs favourites, shopping lists, and meal plans across devices when signed in. Ratings and reviews are public (no login required). The site is installable as a Progressive Web App (PWA).
 
 ---
 
@@ -23,23 +23,179 @@ fatscran/
 ├── recipe.html         # Individual recipe page
 ├── shopping.html       # Shopping list page
 ├── planner.html        # Weekly meal planner page
+├── admin.html          # Admin page for adding/editing recipes
 ├── styles.css          # All site styles
-├── recipes.js          # Recipe data (single source of truth)
+├── recipes.js          # Recipe data array (client-side fallback)
 ├── manifest.json       # PWA manifest
-├── sw.js               # Service worker (PWA caching)
+├── sw.js               # Service worker (passthrough, no caching)
 ├── fatscran-icon.png   # PWA icon 512x512
 ├── fatscran-icon-small.png  # PWA icon 192x192
+├── js/
+│   ├── utils.js        # Shared utilities and hamburger nav
+│   ├── auth.js         # Auth, session management, and synced data layer
+│   └── db.js           # Recipe database operations (Supabase)
 └── images/
     ├── naked-chicken-katsu-curry.jpg
     ├── oats-and-berries.jpg
     └── chicken-flatbread.jpg
 ```
 
+> **Note on images:** New recipe images are uploaded to Supabase Storage (`recipe-images` bucket) via the admin page and referenced as full public URLs. The local `images/` folder contains only the original three images that were added before Supabase Storage was set up.
+
+### Script load order
+
+All pages that use the Supabase backend load scripts in this order:
+
+```html
+<script src="recipes.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<!-- then js/db.js if the page needs it -->
+```
+
+`auth.js` defines `SUPABASE_URL` and `SUPABASE_KEY`, which `db.js` depends on, so `auth.js` must always come before `db.js`.
+
 ---
 
-## recipes.js — Data Layer
+## js/utils.js — Shared Utilities
 
-This is the single source of truth for all recipe content. All pages load it via `<script src="recipes.js">`.
+Loaded by all pages. Contains helpers that would otherwise be duplicated across page scripts.
+
+### localStorage helpers
+
+| Function | Description |
+|---|---|
+| `getList()` / `saveList(list)` | Read/write shopping list from localStorage |
+| `getFavourites()` / `saveFavourites(favs)` | Read/write favourites from localStorage |
+| `getChecked()` / `saveChecked(checked)` | Read/write ticked shopping list items from localStorage |
+
+### Recipe helpers
+
+| Function | Description |
+|---|---|
+| `badgeClass(section)` | Returns CSS class string for a section badge e.g. `"badge badge-tea"` |
+| `parseCookTime(str)` | Parses a cook time string (e.g. `"1 hr 20 mins"`) into total minutes |
+| `guessCategory(name)` | Regex-matches an ingredient name to a shopping category |
+
+### SVG icon helpers
+
+| Function | Description |
+|---|---|
+| `clockIconSvg(size)` | Returns inline SVG for the clock icon |
+| `portionIconSvg(size)` | Returns inline SVG for the portions/people icon |
+
+### Hamburger nav
+
+An IIFE at the bottom of `utils.js` wires up the mobile hamburger nav. It listens for `DOMContentLoaded` (or runs immediately if the DOM is already ready) and attaches click handlers to `#nav-hamburger` and `#nav-links`. Clicking the hamburger toggles `.is-open` on the nav links list. Clicking any nav link or clicking outside the nav closes the menu. All pages use `id="main-nav"` on the `<nav>` element.
+
+---
+
+## js/auth.js — Auth & Synced Data Layer
+
+The most important shared script. Loaded by all pages. Defines `SUPABASE_URL` and `SUPABASE_KEY` (used by `db.js` and `recipe.html` for ratings). Provides auth, session management, the nav sign-in/avatar UI, and all synced data functions.
+
+### The `sb` object
+
+A minimal Supabase REST client. All methods use `authedHeaders()` which injects the user's JWT when a session exists, or falls back to the anon key when signed out.
+
+| Method | Description |
+|---|---|
+| `sb.get(table, params)` | GET request to a Supabase table |
+| `sb.post(table, body)` | POST (insert) to a Supabase table |
+| `sb.patch(table, params, body)` | PATCH (update) to a Supabase table |
+| `sb.delete(table, params)` | DELETE from a Supabase table |
+| `sb.signInWithEmail(email, password)` | Signs in via email/password |
+| `sb.signUpWithEmail(email, password)` | Creates a new account |
+| `sb.signInWithGoogle()` | Initiates Google OAuth redirect |
+| `sb.signOut()` | Signs out and clears session |
+| `sb.refreshSession(refreshToken)` | Refreshes an expired access token |
+
+### Session management
+
+The session is stored in localStorage under the key `fatscran-session` as a JSON object:
+
+```js
+{
+  access_token: String,
+  refresh_token: String,
+  expires_at: Number,   // Unix timestamp (ms)
+  user: { id, email }
+}
+```
+
+| Function | Description |
+|---|---|
+| `getSession()` | Returns the stored session object, or null |
+| `setSession(session)` | Stores session in localStorage |
+| `clearSession()` | Removes session from localStorage |
+
+### Auth modal
+
+`injectAuthModal()` is called by `initAuth()` and appends the sign-in modal and nav auth elements (sign-in button or user avatar) directly to the DOM. Pages do not need to include any auth HTML themselves.
+
+| Function | Description |
+|---|---|
+| `openAuthModal()` | Shows the auth modal |
+| `closeAuthModalDirect()` | Hides the auth modal |
+| `handleAuthSubmit()` | Handles email/password sign-in or sign-up |
+| `updateNavAuth()` | Updates the nav to show sign-in button or user avatar |
+| `toggleUserMenu()` | Opens/closes the avatar dropdown |
+| `handleSignOut()` | Signs out and refreshes nav state |
+
+### Page lifecycle
+
+`initAuth()` is called at the bottom of each page's script. It:
+1. Checks for a Google OAuth callback in the URL and completes the flow if present.
+2. Loads and validates the stored session (refreshing if expired).
+3. Injects the auth modal and nav UI.
+4. Calls `onAuthStateChange()` if the page defines it (used to re-render after sign-in/out).
+
+Pages that need to react to auth state define:
+```js
+async function onAuthStateChange() { /* re-render with new auth state */ }
+```
+
+### Synced data functions
+
+These functions sync to Supabase tables when the user is signed in, and fall back to localStorage when signed out. Pages call these instead of directly reading/writing localStorage.
+
+| Function | Description |
+|---|---|
+| `getFavs()` | Returns array of favourite recipe IDs |
+| `toggleFavSync(id)` | Adds or removes a recipe from favourites |
+| `getListSync()` | Returns array of `{ id, portions }` shopping list items |
+| `saveListSync(list)` | Replaces the shopping list entirely |
+| `addToListSync(id, portions)` | Adds or updates a recipe in the shopping list |
+| `removeFromListSync(id)` | Removes a recipe from the shopping list |
+| `getPlanSync(weekKey)` | Returns the meal plan object for a given week key |
+| `savePlanSlot(weekKey, slotKey, recipeId)` | Saves or removes a single meal slot assignment |
+
+---
+
+## js/db.js — Recipe Database
+
+Loaded only by pages that need to read or write recipes from Supabase (`recipe.html`, `admin.html`). Depends on `SUPABASE_URL` and `SUPABASE_KEY` defined in `auth.js`.
+
+| Function | Description |
+|---|---|
+| `fetchAllRecipes()` | Fetches all recipes from the 4 recipe tables in parallel and assembles them into the same schema as `recipes.js` |
+| `fetchRecipeById(id)` | Fetches a single recipe from Supabase by ID. Used in admin for editing. |
+| `fetchRecipeByIdDirect(id)` | Fetches a single recipe by hitting only the 4 required tables for that ID in parallel. Faster than loading all recipes. Used by `recipe.html`. Falls back to the local `recipes` array if the fetch fails. |
+| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. If `editingId` is provided, updates existing records; otherwise inserts new ones. Returns the recipe ID. |
+| `deleteRecipe(id)` | Deletes a recipe and all its related rows in the 4 tables. |
+| `uploadRecipeImage(file)` | Uploads an image file to the `recipe-images` Supabase Storage bucket and returns the public URL. |
+| `checkIsAdmin()` | Checks the `profiles` table for the current user and returns true if `is_admin` is set. Returns false if not signed in. |
+
+---
+
+## recipes.js — Client-Side Recipe Array
+
+The original recipe data array. Still loaded by all pages and used as:
+
+- **Fallback:** `fetchRecipeByIdDirect()` falls back to this array if the Supabase fetch fails.
+- **Planner and shopping pages:** These pages currently read from `recipes` for fast local lookups (recipe title, macros etc.) alongside the synced list/plan data from Supabase or localStorage.
+
+The array and its schema are unchanged. See the recipe object schema below.
 
 ### Recipe Object Schema
 
@@ -50,7 +206,7 @@ This is the single source of truth for all recipe content. All pages load it via
   section: String,             // "breakfast" | "dinner" | "tea" | "dessert" | "sauces"
   basePortions: Number,        // Number of portions the ingredient amounts are written for
   cookTime: String,            // e.g. "35 mins", "1 hr", "3 hrs"
-  image: String,               // Optional. Path relative to root e.g. "images/foo.jpg"
+  image: String,               // Optional. Path or full Supabase Storage URL.
   macrosPerPortion: {
     calories: Number,
     protein: Number,
@@ -80,7 +236,7 @@ This is the single source of truth for all recipe content. All pages load it via
 Scales an ingredient amount to the selected number of portions. Returns a formatted string. If `amount` is null, returns the unit string as-is (e.g. "to taste").
 
 **`sections`**
-A derived array of unique section names prefixed with "all", built from the recipes array. Used by filter buttons.
+A derived array of unique section names prefixed with "all", built from the recipes array. Used by filter buttons on index.html.
 
 ### Sections
 
@@ -94,18 +250,12 @@ A derived array of unique section names prefixed with "all", built from the reci
 
 ### Adding a new recipe
 
+New recipes should be added via `admin.html` which writes directly to Supabase. If adding to `recipes.js` as well for the local fallback:
+
 1. Give it the next available `id` (currently highest is 86).
 2. Set `section` to one of the five valid strings above.
 3. Set `basePortions` to match the ingredient amounts you are entering.
 4. Set `amount: null` for any ingredient that is "to taste" or not scalable.
-5. Add it anywhere in the array (order doesn't affect display).
-
-### Images
-
-- Store images in the `images/` folder.
-- Reference them in the recipe object as `image: "images/filename.jpg"`.
-- Only recipes with an `image` field will show a banner image. Cards and recipe pages without one simply have no image block.
-- Recommended dimensions: at least 1000px wide, 16:9 for cards, taller crops work well for the recipe page banner.
 
 ---
 
@@ -124,9 +274,10 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 - **Section filters:** Pill buttons for All, Breakfast, Dinner, Tea, Dessert, Favourites. Sauces button is hidden automatically if no sauce recipes exist. Only one active at a time.
 - **Default order:** When sort is set to "No sort" and the All filter is active, recipes are grouped by section in this order: Breakfast, Dinner, Tea, Sauces, Dessert.
 - **Result count:** Displays "Showing X recipes" above the grid, updates live on every filter and search change.
-- **Favourites:** Heart icon on each card. Toggled via `localStorage` key `fatscran-favs` (array of IDs). The Favourites filter shows only hearted recipes.
+- **Favourites:** Heart icon on each card. Toggled via `toggleFavSync()` (syncs to Supabase when signed in, localStorage when not). The Favourites filter shows only hearted recipes.
 - **Recipe cards:** Show image (if present), title, section badge, cook time with clock icon (above macros), macros per portion (kcal, protein, carbs, fat), and a "per portion" label at the bottom.
 - **Card title height:** `.card-name` uses `min-height: calc(1.1rem * 1.35 * 2)` to always reserve two lines of height, keeping all cards consistent regardless of title length.
+- **Admin edit button:** If the signed-in user is an admin, a small pencil icon appears on each card linking to `admin.html?edit={id}`.
 - **Back button state:** When clicking through to a recipe, the active section filter, search query, and sort option are saved to `sessionStorage`. On returning to index.html they are restored automatically.
 
 ### Key JS functions
@@ -135,7 +286,7 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 |---|---|
 | `applyFilters()` | Re-renders the grid based on active section, search query, and sort |
 | `renderCards(list)` | Builds and injects the card HTML from a recipe array |
-| `toggleFav(id, event)` | Adds/removes a recipe ID from localStorage favourites |
+| `toggleFav(id, event)` | Calls `toggleFavSync()` to add/remove a recipe from favourites |
 | `recipeMatchesSearch(recipe, query)` | Returns true if the recipe title or any ingredient name includes the query |
 | `badgeClass(section)` | Returns the CSS class string for a section badge |
 | `parseCookTime(str)` | Parses a cook time string into total minutes for sorting |
@@ -143,12 +294,6 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 | `groupBySection(list)` | Groups and orders recipes by section for the default view |
 | `saveState()` | Saves active filter, search, and sort to sessionStorage |
 | `restoreState()` | Restores filter, search, and sort from sessionStorage on page load |
-
-### localStorage keys used
-
-| Key | Value |
-|---|---|
-| `fatscran-favs` | JSON array of favourite recipe IDs |
 
 ### sessionStorage keys used
 
@@ -162,28 +307,21 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 
 **URL:** `/fatscran/recipe.html?id={id}`
 
-The page is fully JavaScript-rendered into `<main id="page-content">`. On load it reads the `id` query parameter, finds the matching recipe in the `recipes` array, and builds the entire page.
+The page is fully JavaScript-rendered into `<main id="page-content">`. On load it reads the `id` query parameter, calls `fetchRecipeByIdDirect(id)` to fetch from Supabase (falling back to the local `recipes` array), and builds the entire page.
 
 ### Features
 
 - **Banner image:** If `recipe.image` is set, shows a HelloFresh-style image banner with the title/badge overlapping it from below. If no image, shows the title/badge/meta inline.
 - **Portions selector:** +/- buttons that re-render the page with scaled ingredient amounts and scaled macros. Starts at 1 portion.
 - **Macros strip:** Shows calories, protein, carbs, fat scaled to the selected number of portions.
-- **Add to shopping list button:** Adds or updates the recipe in `localStorage` `fatscran-list`. Button text changes to "Update shopping list" if already in the list.
-- **Share button:** Sits next to the add to shopping list button. On mobile uses the Web Share API (native share sheet). On desktop copies the URL to clipboard and briefly shows "Copied!" before resetting.
+- **Add to shopping list button:** Calls `addToListSync()` to save the recipe to the shopping list (Supabase when signed in, localStorage when not). Button text changes to "Update list" if already in the list.
+- **Share button:** On mobile uses the Web Share API (native share sheet). On desktop copies the URL to clipboard and briefly shows "Copied!" before resetting. Both the add and share buttons use inline SVG icons with a `.btn-label` span for the text so the icon is preserved during state changes.
 - **Ingredients list:** Amounts scaled to selected portions using `basePortions` ratio. "to taste" ingredients show their unit string instead.
 - **Method steps:** Numbered list with a terracotta circle number badge.
-- **Ratings and reviews:** Fetched from and submitted to Supabase. Star picker (1-5), optional text review. Reviews displayed in reverse chronological order with average rating shown.
+- **Ratings and reviews:** Fetched from and submitted to Supabase `ratings` table. Star picker (1-5), optional text review. Reviews displayed in reverse chronological order with average rating shown.
+- **Admin edit button:** If `checkIsAdmin()` returns true, an "Edit recipe" button appears in the action row linking to `admin.html?edit={id}`.
 - **Print view:** Printing a recipe page hides nav, back link, portions control, action buttons, banner image, and ratings. Shows title, macros, ingredients, and method cleanly in black and white.
-- **Not found state:** If the `id` param doesn't match any recipe, shows a "Recipe not found" message.
-
-### Supabase integration
-
-- **Project URL:** `https://qtvlctyyjjxmrpbchchl.supabase.co`
-- **Table:** `ratings`
-- **Columns:** `recipe_id` (int), `stars` (int 1-5), `review` (text, nullable), `created_at` (timestamp)
-- **Auth:** Anonymous key only. RLS policies must allow public insert and select on the `ratings` table.
-- **Anon key:** Stored inline in `recipe.html`. Do not commit a service role key here.
+- **Not found state:** If the `id` param doesn't match any recipe (and the Supabase fetch also returns nothing), shows a "Recipe not found" message.
 
 ### Key JS functions
 
@@ -191,19 +329,13 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 |---|---|
 | `renderPage()` | Full re-render of page content for current portions value |
 | `changePortion(delta)` | Increments/decrements portions (min 1) and re-renders |
-| `addToList()` | Saves recipe + portions to localStorage shopping list |
-| `updateBtn()` | Updates the add/update button label and colour |
+| `addToList()` | Calls `addToListSync()` then updates the button state |
+| `updateBtn()` | Reads current list via `getListSync()` and updates button label and colour |
 | `shareRecipe()` | Shares via Web Share API on mobile, copies URL to clipboard on desktop |
 | `fetchRatings()` | GET request to Supabase ratings table |
 | `submitRating()` | POST request to Supabase ratings table |
 | `loadRatings()` | Fetches and renders average rating + review list |
 | `setStars(n)` | Updates the interactive star picker UI |
-
-### localStorage keys used
-
-| Key | Value |
-|---|---|
-| `fatscran-list` | JSON array of `{ id, portions }` objects |
 
 ---
 
@@ -211,28 +343,27 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 
 **URL:** `/fatscran/shopping.html`
 
-Fully JavaScript-rendered. Reads the shopping list from `localStorage` and builds a two-column layout: recipe list on the left, ingredient shopping list on the right.
+Fully JavaScript-rendered. Reads the shopping list via `getListSync()` (Supabase when signed in, localStorage when not) and builds a two-column layout: recipe list on the left, ingredient shopping list on the right.
 
 ### Features
 
 - **Recipe list (left panel):** Shows each added recipe with its title, section, portion count, total kcal and protein. Has +/- portion controls and a Remove button per recipe.
 - **Weekly nutrition totals:** Below the recipe list, shows the summed calories, protein, carbs, and fat across all recipes and portions.
 - **Ingredient list (right panel):** Aggregates and merges all ingredients across all added recipes, scaled by portions. Groups them by food category. Shows quantities with units.
-- **Tick boxes:** Each ingredient can be ticked off. Ticked state persists in `localStorage`. Ticked items appear faded with strikethrough and a filled checkbox.
-- **Clear list:** Removes all recipes and resets ticked state.
+- **Tick boxes:** Each ingredient can be ticked off. Ticked state persists in `localStorage` (`fatscran-checked`). Ticked items appear faded with strikethrough and a filled checkbox.
+- **Clear list:** Calls `saveListSync([])` to remove all recipes and resets ticked state.
 - **Print:** Prints the ingredient list only (recipe list panel hidden via print CSS).
 - **Empty state:** If no recipes added, shows a prompt with a link to browse recipes.
 
 ### Category guessing
 
-Ingredients are automatically assigned to a display category using `guessCategory(name)` which regex-matches the ingredient name against known patterns. Categories in display order: meat, fish, dairy, veg, fruit, carbs, tins, sauces, spices, other.
+Ingredients are automatically assigned to a display category using `guessCategory(name)` from `js/utils.js`, which regex-matches the ingredient name against known patterns. Categories in display order: meat, fish, dairy, veg, fruit, carbs, tins, sauces, spices, other.
 
 ### localStorage keys used
 
 | Key | Value |
 |---|---|
-| `fatscran-list` | JSON array of `{ id, portions }` objects |
-| `fatscran-checked` | JSON array of ticked ingredient name keys (lowercase) |
+| `fatscran-checked` | JSON array of ticked ingredient name keys (lowercase). Always local, never synced. |
 
 ---
 
@@ -249,22 +380,39 @@ A weekly calendar view showing Monday to Sunday with three meal slots per day (B
 - **Modal picker:** Searchable list of all recipes. Clicking a recipe assigns it to the slot. Includes a "Remove recipe" option if a recipe is already assigned.
 - **Day totals:** If any slots are filled, each day column shows a total kcal and protein for that day.
 - **Batch cook summary:** Below the grid, lists all recipes planned for the week with the days they're needed and cook time.
-- **Add week to shopping list:** Adds one portion of each planned recipe (unique recipes only) to `localStorage` `fatscran-list`, then redirects to shopping.html.
+- **Add week to shopping list:** Calls `addToListSync()` for each unique planned recipe, then redirects to shopping.html.
 - **Today highlight:** Current day column header is highlighted in the accent colour.
 - **Keyboard:** Pressing Escape closes the modal.
 
 ### Data storage
 
-Each week's plan is stored as a separate localStorage key. The key format is `week-{year}-{month}-{date of Monday}` e.g. `week-2026-5-15`.
+Plan data is synced via `getPlanSync(weekKey)` and `savePlanSlot(weekKey, slotKey, recipeId)`. When signed in these read/write the `meal_plans` Supabase table. When signed out they fall back to localStorage.
 
-The value is a JSON object with slot keys of format `{Day}-{meal}` e.g. `Mon-breakfast`, mapped to a recipe ID integer.
+The week key format is `week-{year}-{month}-{date of Monday}` e.g. `week-2026-5-15`. Slot keys are `{Day}-{meal}` e.g. `Mon-breakfast`.
 
-### localStorage keys used
+---
 
-| Key | Value |
-|---|---|
-| `week-{year}-{month}-{date}` | JSON object of slot assignments for that week |
-| `fatscran-list` | Written to when "Add week to shopping list" is used |
+## admin.html — Recipe Editor
+
+**URL:** `/fatscran/admin.html` (create) or `/fatscran/admin.html?edit={id}` (edit)
+
+Protected page. On load, `checkIsAdmin()` is called and non-admins see an access denied message. Admins see the full recipe creation/editing form.
+
+### Features
+
+- **Basic info:** Title, section (dropdown), cook time, base portions.
+- **Macros:** Calories, protein, carbs, fat, fiber — all per portion.
+- **Image upload:** Click-to-upload area. Images are uploaded to the `recipe-images` Supabase Storage bucket via `uploadRecipeImage()`. The returned public URL is stored in the `image` field. An existing image can be removed (sets `image` to null).
+- **Ingredients:** Add, remove, and reorder (↑/↓) ingredients. Each row has name, amount (blank = null/"to taste"), and unit fields.
+- **Method steps:** Add, remove, and reorder steps. Each step has a title and full description textarea.
+- **Preview:** Validates the form, then shows a full-page preview overlay rendering the recipe exactly as it would appear on `recipe.html`. The publish button is available from within the preview.
+- **Publish / Save changes:** Calls `saveRecipe()` which upserts across all 4 recipe tables, then redirects to the new/updated recipe page.
+- **Cancel:** Returns to `index.html` without saving.
+- **Delete recipe:** Only shown when editing. Confirms before calling `deleteRecipe()`, then redirects to index.html.
+
+### Form validation
+
+Before preview or publish, the form is validated for: title, cook time, calories, at least one ingredient (all with names), at least one step (all with title and description).
 
 ---
 
@@ -305,20 +453,23 @@ Single stylesheet shared across all pages.
 | `.badge-sauces` | `#F5E0D8` | `#8A3010` |
 | `.badge-dessert` | `#FCE4EC` | `#9B2D5E` |
 
-### Recipe banner image
-
-`.recipe-banner-image` sets the height of the image container on the recipe page.
-
-- Desktop: `280px`
-- Mobile (max 640px): `360px` (taller crop on small screens)
-
 ### Responsive breakpoints
 
 | Breakpoint | Changes |
 |---|---|
 | `max-width: 800px` | Recipe body and shopping layout switch to single column. Recipe title shrinks. Macros strip goes 2-column. |
-| `max-width: 640px` | Recipe banner image height increases to 360px. |
+| `max-width: 700px` | Planner grid goes 2-column (from 7). |
+| `max-width: 640px` | Hamburger nav visible, desktop nav links hidden. Recipe banner height increases to 220px (inside banner wrap). Recipe actions switch from flex row to 2-column grid: first button (Add to list) spans both columns, Share and Edit sit side by side below. Admin form grids collapse to 1-column. |
 | `max-width: 480px` | Main padding reduced. Nav logo shrinks. Card stats and macros go 2-column. Recipe title and macro values shrink further. |
+
+### Key component classes
+
+- **`.btn-primary`** — Filled accent colour button. Used for primary actions.
+- **`.btn-secondary`** — Outlined/transparent button. Used for secondary actions (Preview, Share, Cancel, Edit).
+- **`.btn-sm`** — Small button variant for panel headers and planner actions.
+- **`.recipe-actions`** — Flex row of action buttons on the recipe page. Goes 2-column grid at ≤640px.
+- **`.admin-form-actions`** — Flex row containing Preview, Publish/Save, and Cancel buttons on the admin page.
+- **`.nav-hamburger`** — Hidden on desktop, visible at ≤640px. Toggles `.is-open` on `.nav-links` via `js/utils.js`.
 
 ### Print styles
 
@@ -346,62 +497,165 @@ Applied when printing from either shopping.html or recipe.html.
 
 ### sw.js — Service Worker
 
-Uses a **network-first** caching strategy. On every fetch request it tries the network first, caches a successful response, and falls back to the cache if the network fails.
+The service worker is a **complete passthrough** — it performs no caching at all. Every fetch request is passed straight to the network.
 
-- **Cache name:** `fatscran-v2`
-- **Pre-cached URLs:** index, recipe, shopping, planner HTML pages; styles.css; recipes.js; both icon files
-- **Install:** Pre-caches listed URLs and immediately activates (`skipWaiting`)
-- **Activate:** Deletes any caches that are not `fatscran-v2`
-- **Fetch:** Network first, cache on success, cache fallback on failure (returns index.html if no match found)
+- **Install:** Calls `skipWaiting()` immediately.
+- **Activate:** Deletes all existing caches (clears any caches left over from previous versions).
+- **Fetch:** Passes every request through to the network unchanged.
 
-**Important:** The cache name is `fatscran-v2`. If the service worker strategy or cached files change significantly, increment the version to `fatscran-v3` etc. to force old caches to be deleted.
+This approach ensures users always receive fresh recipe data and assets. The previous caching strategy was removed because stale caches were causing users to see outdated recipe content after edits.
+
+> **Note:** The service worker is registered in each HTML page as `/fatscran/sw.js`. If the service worker is ever changed back to a caching strategy, increment the cache name version (e.g. `fatscran-v3`) to force old caches to be cleared on activation.
 
 ---
 
 ## Supabase Backend
 
-Only used for the ratings/reviews feature on recipe pages.
-
 | Setting | Value |
 |---|---|
 | Project URL | `https://qtvlctyyjjxmrpbchchl.supabase.co` |
-| Table | `ratings` |
-| Auth method | Anonymous key (public) |
+| Auth methods | Email/password, Google OAuth |
+| Storage bucket | `recipe-images` (public) |
 
-### Required RLS policies on `ratings` table
+### Auth
 
-- Allow public `SELECT` (to fetch reviews)
-- Allow public `INSERT` (to submit reviews)
-- `GRANT SELECT, INSERT ON ratings TO anon;` must also be set
+Users sign in via the modal injected by `js/auth.js`. Two methods are supported:
 
-### ratings table schema
+- **Email/password:** Standard Supabase email + password auth.
+- **Google OAuth:** Redirects to Google and returns to the page via URL hash. The callback is handled by `initAuth()` on page load.
+
+Sessions are stored in localStorage as `fatscran-session`. `initAuth()` checks the session on every page load and refreshes the access token if expired. Signing out clears the session and re-renders the nav.
+
+### Database tables
+
+#### recipes
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | int8 | Primary key, auto increment |
-| `recipe_id` | int4 | Foreign key (logical) to recipe id |
-| `stars` | int2 | 1-5 |
+| `title` | text | |
+| `section` | text | breakfast / dinner / tea / dessert / sauces |
+| `base_portions` | int4 | |
+| `cook_time` | text | e.g. "35 mins" |
+| `image` | text | Nullable. Full public URL from Supabase Storage. |
+
+#### recipe_macros
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `recipe_id` | int8 | Foreign key → recipes.id |
+| `calories` | int4 | Per portion |
+| `protein` | int4 | Per portion (g) |
+| `carbs` | int4 | Per portion (g) |
+| `fat` | int4 | Per portion (g) |
+| `fiber` | numeric | Nullable. Per portion (g). |
+
+#### recipe_ingredients
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `recipe_id` | int8 | Foreign key → recipes.id |
+| `name` | text | |
+| `amount` | numeric | Nullable (null = "to taste") |
+| `unit` | text | e.g. "g", "ml", "whole", "to taste" |
+| `sort_order` | int4 | 0-indexed display order |
+
+#### recipe_steps
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `recipe_id` | int8 | Foreign key → recipes.id |
+| `title` | text | Short step name |
+| `description` | text | Full instructions |
+| `sort_order` | int4 | 0-indexed display order |
+
+#### ratings
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key, auto increment |
+| `recipe_id` | int4 | Logical FK to recipe id |
+| `stars` | int2 | 1–5 |
 | `review` | text | Nullable |
 | `created_at` | timestamptz | Default now() |
 
+RLS: public `SELECT` and `INSERT` allowed (no auth required for ratings).
+
+#### favourites
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `user_id` | uuid | Set automatically by Supabase RLS from auth.uid() |
+| `recipe_id` | int4 | |
+| `created_at` | timestamptz | Default now() |
+
+RLS: users can only read and write their own rows.
+
+#### shopping_list
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `user_id` | uuid | Set automatically by RLS |
+| `recipe_id` | int4 | |
+| `portions` | int4 | |
+| `created_at` | timestamptz | Default now() |
+
+RLS: users can only read and write their own rows.
+
+#### meal_plans
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `user_id` | uuid | Set automatically by RLS |
+| `week_key` | text | e.g. `"week-2026-5-15"` |
+| `slot_key` | text | e.g. `"Mon-breakfast"` |
+| `recipe_id` | int4 | Nullable (null removes the assignment) |
+| `created_at` | timestamptz | Default now() |
+
+RLS: users can only read and write their own rows.
+
+#### profiles
+
+| Column | Type | Notes |
+|---|---|---|
+| `user_id` | uuid | Primary key, FK → auth.users |
+| `is_admin` | bool | Default false |
+| `created_at` | timestamptz | Default now() |
+
+RLS: users can read their own row. Only service-role or direct DB access should set `is_admin = true`.
+
+### RLS notes
+
+- `user_id` is **never passed in the request body** from the client. Supabase sets it automatically via RLS using `auth.uid()`. Do not include `user_id` in POST/PATCH payloads.
+- The `sb` object in `auth.js` uses `authedHeaders()` to attach the user JWT, which is what triggers the RLS `auth.uid()` function.
+
 ---
 
-## localStorage Summary
+## Data Storage Summary
+
+When a user is **signed in**, all personal data (favourites, shopping list, meal plans) is synced to Supabase and available across devices. When **signed out**, it falls back to localStorage.
+
+### localStorage keys
 
 | Key | Used by | Description |
 |---|---|---|
-| `fatscran-favs` | index.html | Array of favourite recipe IDs |
-| `fatscran-list` | recipe.html, shopping.html, planner.html | Array of `{ id, portions }` for the shopping list |
-| `fatscran-checked` | shopping.html | Array of ticked ingredient keys |
-| `week-{year}-{month}-{date}` | planner.html | Per-week meal plan objects |
+| `fatscran-session` | js/auth.js | Current user session (access token, refresh token, user object) |
+| `fatscran-favs` | js/auth.js (fallback) | Array of favourite recipe IDs (used when signed out) |
+| `fatscran-list` | js/auth.js (fallback) | Array of `{ id, portions }` shopping list items (used when signed out) |
+| `fatscran-checked` | shopping.html | Array of ticked ingredient keys. Always local, never synced. |
+| `week-{year}-{month}-{date}` | js/auth.js (fallback) | Per-week meal plan objects (used when signed out) |
 
-All data is stored client-side only. Clearing browser data or localStorage resets everything.
-
-## sessionStorage Summary
+### sessionStorage keys
 
 | Key | Used by | Description |
 |---|---|---|
-| `fatscran-state` | index.html | JSON object storing active section filter, search query, and sort option. Restored on page load to preserve state when returning from a recipe page. |
+| `fatscran-state` | index.html | JSON object storing active section filter, search query, and sort option. Restored on page load to preserve state when navigating back. |
 
 ---
 
@@ -431,10 +685,12 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 
 - **Ingredient amounts set to `null`** mean "to taste" or are unscalable (e.g. garlic to taste, salt and pepper). These display their `unit` string directly.
 - **`basePortions`** must match the amounts in the ingredients array. The scaling formula is `amount * (selectedPortions / basePortions)`.
-- **Recipe IDs** are not sequential by design (gaps exist from skipped/merged recipes during import). Always use the next available integer above the current maximum (86 as of this writing).
+- **Recipe IDs** are not sequential by design (gaps exist from skipped/merged recipes during import). Always use the next available integer above the current maximum (86 as of this writing). New recipes created via `admin.html` get their ID assigned by Supabase auto-increment.
 - **Section "dinner"** is used for lunch-style cold/quick-assemble meals (wraps, sandwiches, flatbreads, salads), not just evening meals.
 - **Section "tea"** is used for hot cooked evening meals.
 - **Prep steps always come before cooking steps** in the method.
-- **Recipe images** are optional. Cards without images just have no image block — there is no placeholder.
+- **Recipe images** are optional. Cards without images just have no image block — there is no placeholder. New images are uploaded to Supabase Storage; the `image` field stores the full public URL. The three original local images in `images/` continue to be referenced by their relative path.
 - **The Sauces section** exists in the data schema but currently has no recipes. The filter button is hidden automatically until at least one sauce recipe is added.
-- **Cook times** are stored as strings (e.g. "35 mins", "1 hr 20 mins"). The `parseCookTime()` function in index.html converts these to minutes for sorting. If cook time filtering is added in future, this function should be the single source of that logic.
+- **Cook times** are stored as strings (e.g. "35 mins", "1 hr 20 mins"). The `parseCookTime()` function in `js/utils.js` converts these to minutes for sorting.
+- **Admin access** is granted by setting `is_admin = true` in the `profiles` table directly in the Supabase dashboard. There is no self-serve way to become an admin.
+- **`user_id` is never sent in request payloads.** Supabase RLS sets it automatically. If a request to a user-scoped table fails with an auth error, the most likely cause is a missing or expired JWT in the `Authorization` header — check that `initAuth()` completed before the request was made.
