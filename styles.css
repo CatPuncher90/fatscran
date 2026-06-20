@@ -2975,12 +2975,20 @@ main {
   .admin-list-actions { flex-direction: row; }
 }
 
+/* Recipe action buttons - mobile layout */
 @media (max-width: 640px) {
   .recipe-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
   }
-  .recipe-actions > :first-child {
+  .recipe-actions .btn-primary {
     grid-column: 1 / -1;
+  }
+  .recipe-actions .btn-secondary,
+  .recipe-actions a.btn-secondary {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
   }
 }
