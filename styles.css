@@ -2999,6 +2999,9 @@ main {
   grid-template-columns: repeat(3, 1fr);
   align-items: stretch;
 }
+.recipe-actions > * {
+  height: 100%;
+}
 .recipe-actions .btn-primary,
 .recipe-actions .btn-secondary,
 .recipe-actions a.btn-secondary {
