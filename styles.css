@@ -390,7 +390,7 @@ main {
 /* macros */
 .macros-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
@@ -2993,8 +2993,10 @@ main {
   }
 }
 
-/* Align recipe action buttons to same height on desktop */
+/* Recipe action buttons - desktop grid */
 .recipe-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   align-items: stretch;
 }
 .recipe-actions .btn-primary,
