@@ -1,4 +1,4 @@
-const CACHE = 'fatscran-v2';
+const CACHE = 'fatscran-v3';
 const URLS = [
   '/fatscran/',
   '/fatscran/index.html',
