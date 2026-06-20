@@ -3082,11 +3082,24 @@ main {
   gap: 0.5rem;
 }
 
-.radio-label {
+label.radio-label {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  cursor: pointer;
+}
+
+label.radio-label input[type="radio"] {
+  width: auto;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
