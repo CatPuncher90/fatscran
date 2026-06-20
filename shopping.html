@@ -27,30 +27,26 @@
     <h1>Shopping List</h1>
     <p>Recipes you've added this week.</p>
   </div>
-  <div class="shopping-layout" id="shopping-layout"></div>
+  <div class="shopping-layout" id="shopping-layout"><div class="shopping-loading">Loading...</div></div>
 </main>
 
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
 <script>
 const CATEGORY_ORDER = ['meat','fish','dairy','veg','fruit','carbs','tins','sauces','spices','other'];
 
 function calcTotals(list) {
   let calories = 0, protein = 0, carbs = 0, fat = 0;
   for (const item of list) {
-    const recipe = recipes.find(r => r.id === item.id);
-    if (!recipe) continue;
-    calories += recipe.macrosPerPortion.calories * item.portions;
-    protein  += recipe.macrosPerPortion.protein  * item.portions;
-    carbs    += recipe.macrosPerPortion.carbs     * item.portions;
-    fat      += recipe.macrosPerPortion.fat       * item.portions;
+    const r = recipes.find(r => r.id === item.id);
+    if (!r) continue;
+    calories += r.macrosPerPortion.calories * item.portions;
+    protein  += r.macrosPerPortion.protein  * item.portions;
+    carbs    += r.macrosPerPortion.carbs    * item.portions;
+    fat      += r.macrosPerPortion.fat      * item.portions;
   }
-  return {
-    calories: Math.round(calories),
-    protein:  Math.round(protein),
-    carbs:    Math.round(carbs),
-    fat:      Math.round(fat)
-  };
+  return { calories: Math.round(calories), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat) };
 }
 
 function buildIngredients(list) {
@@ -67,36 +63,31 @@ function buildIngredients(list) {
   }
   const byCategory = {};
   for (const item of Object.values(merged)) {
-    const cat = item.category;
-    if (!byCategory[cat]) byCategory[cat] = [];
+    if (!byCategory[item.category]) byCategory[item.category] = [];
     const qty = item.isToTaste ? 'to taste' : (Math.round(item.total * 10) / 10) + ' ' + item.unit;
-    byCategory[cat].push({ name: item.name, qty, key: item.name.toLowerCase() });
+    byCategory[item.category].push({ name: item.name, qty, key: item.name.toLowerCase() });
   }
   return byCategory;
 }
 
 function toggleCheck(key) {
   const checked = getChecked();
-  const idx     = checked.indexOf(key);
+  const idx = checked.indexOf(key);
   if (idx === -1) { checked.push(key); } else { checked.splice(idx, 1); }
   saveChecked(checked);
   renderIngredientList();
 }
 
 function renderIngredientList() {
-  const byCategory  = buildIngredients(getList());
+  const byCategory  = buildIngredients(window._currentList || []);
   const checked     = getChecked();
   const el          = document.getElementById('ingredient-list');
   if (!el) return;
 
   const keys = Object.keys(byCategory);
-  if (keys.length === 0) {
-    el.innerHTML = '<div class="empty-state"><p>No ingredients yet.</p></div>';
-    return;
-  }
+  if (!keys.length) { el.innerHTML = '<div class="empty-state"><p>No ingredients yet.</p></div>'; return; }
 
   const orderedKeys = CATEGORY_ORDER.filter(c => byCategory[c]).concat(keys.filter(k => !CATEGORY_ORDER.includes(k)));
-
   el.innerHTML = orderedKeys.map(cat => `
     <div class="category-group">
       <p class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</p>
@@ -111,33 +102,35 @@ function renderIngredientList() {
     </div>`).join('');
 }
 
-function removeItem(id) {
-  saveList(getList().filter(i => i.id !== id));
-  render();
+async function removeItem(id) {
+  await removeFromListSync(id);
+  await render();
 }
 
-function updatePortions(id, val) {
-  const list = getList();
+async function updatePortions(id, val) {
+  const portions = Math.max(1, parseInt(val) || 1);
+  const list = await getListSync();
   const item = list.find(i => i.id === id);
-  if (item) { item.portions = Math.max(1, parseInt(val) || 1); saveList(list); }
-  render();
+  if (item) { item.portions = portions; await saveListSync(list); }
+  await render();
 }
 
-function clearAll() {
-  saveList([]);
+async function clearAll() {
+  await saveListSync([]);
   saveChecked([]);
-  render();
+  await render();
 }
 
-function render() {
+async function render() {
   const layout = document.getElementById('shopping-layout');
-  const list   = getList();
+  const list   = await getListSync();
+  window._currentList = list;
 
-  if (list.length === 0) {
+  if (!list.length) {
     layout.innerHTML = `
       <div class="shopping-empty">
         <p class="shopping-empty__title">No recipes added yet</p>
-        <p class="shopping-empty__body">Open a recipe and press "Add to shopping list".</p>
+        <p class="shopping-empty__body">Open a recipe and press "Add to list".</p>
         <a href="index.html" class="btn-primary-sm">Browse recipes</a>
       </div>`;
     return;
@@ -182,7 +175,6 @@ function render() {
         </div>
       </div>
     </div>
-
     <div class="panel">
       <div class="panel-header">
         <h2>Your shopping list</h2>
@@ -196,7 +188,14 @@ function render() {
   renderIngredientList();
 }
 
-render();
+async function onAuthStateChange() { await render(); }
+
+async function init() {
+  await initAuth();
+  await render();
+}
+
+init();
 </script>
 </body>
 </html>

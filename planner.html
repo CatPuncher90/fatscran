@@ -27,22 +27,17 @@
     <h1>Meal Planner</h1>
     <p>Tap any slot to assign a recipe.</p>
   </div>
-
   <div class="week-nav">
     <button id="prev-btn" onclick="changeWeek(-1)" class="week-nav__btn">&#8592; Prev</button>
-    <div class="week-nav__label">
-      <h2 id="week-label"></h2>
-    </div>
+    <div class="week-nav__label"><h2 id="week-label"></h2></div>
     <div class="week-nav__right">
       <button class="week-nav__btn week-nav__btn--today" onclick="goToToday()">Today</button>
       <button id="next-btn" onclick="changeWeek(1)" class="week-nav__btn">Next &#8594;</button>
     </div>
   </div>
-
   <div class="planner-actions">
     <button class="btn-sm btn-primary" onclick="addWeekToShoppingList()">Add week to shopping list</button>
   </div>
-
   <div class="week-grid" id="week-grid"></div>
   <div class="batch-summary" id="batch-summary"></div>
 </main>
@@ -62,6 +57,7 @@
 
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
 <script>
 const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MEALS = ['breakfast','dinner','tea'];
@@ -70,7 +66,7 @@ const MAX_WEEKS = 4;
 let currentWeekOffset = 0;
 let modalDay  = null;
 let modalMeal = null;
-let modalQuery = '';
+let currentPlan = {};
 
 function getMonday(offset) {
   const now    = new Date();
@@ -86,14 +82,6 @@ function weekKey(offset) {
   return `week-${m.getFullYear()}-${m.getMonth()}-${m.getDate()}`;
 }
 
-function getPlan(offset) {
-  try { return JSON.parse(localStorage.getItem(weekKey(offset)) || '{}'); } catch(e) { return {}; }
-}
-
-function savePlan(offset, plan) {
-  localStorage.setItem(weekKey(offset), JSON.stringify(plan));
-}
-
 function formatDate(date) {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
@@ -102,8 +90,6 @@ function getTodayDayIndex() {
   const d = new Date().getDay();
   return d === 0 ? 6 : d - 1;
 }
-
-function isCurrentWeek() { return currentWeekOffset === 0; }
 
 function updateNav() {
   const monday = getMonday(currentWeekOffset);
@@ -116,15 +102,14 @@ function updateNav() {
 
 function renderWeek() {
   updateNav();
-  const plan     = getPlan(currentWeekOffset);
+  const plan     = currentPlan;
   const monday   = getMonday(currentWeekOffset);
-  const todayIdx = isCurrentWeek() ? getTodayDayIndex() : -1;
+  const todayIdx = currentWeekOffset === 0 ? getTodayDayIndex() : -1;
   const grid     = document.getElementById('week-grid');
 
   grid.innerHTML = DAYS.map((day, di) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + di);
-
     let dayCalories = 0, dayProtein = 0;
 
     const slots = MEALS.map(meal => {
@@ -132,7 +117,6 @@ function renderWeek() {
       const recipeId = plan[key];
       const recipe   = recipeId ? recipes.find(r => r.id === recipeId) : null;
       if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; }
-
       return `
         <div class="meal-slot" onclick="openModal('${day}','${meal}')">
           <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
@@ -169,11 +153,9 @@ function renderBatchSummary(plan) {
     if (!recipeDays[recipeId]) recipeDays[recipeId] = [];
     if (!recipeDays[recipeId].includes(day)) recipeDays[recipeId].push(day);
   }
-
   const el  = document.getElementById('batch-summary');
   const ids = Object.keys(recipeDays);
   if (!ids.length) { el.innerHTML = ''; return; }
-
   el.innerHTML = `
     <p class="section-label">What to batch cook this week</p>
     <div class="batch-grid">
@@ -181,61 +163,46 @@ function renderBatchSummary(plan) {
         const recipe = recipes.find(r => r.id === parseInt(id));
         if (!recipe) return '';
         const days = recipeDays[id];
-        return `
-          <div class="batch-card">
-            <div class="batch-card-title">${recipe.title}</div>
-            <div class="batch-card-meta">Needed: ${days.join(', ')}</div>
-            <div class="batch-card-meta">${recipe.cookTime} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div>
-          </div>`;
+        return `<div class="batch-card"><div class="batch-card-title">${recipe.title}</div><div class="batch-card-meta">Needed: ${days.join(', ')}</div><div class="batch-card-meta">${recipe.cookTime} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div></div>`;
       }).join('')}
     </div>`;
 }
 
-function removeFromSlot(day, meal) {
-  const plan = getPlan(currentWeekOffset);
-  delete plan[`${day}-${meal}`];
-  savePlan(currentWeekOffset, plan);
+async function removeFromSlot(day, meal) {
+  const key = `${day}-${meal}`;
+  delete currentPlan[key];
+  await savePlanSlot(weekKey(currentWeekOffset), key, null);
   renderWeek();
 }
 
-function changeWeek(dir) {
+async function changeWeek(dir) {
   const next = currentWeekOffset + dir;
   if (next < -MAX_WEEKS || next > MAX_WEEKS) return;
   currentWeekOffset = next;
+  currentPlan = await getPlanSync(weekKey(currentWeekOffset));
   renderWeek();
 }
 
-function goToToday() {
+async function goToToday() {
   currentWeekOffset = 0;
+  currentPlan = await getPlanSync(weekKey(0));
   renderWeek();
 }
 
-function addWeekToShoppingList() {
-  const plan = getPlan(currentWeekOffset);
-  const list = getList();
-
-  // Collect unique recipe IDs from the week plan
-  const uniqueIds = [...new Set(Object.values(plan).filter(Boolean).map(id => parseInt(id)))];
-
+async function addWeekToShoppingList() {
+  const uniqueIds = [...new Set(Object.values(currentPlan).filter(Boolean).map(id => parseInt(id)))];
+  const list = await getListSync();
   for (const id of uniqueIds) {
-    const recipe   = recipes.find(r => r.id === id);
-    if (!recipe) continue;
     const existing = list.find(i => i.id === id);
     if (existing) { existing.portions += 1; } else { list.push({ id, portions: 1 }); }
   }
-
-  saveList(list);
+  await saveListSync(list);
   window.location.href = 'shopping.html';
 }
-
-// ---------------------------------------------------------------------------
-// Modal
-// ---------------------------------------------------------------------------
 
 function openModal(day, meal) {
   modalDay  = day;
   modalMeal = meal;
-  modalQuery = '';
   document.getElementById('modal-search-input').value = '';
   document.getElementById('modal-title').textContent  = `${day} \u2013 ${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
   filterModal('');
@@ -249,20 +216,14 @@ function closeModal(event) {
 
 function closeModalDirect() {
   document.getElementById('modal-overlay').style.display = 'none';
-  modalDay  = null;
+  modalDay = null;
   modalMeal = null;
 }
 
 function filterModal(query) {
-  modalQuery = query.toLowerCase();
-  const plan      = getPlan(currentWeekOffset);
-  const currentId = plan[`${modalDay}-${modalMeal}`];
-  const filtered  = recipes.filter(r =>
-    !modalQuery ||
-    r.title.toLowerCase().includes(modalQuery) ||
-    r.section.toLowerCase().includes(modalQuery)
-  );
-
+  const q         = query.toLowerCase();
+  const currentId = currentPlan[`${modalDay}-${modalMeal}`];
+  const filtered  = recipes.filter(r => !q || r.title.toLowerCase().includes(q) || r.section.toLowerCase().includes(q));
   document.getElementById('modal-list').innerHTML =
     (currentId ? `<div class="modal-remove" onclick="clearSlotFromModal()">Remove recipe</div>` : '') +
     filtered.map(r => `
@@ -272,25 +233,36 @@ function filterModal(query) {
       </div>`).join('');
 }
 
-function selectRecipe(id) {
-  const plan = getPlan(currentWeekOffset);
-  plan[`${modalDay}-${modalMeal}`] = id;
-  savePlan(currentWeekOffset, plan);
+async function selectRecipe(id) {
+  const key = `${modalDay}-${modalMeal}`;
+  currentPlan[key] = id;
+  await savePlanSlot(weekKey(currentWeekOffset), key, id);
   closeModalDirect();
   renderWeek();
 }
 
-function clearSlotFromModal() {
-  const plan = getPlan(currentWeekOffset);
-  delete plan[`${modalDay}-${modalMeal}`];
-  savePlan(currentWeekOffset, plan);
+async function clearSlotFromModal() {
+  const key = `${modalDay}-${modalMeal}`;
+  delete currentPlan[key];
+  await savePlanSlot(weekKey(currentWeekOffset), key, null);
   closeModalDirect();
   renderWeek();
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
 
-renderWeek();
+async function onAuthStateChange() {
+  currentPlan = await getPlanSync(weekKey(currentWeekOffset));
+  renderWeek();
+}
+
+async function init() {
+  await initAuth();
+  currentPlan = await getPlanSync(weekKey(currentWeekOffset));
+  renderWeek();
+}
+
+init();
 </script>
 </body>
 </html>

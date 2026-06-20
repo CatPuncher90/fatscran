@@ -27,7 +27,6 @@
     <h1>Meal Prep Recipes</h1>
     <p>High protein, batch-friendly meals to fuel your week.</p>
   </div>
-
   <div class="search-bar-row">
     <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="applyFilters()">
     <select id="sort-select" onchange="applyFilters()" class="sort-select">
@@ -37,7 +36,6 @@
       <option value="cooktime">Quickest cook time</option>
     </select>
   </div>
-
   <div class="filters" id="filters">
     <button class="filter-btn active" data-section="all">All</button>
     <button class="filter-btn" data-section="breakfast">Breakfast</button>
@@ -46,23 +44,22 @@
     <button class="filter-btn" data-section="dessert">Dessert</button>
     <button class="filter-btn" data-section="favourites">&#9825; Favourites</button>
   </div>
-
   <p id="result-count" class="result-count"></p>
   <div class="recipe-grid" id="recipe-grid"></div>
 </main>
 
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
 <script>
-const SECTION_ORDER = ['breakfast', 'dinner', 'tea', 'sauces', 'dessert'];
+const SECTION_ORDER = ['breakfast','dinner','tea','sauces','dessert'];
+let activeSection = 'all';
+let currentFavs   = [];
 
-function toggleFav(id, event) {
+async function toggleFav(id, event) {
   event.preventDefault();
   event.stopPropagation();
-  const favs = getFavourites();
-  const idx = favs.indexOf(id);
-  if (idx === -1) { favs.push(id); } else { favs.splice(idx, 1); }
-  saveFavourites(favs);
+  currentFavs = await toggleFavSync(id);
   applyFilters();
 }
 
@@ -77,9 +74,9 @@ function sortWithinGroups(list, sortBy) {
   if (sortBy === 'default') return list;
   return list.slice().sort((a, b) => {
     if (a.section !== b.section) return SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section);
-    if (sortBy === 'protein')  return b.macrosPerPortion.protein   - a.macrosPerPortion.protein;
-    if (sortBy === 'calories') return a.macrosPerPortion.calories  - b.macrosPerPortion.calories;
-    if (sortBy === 'cooktime') return parseCookTime(a.cookTime)    - parseCookTime(b.cookTime);
+    if (sortBy === 'protein')  return b.macrosPerPortion.protein  - a.macrosPerPortion.protein;
+    if (sortBy === 'calories') return a.macrosPerPortion.calories - b.macrosPerPortion.calories;
+    if (sortBy === 'cooktime') return parseCookTime(a.cookTime)   - parseCookTime(b.cookTime);
     return 0;
   });
 }
@@ -92,11 +89,7 @@ function groupBySection(list) {
 }
 
 function saveState() {
-  sessionStorage.setItem('fatscran-state', JSON.stringify({
-    section: activeSection,
-    query:   document.getElementById('search-input').value,
-    sort:    document.getElementById('sort-select').value
-  }));
+  sessionStorage.setItem('fatscran-state', JSON.stringify({ section: activeSection, query: document.getElementById('search-input').value, sort: document.getElementById('sort-select').value }));
 }
 
 function restoreState() {
@@ -106,26 +99,17 @@ function restoreState() {
     activeSection = state.section || 'all';
     document.getElementById('search-input').value = state.query || '';
     document.getElementById('sort-select').value  = state.sort  || 'default';
-    document.querySelectorAll('#filters .filter-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.section === activeSection);
-    });
+    document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
   } catch(e) {}
 }
 
 function renderCards(list) {
   const grid  = document.getElementById('recipe-grid');
   const count = document.getElementById('result-count');
-  const favs  = getFavourites();
 
   if (list.length === 0) {
-    // Show a contextual empty state depending on active filter
     if (activeSection === 'favourites') {
-      grid.innerHTML = `
-        <div class="empty-state empty-state--full">
-          <p class="empty-state__title">No favourites yet</p>
-          <p class="empty-state__body">Tap the &#9825; on any recipe card to save it here.</p>
-          <button class="btn-primary-sm" onclick="setSection('all')">Browse all recipes</button>
-        </div>`;
+      grid.innerHTML = `<div class="empty-state empty-state--full"><p class="empty-state__title">No favourites yet</p><p class="empty-state__body">Tap the &#9825; on any recipe card to save it here.</p><button class="btn-primary-sm" onclick="setSection('all')">Browse all recipes</button></div>`;
     } else {
       grid.innerHTML = '<p class="no-results">No recipes found.</p>';
     }
@@ -136,13 +120,10 @@ function renderCards(list) {
   count.textContent = 'Showing ' + list.length + ' recipe' + (list.length === 1 ? '' : 's');
 
   grid.innerHTML = list.map(r => {
-    const isFav = favs.includes(r.id);
-    const imageBlock = r.image
-      ? `<div class="card-image"><img src="${r.image}" alt="${r.title}" loading="lazy"></div>`
-      : '';
-
+    const isFav     = currentFavs.includes(r.id);
+    const imageBlock = r.image ? `<div class="card-image"><img src="${r.image}" alt="${r.title}" loading="lazy"></div>` : '';
     return `
-      <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()" style="display:flex;flex-direction:column;">
+      <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()">
         ${imageBlock}
         <div class="card-top">
           <span class="card-name">${r.title}</span>
@@ -151,10 +132,7 @@ function renderCards(list) {
             <span class="${badgeClass(r.section)}">${r.section}</span>
           </div>
         </div>
-        <div class="card-cooktime">
-          ${clockIconSvg(13)}
-          <span>${r.cookTime}</span>
-        </div>
+        <div class="card-cooktime">${clockIconSvg(13)}<span>${r.cookTime}</span></div>
         <div class="card-stats">
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.calories}</span><span class="stat-label">kcal</span></div>
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.protein}g</span><span class="stat-label">protein</span></div>
@@ -168,24 +146,17 @@ function renderCards(list) {
 
 function setSection(section) {
   activeSection = section;
-  document.querySelectorAll('#filters .filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.section === activeSection);
-  });
+  document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
   applyFilters();
 }
-
-let activeSection = 'all';
 
 function applyFilters() {
   const query  = document.getElementById('search-input').value;
   const sortBy = document.getElementById('sort-select').value;
-  const favs   = getFavourites();
-
   let filtered = recipes.filter(r =>
-    (activeSection === 'all' || (activeSection === 'favourites' ? favs.includes(r.id) : r.section === activeSection)) &&
+    (activeSection === 'all' || (activeSection === 'favourites' ? currentFavs.includes(r.id) : r.section === activeSection)) &&
     recipeMatchesSearch(r, query)
   );
-
   filtered = sortBy === 'default' ? groupBySection(filtered) : sortWithinGroups(filtered, sortBy);
   renderCards(filtered);
 }
@@ -201,8 +172,20 @@ if (!recipes.some(r => r.section === 'sauces')) {
   if (saucesBtn) saucesBtn.style.display = 'none';
 }
 
-restoreState();
-applyFilters();
+// Called by auth.js after sign in / sign out
+async function onAuthStateChange() {
+  currentFavs = await getFavs();
+  applyFilters();
+}
+
+async function init() {
+  await initAuth();
+  restoreState();
+  currentFavs = await getFavs();
+  applyFilters();
+}
+
+init();
 </script>
 </body>
 </html>
