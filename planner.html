@@ -412,20 +412,25 @@ function openCopyDayModal(day) {
 }
 
 async function confirmCopy() {
-  const checked = [...document.querySelectorAll('#copy-modal-body input[type="checkbox"]:checked')].map(cb => cb.value);
+  const checked    = [...document.querySelectorAll('#copy-modal-body input[type="checkbox"]:checked')].map(cb => cb.value);
+  // Snapshot state before closeCopyModalDirect() nulls the module-level vars
+  const mode       = copyMode;
+  const slotMeal   = copySlotMeal;
+  const slotRecipe = copySlotRecipeId;
+  const fromDay    = copyFromDay;
   closeCopyModalDirect();
   if (!checked.length) return;
   const wk = weekKey(currentWeekOffset);
-  if (copyMode === 'slot') {
+  if (mode === 'slot') {
     for (const day of checked) {
-      const key = `${day}-${copySlotMeal}`;
-      currentPlan[key] = copySlotRecipeId;
-      await savePlanSlot(wk, key, copySlotRecipeId);
+      const key = `${day}-${slotMeal}`;
+      currentPlan[key] = slotRecipe;
+      await savePlanSlot(wk, key, slotRecipe);
     }
-  } else if (copyMode === 'day') {
+  } else if (mode === 'day') {
     for (const targetDay of checked) {
       for (const meal of MEALS) {
-        const sourceKey = `${copyFromDay}-${meal}`;
+        const sourceKey = `${fromDay}-${meal}`;
         const targetKey = `${targetDay}-${meal}`;
         const recipeId  = currentPlan[sourceKey];
         if (recipeId) {
