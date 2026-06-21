@@ -44,6 +44,7 @@
   <div id="weekly-overview"></div>
 </main>
 
+<!-- Recipe picker modal -->
 <div id="modal-overlay" class="modal-overlay" style="display:none;" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -53,7 +54,28 @@
     <div class="modal-search">
       <input type="text" placeholder="Search recipes..." oninput="filterModal(this.value)" id="modal-search-input">
     </div>
+    <div class="modal-filter-row">
+      <button class="modal-filter-btn" data-section="breakfast" onclick="setModalFilter('breakfast')">Breakfast</button>
+      <button class="modal-filter-btn" data-section="dinner" onclick="setModalFilter('dinner')">Dinner</button>
+      <button class="modal-filter-btn" data-section="tea" onclick="setModalFilter('tea')">Tea</button>
+      <button class="modal-filter-btn" data-section="all" onclick="setModalFilter('all')">All</button>
+    </div>
     <div class="modal-list" id="modal-list"></div>
+  </div>
+</div>
+
+<!-- Copy modal -->
+<div id="copy-modal-overlay" class="modal-overlay" style="display:none;" onclick="closeCopyModal(event)">
+  <div class="modal copy-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="copy-modal-title">Copy to days</h3>
+      <button class="modal-close" onclick="closeCopyModalDirect()">&#215;</button>
+    </div>
+    <div id="copy-modal-body" class="copy-modal-body"></div>
+    <div class="copy-modal-footer">
+      <button class="btn-secondary" onclick="closeCopyModalDirect()">Cancel</button>
+      <button class="btn-primary" onclick="confirmCopy()">Copy</button>
+    </div>
   </div>
 </div>
 
@@ -66,11 +88,20 @@ const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MEALS = ['breakfast','dinner','tea'];
 const MAX_WEEKS = 4;
 
-let currentWeekOffset = 0;
-let modalDay    = null;
-let modalMeal   = null;
-let currentPlan = {};
-let userProfile = null;
+let currentWeekOffset  = 0;
+let modalDay           = null;
+let modalMeal          = null;
+let modalSectionFilter = 'all';
+let currentPlan        = {};
+let userProfile        = null;
+
+let copyMode         = null;
+let copySlotDay      = null;
+let copySlotMeal     = null;
+let copySlotRecipeId = null;
+let copyFromDay      = null;
+
+const COPY_SVG = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
 function getMonday(offset) {
   const now    = new Date();
@@ -99,7 +130,7 @@ function updateNav() {
   const monday = getMonday(currentWeekOffset);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  document.getElementById('week-label').textContent = `${formatDate(monday)} \u2013 ${formatDate(sunday)}`;
+  document.getElementById('week-label').textContent = `${formatDate(monday)} – ${formatDate(sunday)}`;
   document.getElementById('prev-btn').disabled = currentWeekOffset <= -MAX_WEEKS;
   document.getElementById('next-btn').disabled = currentWeekOffset >= MAX_WEEKS;
 }
@@ -135,7 +166,10 @@ function renderWeek() {
           <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
           ${recipe ? `
             <div class="slot-recipe" onclick="event.stopPropagation()">
-              <button class="remove-slot" onclick="removeFromSlot('${day}','${meal}')">&#215;</button>
+              <div class="slot-btns">
+                <button class="remove-slot" onclick="removeFromSlot('${day}','${meal}')" title="Remove">&#215;</button>
+                <button class="copy-slot-btn" onclick="openCopySlotModal('${day}','${meal}',${recipeId})" title="Copy to other days">${COPY_SVG}</button>
+              </div>
               ${recipe.title}
               <div class="slot-macros">${recipe.macrosPerPortion.calories} kcal &middot; ${recipe.macrosPerPortion.protein}g</div>
             </div>` : ''}
@@ -147,7 +181,10 @@ function renderWeek() {
 
     return `
       <div class="day-col">
-        <div class="day-header ${di === todayIdx ? 'day-header--today' : ''}">${day}</div>
+        <div class="day-header ${di === todayIdx ? 'day-header--today' : ''}">
+          <span class="day-header-label">${day}</span>
+          ${filledSlots > 0 ? `<button class="copy-day-btn" onclick="event.stopPropagation();openCopyDayModal('${day}')" title="Copy day to other days">${COPY_SVG}</button>` : ''}
+        </div>
         <div class="day-date">${formatDate(date)}</div>
         ${slots}
         ${dayCalories > 0 ? `
@@ -272,14 +309,30 @@ async function addWeekToShoppingList() {
   window.location.href = 'shopping.html';
 }
 
+// ---------------------------------------------------------------------------
+// Recipe picker modal
+// ---------------------------------------------------------------------------
+
 function openModal(day, meal) {
-  modalDay  = day;
-  modalMeal = meal;
+  modalDay           = day;
+  modalMeal          = meal;
+  modalSectionFilter = meal;
   document.getElementById('modal-search-input').value = '';
-  document.getElementById('modal-title').textContent  = `${day} \u2013 ${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
+  document.getElementById('modal-title').textContent  = `${day} – ${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
+  document.querySelectorAll('.modal-filter-btn').forEach(b =>
+    b.classList.toggle('modal-filter-btn--active', b.dataset.section === meal)
+  );
   filterModal('');
   document.getElementById('modal-overlay').style.display = 'flex';
   setTimeout(() => document.getElementById('modal-search-input').focus(), 50);
+}
+
+function setModalFilter(section) {
+  modalSectionFilter = section;
+  document.querySelectorAll('.modal-filter-btn').forEach(b =>
+    b.classList.toggle('modal-filter-btn--active', b.dataset.section === section)
+  );
+  filterModal(document.getElementById('modal-search-input').value);
 }
 
 function closeModal(event) {
@@ -288,14 +341,18 @@ function closeModal(event) {
 
 function closeModalDirect() {
   document.getElementById('modal-overlay').style.display = 'none';
-  modalDay = null;
+  modalDay  = null;
   modalMeal = null;
 }
 
 function filterModal(query) {
   const q         = query.toLowerCase();
   const currentId = currentPlan[`${modalDay}-${modalMeal}`];
-  const filtered  = recipes.filter(r => !q || r.title.toLowerCase().includes(q) || r.section.toLowerCase().includes(q));
+  const filtered  = recipes.filter(r => {
+    const matchSection = modalSectionFilter === 'all' || r.section === modalSectionFilter;
+    const matchQuery   = !q || r.title.toLowerCase().includes(q) || r.section.toLowerCase().includes(q);
+    return matchSection && matchQuery;
+  });
   document.getElementById('modal-list').innerHTML =
     (currentId ? `<div class="modal-remove" onclick="clearSlotFromModal()">Remove recipe</div>` : '') +
     filtered.map(r => `
@@ -321,7 +378,85 @@ async function clearSlotFromModal() {
   renderWeek();
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+// ---------------------------------------------------------------------------
+// Copy modals
+// ---------------------------------------------------------------------------
+
+function openCopySlotModal(day, meal, recipeId) {
+  copyMode         = 'slot';
+  copySlotDay      = day;
+  copySlotMeal     = meal;
+  copySlotRecipeId = recipeId;
+  const recipe     = recipes.find(r => r.id === recipeId);
+  document.getElementById('copy-modal-title').textContent = 'Copy to other days';
+  document.getElementById('copy-modal-body').innerHTML = `
+    <p class="copy-modal-desc">Copy <strong>${recipe ? recipe.title : 'this recipe'}</strong> to the ${meal} slot on:</p>
+    ${DAYS.filter(d => d !== day).map(d => `
+      <label class="copy-day-label">
+        <input type="checkbox" value="${d}"> ${d}
+      </label>`).join('')}`;
+  document.getElementById('copy-modal-overlay').style.display = 'flex';
+}
+
+function openCopyDayModal(day) {
+  copyMode    = 'day';
+  copyFromDay = day;
+  document.getElementById('copy-modal-title').textContent = `Copy ${day} to other days`;
+  document.getElementById('copy-modal-body').innerHTML = `
+    <p class="copy-modal-desc">Copy all filled slots from <strong>${day}</strong> to:</p>
+    ${DAYS.filter(d => d !== day).map(d => `
+      <label class="copy-day-label">
+        <input type="checkbox" value="${d}"> ${d}
+      </label>`).join('')}`;
+  document.getElementById('copy-modal-overlay').style.display = 'flex';
+}
+
+async function confirmCopy() {
+  const checked = [...document.querySelectorAll('#copy-modal-body input[type="checkbox"]:checked')].map(cb => cb.value);
+  closeCopyModalDirect();
+  if (!checked.length) return;
+  const wk = weekKey(currentWeekOffset);
+  if (copyMode === 'slot') {
+    for (const day of checked) {
+      const key = `${day}-${copySlotMeal}`;
+      currentPlan[key] = copySlotRecipeId;
+      await savePlanSlot(wk, key, copySlotRecipeId);
+    }
+  } else if (copyMode === 'day') {
+    for (const targetDay of checked) {
+      for (const meal of MEALS) {
+        const sourceKey = `${copyFromDay}-${meal}`;
+        const targetKey = `${targetDay}-${meal}`;
+        const recipeId  = currentPlan[sourceKey];
+        if (recipeId) {
+          currentPlan[targetKey] = recipeId;
+          await savePlanSlot(wk, targetKey, recipeId);
+        } else {
+          delete currentPlan[targetKey];
+          await savePlanSlot(wk, targetKey, null);
+        }
+      }
+    }
+  }
+  renderWeek();
+}
+
+function closeCopyModal(event) {
+  if (event.target === document.getElementById('copy-modal-overlay')) closeCopyModalDirect();
+}
+
+function closeCopyModalDirect() {
+  document.getElementById('copy-modal-overlay').style.display = 'none';
+  copyMode         = null;
+  copySlotDay      = null;
+  copySlotMeal     = null;
+  copySlotRecipeId = null;
+  copyFromDay      = null;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModalDirect(); closeCopyModalDirect(); }
+});
 
 async function onAuthStateChange() {
   if (isLoggedIn()) userProfile = await getProfile();
