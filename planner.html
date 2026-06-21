@@ -299,11 +299,15 @@ async function goToToday() {
 }
 
 async function addWeekToShoppingList() {
-  const uniqueIds = [...new Set(Object.values(currentPlan).filter(Boolean).map(id => parseInt(id)))];
+  const counts = {};
+  for (const id of Object.values(currentPlan).filter(Boolean).map(id => parseInt(id))) {
+    counts[id] = (counts[id] || 0) + 1;
+  }
   const list = await getListSync();
-  for (const id of uniqueIds) {
+  for (const [idStr, count] of Object.entries(counts)) {
+    const id = parseInt(idStr);
     const existing = list.find(i => i.id === id);
-    if (existing) { existing.portions += 1; } else { list.push({ id, portions: 1 }); }
+    if (existing) { existing.portions += count; } else { list.push({ id, portions: count }); }
   }
   await saveListSync(list);
   window.location.href = 'shopping.html';
