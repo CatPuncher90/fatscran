@@ -3428,3 +3428,42 @@ label.radio-label input[type="radio"] {
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+/* ==========================================================================
+   Planner — modal recipe suggestions
+   ========================================================================== */
+
+.modal-suggestions {
+  background: var(--accent-light);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  margin-bottom: 4px;
+}
+
+.modal-suggestions-label {
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  margin: 0 0 6px 4px;
+}
+
+.modal-recipe--suggested {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.modal-recipe--suggested:hover {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.modal-full-list-label {
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  padding: 8px 12px 4px;
+  margin: 0;
+}

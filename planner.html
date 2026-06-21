@@ -314,6 +314,46 @@ async function addWeekToShoppingList() {
 }
 
 // ---------------------------------------------------------------------------
+// Suggestion helpers (use cached userProfile — never calls getProfile())
+// ---------------------------------------------------------------------------
+
+function getRemainingMacros(day) {
+  let planned = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  for (const meal of MEALS) {
+    const id = currentPlan[`${day}-${meal}`];
+    if (!id) continue;
+    const r = recipes.find(r => r.id === id);
+    if (!r) continue;
+    planned.calories += r.macrosPerPortion.calories;
+    planned.protein  += r.macrosPerPortion.protein;
+    planned.carbs    += r.macrosPerPortion.carbs;
+    planned.fat      += r.macrosPerPortion.fat;
+  }
+  return {
+    calories: Math.max(0, (userProfile?.target_calories || 0) - planned.calories),
+    protein:  Math.max(0, (userProfile?.target_protein  || 0) - planned.protein),
+    carbs:    Math.max(0, (userProfile?.target_carbs    || 0) - planned.carbs),
+    fat:      Math.max(0, (userProfile?.target_fat      || 0) - planned.fat)
+  };
+}
+
+function getSuggestions(day, meal) {
+  if (!userProfile?.target_calories && !userProfile?.target_protein) return [];
+  const remaining = getRemainingMacros(day);
+  return recipes
+    .filter(r => r.section === meal)
+    .map(r => {
+      // Score by closeness to remaining macros; protein gap weighted 3× over calories
+      const proteinDiff  = Math.abs(r.macrosPerPortion.protein  - remaining.protein)  / Math.max(remaining.protein,  1);
+      const calorieDiff  = Math.abs(r.macrosPerPortion.calories - remaining.calories) / Math.max(remaining.calories, 1);
+      return { recipe: r, score: proteinDiff * 3 + calorieDiff };
+    })
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3)
+    .map(s => s.recipe);
+}
+
+// ---------------------------------------------------------------------------
 // Recipe picker modal
 // ---------------------------------------------------------------------------
 
@@ -357,13 +397,32 @@ function filterModal(query) {
     const matchQuery   = !q || r.title.toLowerCase().includes(q) || r.section.toLowerCase().includes(q);
     return matchSection && matchQuery;
   });
-  document.getElementById('modal-list').innerHTML =
-    (currentId ? `<div class="modal-remove" onclick="clearSlotFromModal()">Remove recipe</div>` : '') +
-    filtered.map(r => `
-      <div class="modal-recipe ${r.id === currentId ? 'modal-recipe--selected' : ''}" onclick="selectRecipe(${r.id})">
-        <div class="modal-recipe-title">${r.title}</div>
-        <div class="modal-recipe-meta">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.cookTime}</div>
-      </div>`).join('');
+
+  let html = currentId ? `<div class="modal-remove" onclick="clearSlotFromModal()">Remove recipe</div>` : '';
+
+  // Suggestions only for empty slots with no active search query
+  if (!currentId && !q) {
+    const suggestions = getSuggestions(modalDay, modalMeal);
+    if (suggestions.length) {
+      html += `<div class="modal-suggestions">
+        <p class="modal-suggestions-label">Suggested for you</p>
+        ${suggestions.map(r => `
+          <div class="modal-recipe modal-recipe--suggested" onclick="selectRecipe(${r.id})">
+            <div class="modal-recipe-title">${r.title}</div>
+            <div class="modal-recipe-meta">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.cookTime}</div>
+          </div>`).join('')}
+      </div>
+      <p class="modal-full-list-label">All ${modalMeal} recipes</p>`;
+    }
+  }
+
+  html += filtered.map(r => `
+    <div class="modal-recipe ${r.id === currentId ? 'modal-recipe--selected' : ''}" onclick="selectRecipe(${r.id})">
+      <div class="modal-recipe-title">${r.title}</div>
+      <div class="modal-recipe-meta">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.cookTime}</div>
+    </div>`).join('');
+
+  document.getElementById('modal-list').innerHTML = html;
 }
 
 async function selectRecipe(id) {
