@@ -42,7 +42,7 @@ let isAdmin       = false;
 
 async function addToList() {
   await addToListSync(recipe.id, portions);
-  updateBtn();
+  await updateBtn();
 }
 
 async function updateBtn() {

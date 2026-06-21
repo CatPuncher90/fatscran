@@ -126,7 +126,7 @@ async function saveRecipe(data, existingId) {
 
   // 2. Macros — delete and re-insert
   await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
-  const macroRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros`, { method: 'POST', headers, body: JSON.stringify({ recipe_id: recipeId, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, fiber: data.fiber || null }) });
+  const macroRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros`, { method: 'POST', headers, body: JSON.stringify({ recipe_id: recipeId, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, sugar: data.sugar || null, fiber: data.fiber || null }) });
   if (!macroRes.ok) throw new Error('Failed to save macros: ' + await macroRes.text());
 
   // 3. Ingredients — delete and re-insert

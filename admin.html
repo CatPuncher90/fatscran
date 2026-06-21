@@ -110,7 +110,7 @@ function renderForm(recipe) {
 
       <div class="admin-section">
         <h2 class="admin-section-title">Macros <span class="admin-section-sub">(per portion)</span></h2>
-        <div class="admin-grid-5">
+        <div class="admin-grid-6">
           <div class="form-group">
             <label>Calories</label>
             <input type="number" id="f-calories" value="${r.macrosPerPortion ? r.macrosPerPortion.calories : ''}">
@@ -128,8 +128,12 @@ function renderForm(recipe) {
             <input type="number" id="f-fat" value="${r.macrosPerPortion ? r.macrosPerPortion.fat : ''}">
           </div>
           <div class="form-group">
+            <label>Sugar (g)</label>
+            <input type="number" id="f-sugar" value="${r.macrosPerPortion && r.macrosPerPortion.sugar != null ? r.macrosPerPortion.sugar : ''}">
+          </div>
+          <div class="form-group">
             <label>Fiber (g)</label>
-            <input type="number" id="f-fiber" value="${r.macrosPerPortion && r.macrosPerPortion.fiber ? r.macrosPerPortion.fiber : ''}">
+            <input type="number" id="f-fiber" value="${r.macrosPerPortion && r.macrosPerPortion.fiber != null ? r.macrosPerPortion.fiber : ''}">
           </div>
         </div>
       </div>
@@ -303,6 +307,7 @@ function collectFormData() {
     protein:      parseInt(document.getElementById('f-protein')?.value) || 0,
     carbs:        parseInt(document.getElementById('f-carbs')?.value) || 0,
     fat:          parseInt(document.getElementById('f-fat')?.value) || 0,
+    sugar:        parseFloat(document.getElementById('f-sugar')?.value) || null,
     fiber:        parseFloat(document.getElementById('f-fiber')?.value) || null,
     ingredients,
     steps,
@@ -312,6 +317,7 @@ function collectFormData() {
       protein:  parseInt(document.getElementById('f-protein')?.value) || 0,
       carbs:    parseInt(document.getElementById('f-carbs')?.value) || 0,
       fat:      parseInt(document.getElementById('f-fat')?.value) || 0,
+      sugar:    parseFloat(document.getElementById('f-sugar')?.value) || null,
       fiber:    parseFloat(document.getElementById('f-fiber')?.value) || null
     },
     image: imageUrl
@@ -351,6 +357,8 @@ function showPreview() {
       <div class="macro-item"><span class="macro-value">${data.protein}g</span><span class="macro-label">Protein</span></div>
       <div class="macro-item"><span class="macro-value">${data.carbs}g</span><span class="macro-label">Carbs</span></div>
       <div class="macro-item"><span class="macro-value">${data.fat}g</span><span class="macro-label">Fat</span></div>
+      ${data.sugar != null ? `<div class="macro-item"><span class="macro-value">${data.sugar}g</span><span class="macro-label">Sugar</span></div>` : ''}
+      ${data.fiber != null ? `<div class="macro-item"><span class="macro-value">${data.fiber}g</span><span class="macro-label">Fiber</span></div>` : ''}
     </div>
     <div class="recipe-body" style="margin-top:2rem;">
       <div class="ingredients-col"><p class="section-label">Ingredients</p><ul class="ingredients-list">${ingredientRows}</ul></div>

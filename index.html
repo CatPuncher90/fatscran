@@ -198,8 +198,8 @@ function updateAdminNav() {
 
 async function init() {
   await initAuth();
-  restoreState();
   [allRecipes, currentFavs, isAdmin] = await Promise.all([fetchAllRecipes(), getFavs(), checkIsAdmin()]);
+  restoreState();
   if (!allRecipes.some(r => r.section === 'sauces')) {
     const saucesBtn = document.querySelector('.filter-btn[data-section="sauces"]');
     if (saucesBtn) saucesBtn.style.display = 'none';

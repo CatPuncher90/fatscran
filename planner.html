@@ -197,20 +197,20 @@ function renderWeeklyOverview(plan) {
     <div class="weekly-overview">
       <p class="section-label">Weekly macro overview</p>
       <div class="weekly-totals__grid">
-        <div class="weekly-total-item ${tlClass(totalCal,tc)}">
-          <div class="weekly-total-value">${Math.round(totalCal).toLocaleString()}</div>
+        <div class="weekly-total-item">
+          <div class="weekly-total-value ${tlClass(totalCal,tc)}">${Math.round(totalCal).toLocaleString()}</div>
           <div class="weekly-total-label">kcal${tc ? ' / '+tc.toLocaleString() : ''}</div>
         </div>
-        ${tp ? `<div class="weekly-total-item ${tlClass(totalProt,tp)}">
-          <div class="weekly-total-value">${Math.round(totalProt)}g</div>
+        ${tp ? `<div class="weekly-total-item">
+          <div class="weekly-total-value ${tlClass(totalProt,tp)}">${Math.round(totalProt)}g</div>
           <div class="weekly-total-label">protein / ${tp}g</div>
         </div>` : ''}
-        ${tch ? `<div class="weekly-total-item ${tlClass(totalCarbs,tch)}">
-          <div class="weekly-total-value">${Math.round(totalCarbs)}g</div>
+        ${tch ? `<div class="weekly-total-item">
+          <div class="weekly-total-value ${tlClass(totalCarbs,tch)}">${Math.round(totalCarbs)}g</div>
           <div class="weekly-total-label">carbs / ${tch}g</div>
         </div>` : ''}
-        ${tf ? `<div class="weekly-total-item ${tlClass(totalFat,tf)}">
-          <div class="weekly-total-value">${Math.round(totalFat)}g</div>
+        ${tf ? `<div class="weekly-total-item">
+          <div class="weekly-total-value ${tlClass(totalFat,tf)}">${Math.round(totalFat)}g</div>
           <div class="weekly-total-label">fat / ${tf}g</div>
         </div>` : ''}
       </div>

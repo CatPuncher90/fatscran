@@ -169,13 +169,15 @@ async function toggleFavSync(id) {
     saveFavourites(favs);
     return favs;
   }
-  await ensureSession();
+  const session = await ensureSession();
+  if (!session) return getFavourites();
   try {
     const rows = await sb.get('favourites', `select=id&recipe_id=eq.${id}`);
     if (rows.length) {
       await sb.delete('favourites', `id=eq.${rows[0].id}`);
     } else {
-      await sb.post('favourites', { recipe_id: id });
+      const s = getSession();
+      await sb.post('favourites', { recipe_id: id, user_id: s.user.id });
     }
     return getFavs();
   } catch(e) { console.error('toggleFavSync', e); return []; }
@@ -210,7 +212,7 @@ async function saveListSync(list) {
       if (existing) {
         await sb.patch('shopping_list', `id=eq.${existing.id}`, { portions: item.portions });
       } else {
-        await sb.post('shopping_list', { recipe_id: item.id, portions: item.portions });
+        await sb.post('shopping_list', { recipe_id: item.id, portions: item.portions, user_id: getSession().user.id });
       }
     }
   } catch(e) { console.error('saveListSync', e); saveList(list); }
@@ -230,7 +232,7 @@ async function addToListSync(id, portions) {
     if (rows.length) {
       await sb.patch('shopping_list', `id=eq.${rows[0].id}`, { portions });
     } else {
-      await sb.post('shopping_list', { recipe_id: id, portions });
+      await sb.post('shopping_list', { recipe_id: id, portions, user_id: getSession().user.id });
     }
   } catch(e) { console.error('addToListSync', e); }
 }
@@ -274,7 +276,7 @@ async function savePlanSlot(weekKey, slotKey, recipeId) {
       if (rows.length) {
         await sb.patch('meal_plans', `id=eq.${rows[0].id}`, { recipe_id: recipeId });
       } else {
-        await sb.post('meal_plans', { week_key: weekKey, slot_key: slotKey, recipe_id: recipeId });
+        await sb.post('meal_plans', { week_key: weekKey, slot_key: slotKey, recipe_id: recipeId, user_id: getSession().user.id });
       }
     }
   } catch(e) { console.error('savePlanSlot', e); }

@@ -605,7 +605,7 @@ main {
 /* === SHOPPING LIST PAGE === */
 .shopping-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 380px 1fr;
   gap: 1.5rem;
   align-items: start;
 }
@@ -1170,9 +1170,6 @@ main {
 
 .picker-item__link .picker-name {
   display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .picker-item__controls {
@@ -1975,9 +1972,6 @@ main {
 
 .picker-item__link .picker-name {
   display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .picker-item__controls {
@@ -2666,6 +2660,12 @@ main {
   gap: 0.75rem;
 }
 
+.admin-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+}
+
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
 
 .form-group label {
@@ -2934,6 +2934,7 @@ main {
 @media (max-width: 640px) {
   .admin-grid-2 { grid-template-columns: 1fr; }
   .admin-grid-5 { grid-template-columns: repeat(2, 1fr); }
+  .admin-grid-6 { grid-template-columns: repeat(3, 1fr); }
   .admin-list-item { flex-wrap: wrap; }
   .admin-ing-name   { flex: 1 1 100%; }
   .admin-ing-amount,
@@ -3217,9 +3218,9 @@ label.radio-label input[type="radio"] {
   border-radius: var(--radius);
 }
 
-.weekly-total-item.tl-green .weekly-total-value { color: #3a7c4a; }
-.weekly-total-item.tl-amber .weekly-total-value { color: #c47c1a; }
-.weekly-total-item.tl-red   .weekly-total-value { color: #b83a1e; }
+.weekly-total-value.tl-green { color: #3a7c4a; }
+.weekly-total-value.tl-amber { color: #c47c1a; }
+.weekly-total-value.tl-red   { color: #b83a1e; }
 
 /* ==========================================================================
    Suggestions (shopping list)
