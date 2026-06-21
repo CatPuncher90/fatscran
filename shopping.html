@@ -97,10 +97,10 @@ function renderIngredientList() {
       <p class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</p>
       <ul class="item-list">
         ${byCategory[cat].map(item => `
-          <li onclick="toggleCheck('${item.key}')" class="ingredient-row ${checked.includes(item.key) ? 'ingredient-row--checked' : ''}">
+          <li onclick="toggleCheck('${escapeHtml(item.key)}')" class="ingredient-row ${checked.includes(item.key) ? 'ingredient-row--checked' : ''}">
             <span class="ingredient-checkbox ${checked.includes(item.key) ? 'ingredient-checkbox--checked' : ''}">${checked.includes(item.key) ? '&#10003;' : ''}</span>
-            <span class="ingredient-name">${item.name}</span>
-            <span class="item-qty">${item.qty}</span>
+            <span class="ingredient-name">${escapeHtml(item.name)}</span>
+            <span class="item-qty">${escapeHtml(item.qty)}</span>
           </li>`).join('')}
       </ul>
     </div>`).join('');
@@ -181,8 +181,8 @@ function suggestionsHTML(list) {
         ${candidates.map(r => `
           <div class="suggestion-card">
             <div class="suggestion-info">
-              <div class="suggestion-title">${r.title}</div>
-              <div class="suggestion-meta">${r.macrosPerPortion.protein}g protein &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.section}</div>
+              <div class="suggestion-title">${escapeHtml(r.title)}</div>
+              <div class="suggestion-meta">${r.macrosPerPortion.protein}g protein &middot; ${r.macrosPerPortion.calories} kcal &middot; ${escapeHtml(r.section)}</div>
             </div>
             <button class="btn-sm btn-primary" onclick="addSuggestion(${r.id})">Add</button>
           </div>`).join('')}
@@ -217,8 +217,8 @@ async function render() {
     return `
       <div class="picker-item">
         <a href="recipe.html?id=${recipe.id}" class="picker-item__link">
-          <span class="picker-name">${recipe.title}</span>
-          <span class="picker-detail">${recipe.section} &middot; ${item.portions} portion${item.portions !== 1 ? 's' : ''} &middot; ${Math.round(recipe.macrosPerPortion.calories * item.portions)} kcal &middot; ${Math.round(recipe.macrosPerPortion.protein * item.portions)}g protein</span>
+          <span class="picker-name">${escapeHtml(recipe.title)}</span>
+          <span class="picker-detail">${escapeHtml(recipe.section)} &middot; ${item.portions} portion${item.portions !== 1 ? 's' : ''} &middot; ${Math.round(recipe.macrosPerPortion.calories * item.portions)} kcal &middot; ${Math.round(recipe.macrosPerPortion.protein * item.portions)}g protein</span>
         </a>
         <div class="picker-item__controls">
           <button onclick="updatePortions(${recipe.id}, ${item.portions - 1})" class="portion-btn">&#8722;</button>

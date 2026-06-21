@@ -170,7 +170,7 @@ function renderWeek() {
                 <button class="remove-slot" onclick="removeFromSlot('${day}','${meal}')" title="Remove">&#215;</button>
                 <button class="copy-slot-btn" onclick="openCopySlotModal('${day}','${meal}',${recipeId})" title="Copy to other days">${COPY_SVG}</button>
               </div>
-              ${recipe.title}
+              ${escapeHtml(recipe.title)}
               <div class="slot-macros">${recipe.macrosPerPortion.calories} kcal &middot; ${recipe.macrosPerPortion.protein}g</div>
             </div>` : ''}
         </div>`;
@@ -272,7 +272,7 @@ function renderBatchSummary(plan) {
         const recipe = recipes.find(r => r.id === parseInt(id));
         if (!recipe) return '';
         const days = recipeDays[id];
-        return `<div class="batch-card"><div class="batch-card-title">${recipe.title}</div><div class="batch-card-meta">Needed: ${days.join(', ')}</div><div class="batch-card-meta">${recipe.cookTime} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div></div>`;
+        return `<div class="batch-card"><div class="batch-card-title">${escapeHtml(recipe.title)}</div><div class="batch-card-meta">Needed: ${days.join(', ')}</div><div class="batch-card-meta">${escapeHtml(recipe.cookTime)} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div></div>`;
       }).join('')}
     </div>`;
 }
@@ -408,8 +408,8 @@ function filterModal(query) {
         <p class="modal-suggestions-label">Suggested for you</p>
         ${suggestions.map(r => `
           <div class="modal-recipe modal-recipe--suggested" onclick="selectRecipe(${r.id})">
-            <div class="modal-recipe-title">${r.title}</div>
-            <div class="modal-recipe-meta">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.cookTime}</div>
+            <div class="modal-recipe-title">${escapeHtml(r.title)}</div>
+            <div class="modal-recipe-meta">${escapeHtml(r.section)} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${escapeHtml(r.cookTime)}</div>
           </div>`).join('')}
       </div>
       <p class="modal-full-list-label">All ${modalMeal} recipes</p>`;
@@ -418,8 +418,8 @@ function filterModal(query) {
 
   html += filtered.map(r => `
     <div class="modal-recipe ${r.id === currentId ? 'modal-recipe--selected' : ''}" onclick="selectRecipe(${r.id})">
-      <div class="modal-recipe-title">${r.title}</div>
-      <div class="modal-recipe-meta">${r.section} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${r.cookTime}</div>
+      <div class="modal-recipe-title">${escapeHtml(r.title)}</div>
+      <div class="modal-recipe-meta">${escapeHtml(r.section)} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${escapeHtml(r.cookTime)}</div>
     </div>`).join('');
 
   document.getElementById('modal-list').innerHTML = html;
@@ -453,7 +453,7 @@ function openCopySlotModal(day, meal, recipeId) {
   const recipe     = recipes.find(r => r.id === recipeId);
   document.getElementById('copy-modal-title').textContent = 'Copy to other days';
   document.getElementById('copy-modal-body').innerHTML = `
-    <p class="copy-modal-desc">Copy <strong>${recipe ? recipe.title : 'this recipe'}</strong> to the ${meal} slot on:</p>
+    <p class="copy-modal-desc">Copy <strong>${recipe ? escapeHtml(recipe.title) : 'this recipe'}</strong> to the ${escapeHtml(meal)} slot on:</p>
     ${DAYS.filter(d => d !== day).map(d => `
       <label class="copy-day-label">
         <input type="checkbox" value="${d}"> ${d}

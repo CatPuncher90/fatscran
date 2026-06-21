@@ -127,20 +127,20 @@ function renderCards(list) {
 
   grid.innerHTML = list.map(r => {
     const isFav     = currentFavs.includes(r.id);
-    const imageBlock = r.image ? `<div class="card-image"><img src="${r.image}" alt="${r.title}" loading="lazy"></div>` : '';
+    const imageBlock = r.image ? `<div class="card-image"><img src="${escapeHtml(r.image)}" alt="${escapeHtml(r.title)}" loading="lazy"></div>` : '';
     const adminBtn   = isAdmin ? `<button onclick="event.preventDefault();event.stopPropagation();window.location='admin.html?edit=${r.id}'" class="card-admin-btn" title="Edit recipe">&#9998;</button>` : '';
     return `
       <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()">
         ${imageBlock}
         <div class="card-top">
-          <span class="card-name">${r.title}</span>
+          <span class="card-name">${escapeHtml(r.title)}</span>
           <div class="card-top-actions">
             ${adminBtn}
             <button onclick="toggleFav(${r.id}, event)" class="fav-btn ${isFav ? 'fav-btn--active' : ''}" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}">${isFav ? '&#9829;' : '&#9825;'}</button>
-            <span class="${badgeClass(r.section)}">${r.section}</span>
+            <span class="${badgeClass(r.section)}">${escapeHtml(r.section)}</span>
           </div>
         </div>
-        <div class="card-cooktime">${clockIconSvg(13)}<span>${r.cookTime}</span></div>
+        <div class="card-cooktime">${clockIconSvg(13)}<span>${escapeHtml(r.cookTime)}</span></div>
         <div class="card-stats">
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.calories}</span><span class="stat-label">kcal</span></div>
           <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.protein}g</span><span class="stat-label">protein</span></div>

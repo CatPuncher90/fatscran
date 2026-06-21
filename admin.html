@@ -89,7 +89,7 @@ function renderForm(recipe) {
         <div class="admin-grid-2">
           <div class="form-group">
             <label>Title</label>
-            <input type="text" id="f-title" value="${r.title || ''}" placeholder="e.g. Chicken Tikka Curry">
+            <input type="text" id="f-title" value="${escapeHtml(r.title || '')}" placeholder="e.g. Chicken Tikka Curry">
           </div>
           <div class="form-group">
             <label>Section</label>
@@ -99,7 +99,7 @@ function renderForm(recipe) {
           </div>
           <div class="form-group">
             <label>Cook Time</label>
-            <input type="text" id="f-cooktime" value="${r.cookTime || ''}" placeholder="e.g. 35 mins">
+            <input type="text" id="f-cooktime" value="${escapeHtml(r.cookTime || '')}" placeholder="e.g. 35 mins">
           </div>
           <div class="form-group">
             <label>Base Portions</label>
@@ -142,7 +142,7 @@ function renderForm(recipe) {
         <h2 class="admin-section-title">Image</h2>
         <div class="image-upload-area" id="image-upload-area" onclick="document.getElementById('f-image').click()">
           ${imageUrl
-            ? `<img src="${imageUrl}" class="image-preview-thumb" alt="Recipe image"><p class="image-upload-hint">Click to change</p>`
+            ? `<img src="${escapeHtml(imageUrl)}" class="image-preview-thumb" alt="Recipe image"><p class="image-upload-hint">Click to change</p>`
             : `<div class="image-upload-placeholder"><span>+</span><p>Click to upload image</p></div>`}
         </div>
         <input type="file" id="f-image" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
@@ -198,9 +198,9 @@ function renderIngredients() {
   el.innerHTML = ingredients.map((ing, i) => `
     <div class="admin-list-item">
       <span class="admin-list-num">${i + 1}</span>
-      <input type="text" class="admin-ing-name" value="${ing.name}" placeholder="Ingredient name" oninput="ingredients[${i}].name = this.value">
+      <input type="text" class="admin-ing-name" value="${escapeHtml(ing.name)}" placeholder="Ingredient name" oninput="ingredients[${i}].name = this.value">
       <input type="number" class="admin-ing-amount" value="${ing.amount !== null ? ing.amount : ''}" placeholder="Amount" oninput="ingredients[${i}].amount = this.value === '' ? null : parseFloat(this.value)">
-      <input type="text" class="admin-ing-unit" value="${ing.unit}" placeholder="Unit" oninput="ingredients[${i}].unit = this.value">
+      <input type="text" class="admin-ing-unit" value="${escapeHtml(ing.unit)}" placeholder="Unit" oninput="ingredients[${i}].unit = this.value">
       <div class="admin-list-actions">
         ${i > 0 ? `<button class="admin-move-btn" onclick="moveIngredient(${i}, -1)" title="Move up">↑</button>` : '<span class="admin-move-btn-placeholder"></span>'}
         ${i < ingredients.length - 1 ? `<button class="admin-move-btn" onclick="moveIngredient(${i}, 1)" title="Move down">↓</button>` : '<span class="admin-move-btn-placeholder"></span>'}
@@ -240,8 +240,8 @@ function renderSteps() {
     <div class="admin-list-item admin-step-item">
       <span class="step-num">${i + 1}</span>
       <div class="admin-step-fields">
-        <input type="text" value="${step.title}" placeholder="Step title e.g. Cook the chicken" oninput="steps[${i}].title = this.value">
-        <textarea placeholder="Full instructions..." oninput="steps[${i}].description = this.value">${step.description}</textarea>
+        <input type="text" value="${escapeHtml(step.title)}" placeholder="Step title e.g. Cook the chicken" oninput="steps[${i}].title = this.value">
+        <textarea placeholder="Full instructions..." oninput="steps[${i}].description = this.value">${escapeHtml(step.description)}</textarea>
       </div>
       <div class="admin-list-actions">
         ${i > 0 ? `<button class="admin-move-btn" onclick="moveStep(${i}, -1)" title="Move up">↑</button>` : '<span class="admin-move-btn-placeholder"></span>'}
@@ -281,7 +281,7 @@ async function handleImageUpload(input) {
   area.innerHTML = '<p style="color:var(--muted);font-size:0.875rem;">Uploading...</p>';
   try {
     imageUrl = await uploadRecipeImage(file);
-    area.innerHTML = `<img src="${imageUrl}" class="image-preview-thumb" alt="Recipe image"><p class="image-upload-hint">Click to change</p>`;
+    area.innerHTML = `<img src="${escapeHtml(imageUrl)}" class="image-preview-thumb" alt="Recipe image"><p class="image-upload-hint">Click to change</p>`;
   } catch(e) {
     area.innerHTML = `<div class="image-upload-placeholder"><span>+</span><p>Upload failed: ${e.message}</p></div>`;
   }
@@ -347,11 +347,11 @@ function showPreview() {
   if (error) { showFormError(error); return; }
   hideFormError();
 
-  const ingredientRows = ingredients.map(ing => `<li><span>${ing.name}</span><span class="ing-qty">${ing.amount === null || ing.amount === '' ? ing.unit : ing.amount + ' ' + ing.unit}</span></li>`).join('');
-  const methodSteps    = steps.map((step, i) => `<li><span class="step-num">${i + 1}</span><span class="step-text"><strong>${step.title}:</strong> ${step.description}</span></li>`).join('');
+  const ingredientRows = ingredients.map(ing => `<li><span>${escapeHtml(ing.name)}</span><span class="ing-qty">${ing.amount === null || ing.amount === '' ? escapeHtml(ing.unit) : ing.amount + ' ' + escapeHtml(ing.unit)}</span></li>`).join('');
+  const methodSteps    = steps.map((step, i) => `<li><span class="step-num">${i + 1}</span><span class="step-text"><strong>${escapeHtml(step.title)}:</strong> ${escapeHtml(step.description)}</span></li>`).join('');
 
   document.getElementById('preview-content').innerHTML = `
-    ${data.image ? `<div class="recipe-banner-wrap"><div class="recipe-banner-image"><img src="${data.image}" alt="${data.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div><div class="recipe-hero-card"><div class="recipe-hero-top"><span class="${badgeClass(data.section)}">${data.section}</span></div><h1 class="recipe-title">${data.title}</h1><div class="recipe-meta"><span class="recipe-meta-item">${clockIconSvg(16)} ${data.cookTime}</span><span class="recipe-meta-item">${portionIconSvg(16)} 1 portion</span></div></div></div>` : `<div class="recipe-hero-top"><span class="${badgeClass(data.section)}">${data.section}</span></div><h1 class="recipe-title">${data.title}</h1><div class="recipe-meta"><span class="recipe-meta-item">${clockIconSvg(16)} ${data.cookTime}</span><span class="recipe-meta-item">${portionIconSvg(16)} 1 portion</span></div>`}
+    ${data.image ? `<div class="recipe-banner-wrap"><div class="recipe-banner-image"><img src="${escapeHtml(data.image)}" alt="${escapeHtml(data.title)}" style="width:100%;height:100%;object-fit:cover;display:block;"></div><div class="recipe-hero-card"><div class="recipe-hero-top"><span class="${badgeClass(data.section)}">${escapeHtml(data.section)}</span></div><h1 class="recipe-title">${escapeHtml(data.title)}</h1><div class="recipe-meta"><span class="recipe-meta-item">${clockIconSvg(16)} ${escapeHtml(data.cookTime)}</span><span class="recipe-meta-item">${portionIconSvg(16)} 1 portion</span></div></div></div>` : `<div class="recipe-hero-top"><span class="${badgeClass(data.section)}">${escapeHtml(data.section)}</span></div><h1 class="recipe-title">${escapeHtml(data.title)}</h1><div class="recipe-meta"><span class="recipe-meta-item">${clockIconSvg(16)} ${escapeHtml(data.cookTime)}</span><span class="recipe-meta-item">${portionIconSvg(16)} 1 portion</span></div>`}
     <div class="macros-strip" style="margin-top:1.5rem;">
       <div class="macro-item"><span class="macro-value">${data.calories}</span><span class="macro-label">Calories</span></div>
       <div class="macro-item"><span class="macro-value">${data.protein}g</span><span class="macro-label">Protein</span></div>
