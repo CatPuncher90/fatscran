@@ -209,8 +209,15 @@ async function uploadAvatar(file) {
   if (!session) throw new Error('Must be logged in to upload avatar');
   const ext      = file.name.split('.').pop().toLowerCase();
   const filename = `${session.user.id}/avatar.${ext}`;
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${filename}`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' }, body: file });
-  if (!res.ok) throw new Error('Avatar upload failed: ' + await res.text());
+  const url      = `${SUPABASE_URL}/storage/v1/object/avatars/${filename}`;
+  console.log('[uploadAvatar] uploading to:', url);
+  const res = await fetch(url, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' }, body: file });
+  console.log('[uploadAvatar] response status:', res.status, res.statusText);
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('[uploadAvatar] error response:', errText);
+    throw new Error('Avatar upload failed: ' + errText);
+  }
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${filename}`;
 }
 

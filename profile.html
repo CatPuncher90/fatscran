@@ -128,7 +128,10 @@ async function handleAvatarUpload(e) {
     if (ph)  ph.style.display = 'none';
     if (statusEl) statusEl.textContent = 'Photo updated';
   } catch(err) {
-    if (statusEl) statusEl.textContent = 'Upload failed';
+    if (statusEl) {
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      statusEl.className   = 'profile-save-status profile-save-status--error';
+    }
   }
   uploadingAvatar = false;
 }
