@@ -194,10 +194,12 @@ function renderPage() {
       <p class="section-label">Reviews</p>
       <div id="review-list" class="review-list"></div>
       <div id="review-form" class="review-form">
-        <p class="review-form-label">Leave a review</p>
-        <div class="star-picker">${[1,2,3,4,5].map(i => `<span id="star-${i}" class="star-picker-star star--empty" onclick="setStars(${i})">&#9733;</span>`).join('')}</div>
-        <textarea id="review-text" placeholder="Write a review (optional)"></textarea>
-        <button id="submit-btn" onclick="submitRating()">Submit review</button>
+        ${getSession() ? `
+          <p class="review-form-label">Leave a review</p>
+          <div class="star-picker">${[1,2,3,4,5].map(i => `<span id="star-${i}" class="star-picker-star star--empty" onclick="setStars(${i})">&#9733;</span>`).join('')}</div>
+          <textarea id="review-text" placeholder="Write a review (optional)"></textarea>
+          <button id="submit-btn" onclick="submitRating()">Submit review</button>
+        ` : `<p class="reviews-empty"><a href="#" onclick="openAuthModal();return false;">Sign in</a> to leave a review.</p>`}
       </div>
     </div>`;
 
