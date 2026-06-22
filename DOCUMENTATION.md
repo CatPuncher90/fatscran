@@ -48,13 +48,18 @@ fatscran/
 All pages that use the Supabase backend load scripts in this order:
 
 ```html
+<script src="https://js-de.sentry-cdn.com/7e75aa5aac90f9f87fe2ea2f59c6b137.min.js"
+        integrity="sha256-uJqZ9zwsj6gMvcoGxgfxs6q1L3kHWCLNxJGRCckAZ6E="
+        crossorigin="anonymous"></script>
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
 <!-- then js/db.js if the page needs it -->
 ```
 
-`auth.js` defines `SUPABASE_URL` and `SUPABASE_KEY`, which `db.js` depends on, so `auth.js` must always come before `db.js`.
+The Sentry loader is first so unhandled errors in all subsequent scripts are captured. It carries a Subresource Integrity hash — if the CDN content changes the browser will refuse to execute it. `auth.js` defines `SUPABASE_URL` and `SUPABASE_KEY`, which `db.js` depends on, so `auth.js` must always come before `db.js`.
+
+> **SRI maintenance:** If Sentry rotates the loader, the `integrity` hash will no longer match and the script will be blocked silently. Recompute the hash with `curl -s <url> | openssl dgst -sha256 -binary | openssl base64 -A` and update all 6 HTML pages.
 
 ---
 
@@ -113,7 +118,7 @@ A minimal Supabase REST client. All methods use `authedHeaders()` which injects 
 | `sb.delete(table, params)` | DELETE from a Supabase table |
 | `sb.signInWithEmail(email, password)` | Signs in via email/password |
 | `sb.signUpWithEmail(email, password)` | Creates a new account |
-| `sb.signInWithGoogle()` | Initiates Google OAuth redirect |
+| `sb.signInWithGoogle()` | Initiates Google OAuth redirect. The `redirect_to` URL is hardcoded to `https://catpuncher90.github.io/fatscran/` (not derived from `window.location.origin`) to prevent open redirect if the page is proxied from another domain. |
 | `sb.signOut()` | Signs out and clears session |
 | `sb.refreshSession(refreshToken)` | Refreshes an expired access token |
 
@@ -133,8 +138,8 @@ The session is stored in localStorage under the key `fatscran-session` as a JSON
 | Function | Description |
 |---|---|
 | `getSession()` | Returns the stored session object, or null |
-| `setSession(session)` | Stores session in localStorage |
-| `clearSession()` | Removes session from localStorage |
+| `isLoggedIn()` | Returns true only if a session exists **and** `expires_at > Date.now()`. Expired sessions return false so auth-gated UI does not appear before `ensureSession()` refreshes the token. |
+| `clearSession()` | Removes `fatscran-session` from localStorage and `fatscran-state` from sessionStorage (prevents search state leaking to the next user on a shared device). |
 
 ### Auth modal
 
@@ -144,7 +149,7 @@ The session is stored in localStorage under the key `fatscran-session` as a JSON
 |---|---|
 | `openAuthModal()` | Shows the auth modal |
 | `closeAuthModalDirect()` | Hides the auth modal |
-| `handleAuthSubmit()` | Handles email/password sign-in or sign-up |
+| `handleAuthSubmit()` | Handles email/password sign-in or sign-up. On signup, enforces a minimum of 8 characters and at least one number or symbol before calling Supabase. On sign-in failure, always shows a generic "Invalid email or password." message regardless of the Supabase error, to prevent account enumeration. |
 | `updateNavAuth()` | Updates the nav to show sign-in button or user avatar |
 | `toggleUserMenu()` | Opens/closes the avatar dropdown |
 | `handleSignOut()` | Signs out and refreshes nav state |
@@ -171,7 +176,7 @@ These functions sync to Supabase tables when the user is signed in, and fall bac
 | Function | Description |
 |---|---|
 | `getFavs()` | Returns array of favourite recipe IDs |
-| `toggleFavSync(id)` | Adds or removes a recipe from favourites. Calls `ensureSession()` and guards against null session before the POST. |
+| `toggleFavSync(id)` | Fetches all favourite rows in one GET, checks existence locally, issues a single DELETE or POST, then returns the updated ID array from the local copy — no second network round trip. |
 | `getListSync()` | Returns array of `{ id, portions }` shopping list items |
 | `saveListSync(list)` | Replaces the shopping list entirely |
 | `addToListSync(id, portions)` | Adds or updates a recipe in the shopping list |
@@ -185,6 +190,10 @@ These functions sync to Supabase tables when the user is signed in, and fall bac
 
 Loaded by pages that need to read or write recipes or user profiles from Supabase (`recipe.html`, `admin.html`, `shopping.html`, `planner.html`, `profile.html`). Depends on `SUPABASE_URL` and `SUPABASE_KEY` defined in `auth.js`.
 
+### Error handling
+
+All HTTP failure paths call `dbError(context, res)` — a private helper that reads the response body, logs `context [status]: body` to the console and to Sentry, then throws `new Error('Save failed. Please try again.')`. This prevents raw Supabase error text (which can contain table names, column names, and constraint details) from reaching the user.
+
 ### Recipe functions
 
 | Function | Description |
@@ -194,7 +203,7 @@ Loaded by pages that need to read or write recipes or user profiles from Supabas
 | `fetchRecipeByIdDirect(id)` | Fetches a single recipe by hitting only the 4 required tables for that ID in parallel. Faster than loading all recipes. Used by `recipe.html`. Falls back to the local `recipes` array if the fetch fails. |
 | `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. The macro payload includes `sugar` (nullable) in addition to calories, protein, carbs, fat, and fiber. If `editingId` is provided, updates existing records; otherwise inserts new ones. Returns the recipe ID. |
 | `deleteRecipe(id)` | Deletes a recipe and all its related rows in the 4 tables. |
-| `uploadRecipeImage(file)` | Uploads an image file to the `recipe-images` Supabase Storage bucket and returns the public URL. Logs the upload URL and response status to the console; on failure logs the error body before throwing. |
+| `uploadRecipeImage(file)` | Validates that `file.type` starts with `image/` and that `file.size` is under 5 MB before uploading to the `recipe-images` Supabase Storage bucket. On HTTP failure, logs the full status and response body to Sentry via `dbError()` then throws a generic message. |
 | `checkIsAdmin()` | Checks the `profiles` table for the current user and returns true if `is_admin` is set. Returns false if not signed in. |
 
 ### Profile functions
@@ -203,7 +212,7 @@ Loaded by pages that need to read or write recipes or user profiles from Supabas
 |---|---|
 | `getProfile()` | Calls `ensureSession()` then fetches the current user's row from the `profiles` table (`?id=eq.{userId}`). Returns the profile object or `null` if not signed in or not found. |
 | `saveProfile(data)` | Calls `ensureSession()` then upserts the profile row using POST with `Prefer: resolution=merge-duplicates`. The `id` field (matching the auth user ID) is always included in the payload as the primary key. |
-| `uploadAvatar(file)` | Uploads an image file to the `avatars` Supabase Storage bucket at path `{userId}/avatar.{ext}` with `x-upsert: true`. Logs the upload URL before the fetch and the response status after. On failure, logs the error response body before throwing. Returns the public URL on success. |
+| `uploadAvatar(file)` | Validates file type (`image/*`) and size (≤5 MB), then uploads to the `avatars` Supabase Storage bucket at `{userId}/avatar.{ext}`. On failure, logs full detail to Sentry via `dbError()` and throws a generic message. Returns the public URL on success. |
 
 ---
 
@@ -289,7 +298,7 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 
 ### Features
 
-- **Search:** Filters by recipe title and ingredient names in real time as the user types. The search input has `autocomplete="off"`, `autocorrect="off"`, `autocapitalize="off"`, and `spellcheck="false"` to suppress mobile browser password prompts and autocorrect overlays.
+- **Search:** Filters by recipe title and ingredient names. The input is wrapped in a `<form autocomplete="off">` (form-level attribute is required because some browsers ignore input-level `autocomplete`). Input also carries `autocorrect="off"`, `autocapitalize="off"`, `spellcheck="false"`, and `name="search"`. Keystrokes are debounced via `onSearchInput()` with a 180ms timeout so `applyFilters()` only fires once the user pauses typing.
 - **Sort dropdown:** Sits inline with the search bar. Options: No sort (default), Highest protein, Lowest calories, Quickest cook time. Sorting is always applied within section groups, never across them. Cook time sort parses the string value (e.g. "1 hr 20 mins") into minutes for accurate ordering.
 - **Section filters:** Pill buttons for All, Breakfast, Dinner, Tea, Dessert, Favourites. Sauces button is hidden automatically if no sauce recipes exist. Only one active at a time.
 - **Default order:** When sort is set to "No sort" and the All filter is active, recipes are grouped by section in this order: Breakfast, Dinner, Tea, Sauces, Dessert.
@@ -338,10 +347,10 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 - **Share button:** On mobile uses the Web Share API (native share sheet). On desktop copies the URL to clipboard and briefly shows "Copied!" before resetting. Both the add and share buttons use inline SVG icons with a `.btn-label` span for the text so the icon is preserved during state changes.
 - **Ingredients list:** Amounts scaled to selected portions using `basePortions` ratio. "to taste" ingredients show their unit string instead.
 - **Method steps:** Numbered list with a terracotta circle number badge.
-- **Ratings and reviews:** Fetched from and submitted to Supabase `ratings` table. Star picker (1-5), optional text review. Reviews displayed in reverse chronological order with average rating shown.
+- **Ratings and reviews:** Only shown to signed-in users (gated via `getSession()` — the form is hidden and replaced with a "Sign in to leave a review" prompt for signed-out users). Fetched from and submitted to Supabase `ratings` table. Review textarea has `maxlength="1000"`. Reviews display for everyone regardless of auth state.
 - **Admin edit button:** If `checkIsAdmin()` returns true, an "Edit recipe" button appears in the action row linking to `admin.html?edit={id}`.
 - **Print view:** Printing a recipe page hides nav, back link, portions control, action buttons, banner image, and ratings. Shows title, macros, ingredients, and method steps cleanly in black and white.
-- **Not found state:** If the `id` param doesn't match any recipe (and the Supabase fetch also returns nothing), shows a "Recipe not found" message.
+- **Not found state:** If `recipeId` is `NaN` or falsy (missing/non-numeric `?id=` param), the not-found state renders immediately before any auth or Supabase calls. If the ID is valid but not found in Supabase, the same state renders after the fetch.
 
 ### Key JS functions
 
@@ -823,5 +832,10 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 - **`user_id` is sent in POST request bodies** for `favourites`, `shopping_list`, and `meal_plans` by the sync functions in `js/auth.js`. The `profiles` table is the exception: its PK column is `id` (not `user_id`) and must be included in POST upsert payloads as the conflict key.
 - **`ensureSession()` before profile fetches.** `getProfile()` and `saveProfile()` both call `ensureSession()` before reading the session object, ensuring the access token is refreshed if expired. If a profile request returns a 401, check that `ensureSession` is resolving correctly.
 - **My Profile nav link** appears in the signed-in user dropdown (above Sign out), added by `updateNavAuth()` in `js/auth.js`. It links to `profile.html`.
-- **XSS protection:** All user-supplied strings (recipe title, step text, ingredient name/unit, review text, cook time, section display text, display name, etc.) must be passed through `escapeHtml()` from `js/utils.js` before being interpolated into an `innerHTML` template literal. Badge CSS class names (`badgeClass()` return values) and numeric macro values are intentionally not escaped. If you add a new `innerHTML` template, apply `escapeHtml()` to every string field that originates from the database or user input.
+- **XSS protection:** All user-supplied strings (recipe title, step text, ingredient name/unit, review text, cook time, section display text, display name, user email, avatar URL, etc.) must be passed through `escapeHtml()` from `js/utils.js` before being interpolated into an `innerHTML` template literal. Badge CSS class names (`badgeClass()` return values) and numeric macro values are intentionally not escaped. If you add a new `innerHTML` template, apply `escapeHtml()` to every string field that originates from the database or user input.
+- **Never surface raw Supabase errors to users.** All HTTP failure paths in `js/db.js` go through `dbError(context, res)` which logs the full detail to Sentry and throws a generic "Save failed. Please try again." message. Do not add new `throw new Error('... ' + await res.text())` patterns.
+- **Password validation is client-side only** for the signup flow (≥8 chars, ≥1 number or symbol). Supabase enforces its own minimum server-side. The client check exists for immediate feedback — do not remove it without also tightening the Supabase Auth settings.
+- **Login error messages are intentionally generic.** `handleAuthSubmit()` always shows "Invalid email or password." on sign-in failure, regardless of what Supabase returns. This prevents account enumeration. The real error goes to Sentry. Do not change this to show the Supabase error message.
+- **`isLoggedIn()` checks expiry.** Returns false for sessions where `expires_at <= Date.now()`. Do not use `!!getSession()` as a logged-in check elsewhere — always call `isLoggedIn()`.
 - **`confirmCopy()` state capture:** The copy modal's confirm handler captures `copyMode`, `copySlotMeal`, `copySlotRecipeId`, and `copyFromDay` into local variables *before* calling `closeCopyModalDirect()`, because that function resets those module-level variables to null. Always follow this pattern when reading state before closing a modal that clears state.
+- **Sentry SRI hash:** The Sentry loader script tag on all pages includes an `integrity="sha256-..."` attribute. If the hash ever stops matching (Sentry rotates the loader), the script is silently blocked and error reporting stops. Recompute the hash with `curl -s <url> | openssl dgst -sha256 -binary | openssl base64 -A` and update all 6 HTML files.
