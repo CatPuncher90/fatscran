@@ -232,7 +232,7 @@ async function addToListSync(id, portions) {
     } else {
       await sb.post('shopping_list', { recipe_id: id, portions });
     }
-  } catch(e) { console.error('addToListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); }
+  } catch(e) { console.error('addToListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); throw e; }
 }
 
 async function removeFromListSync(id) {
@@ -277,7 +277,7 @@ async function savePlanSlot(weekKey, slotKey, recipeId) {
         await sb.post('meal_plans', { week_key: weekKey, slot_key: slotKey, recipe_id: recipeId });
       }
     }
-  } catch(e) { console.error('savePlanSlot', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); }
+  } catch(e) { console.error('savePlanSlot', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); throw e; }
 }
 
 // ---------------------------------------------------------------------------

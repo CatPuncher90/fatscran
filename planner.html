@@ -278,10 +278,28 @@ function renderBatchSummary(plan) {
     </div>`;
 }
 
+function showPlannerError(msg) {
+  let el = document.getElementById('planner-write-error');
+  if (!el) {
+    el = document.createElement('p');
+    el.id = 'planner-write-error';
+    el.className = 'auth-error';
+    el.style.cssText = 'margin: 0.5rem 0; max-width: 600px;';
+    document.querySelector('main').insertBefore(el, document.getElementById('week-grid'));
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
 async function removeFromSlot(day, meal) {
   const key = `${day}-${meal}`;
   delete currentPlan[key];
-  await savePlanSlot(weekKey(currentWeekOffset), key, null);
+  try {
+    await savePlanSlot(weekKey(currentWeekOffset), key, null);
+  } catch(e) {
+    showPlannerError('Could not remove slot: ' + e.message);
+  }
   renderWeek();
 }
 
@@ -429,7 +447,11 @@ function filterModal(query) {
 async function selectRecipe(id) {
   const key = `${modalDay}-${modalMeal}`;
   currentPlan[key] = id;
-  await savePlanSlot(weekKey(currentWeekOffset), key, id);
+  try {
+    await savePlanSlot(weekKey(currentWeekOffset), key, id);
+  } catch(e) {
+    showPlannerError('Could not save slot: ' + e.message);
+  }
   closeModalDirect();
   renderWeek();
 }
@@ -437,7 +459,11 @@ async function selectRecipe(id) {
 async function clearSlotFromModal() {
   const key = `${modalDay}-${modalMeal}`;
   delete currentPlan[key];
-  await savePlanSlot(weekKey(currentWeekOffset), key, null);
+  try {
+    await savePlanSlot(weekKey(currentWeekOffset), key, null);
+  } catch(e) {
+    showPlannerError('Could not clear slot: ' + e.message);
+  }
   closeModalDirect();
   renderWeek();
 }

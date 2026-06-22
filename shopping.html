@@ -191,9 +191,28 @@ function suggestionsHTML(list) {
     </div>`;
 }
 
+function showShoppingError(msg) {
+  const layout = document.getElementById('shopping-layout');
+  let el = document.getElementById('shopping-write-error');
+  if (!el) {
+    el = document.createElement('p');
+    el.id = 'shopping-write-error';
+    el.className = 'auth-error';
+    el.style.margin = '0.5rem 0';
+    layout.parentNode.insertBefore(el, layout);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
 async function addSuggestion(id) {
-  await addToListSync(id, 1);
-  await render();
+  try {
+    await addToListSync(id, 1);
+    await render();
+  } catch(e) {
+    showShoppingError('Could not add recipe: ' + e.message);
+  }
 }
 
 async function render() {
