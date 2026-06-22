@@ -168,13 +168,16 @@ async function toggleFavSync(id) {
   }
   await ensureSession();
   try {
-    const rows = await sb.get('favourites', `select=id&recipe_id=eq.${id}`);
-    if (rows.length) {
-      await sb.delete('favourites', `id=eq.${rows[0].id}`);
+    const rows = await sb.get('favourites', 'select=id,recipe_id');
+    const existing = rows.find(r => r.recipe_id === id);
+    const currentIds = rows.map(r => r.recipe_id);
+    if (existing) {
+      await sb.delete('favourites', `id=eq.${existing.id}`);
+      return currentIds.filter(fid => fid !== id);
     } else {
-      await sb.post('favourites', { recipe_id: id });
+      await sb.post('favourites', { recipe_id: id, user_id: getSession().user.id });
+      return [...currentIds, id];
     }
-    return getFavs();
   } catch(e) { console.error('toggleFavSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); return []; }
 }
 
