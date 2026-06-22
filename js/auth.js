@@ -112,7 +112,8 @@ function getUser() {
 }
 
 function isLoggedIn() {
-  return !!getSession();
+  const s = getSession();
+  return !!s && s.expires_at > Date.now();
 }
 
 // Auto-refresh token if within 5 minutes of expiry
