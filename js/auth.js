@@ -373,7 +373,12 @@ async function handleAuthSubmit() {
     if (authMode === 'signin') {
       await sb.signInWithEmail(email, password);
     } else {
-      await sb.signUpWithEmail(email, password);
+      const data = await sb.signUpWithEmail(email, password);
+      if (!data.access_token) {
+        closeAuthModalDirect();
+        showPageNotice('Check your email to confirm your account.');
+        return;
+      }
     }
     closeAuthModalDirect();
     updateNavAuth();
@@ -384,6 +389,20 @@ async function handleAuthSubmit() {
     btn.textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
     btn.disabled    = false;
   }
+}
+
+function showPageNotice(msg) {
+  let el = document.getElementById('page-notice');
+  if (!el) {
+    el = document.createElement('p');
+    el.id        = 'page-notice';
+    el.className = 'auth-error';
+    el.style.cssText = 'margin:0 0 1.25rem;text-align:center;background:#DFF0D8;border-color:#BCE8A8;color:#2A5820;';
+    const main = document.querySelector('main');
+    if (main) main.insertBefore(el, main.firstChild);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
 function showAuthError(msg) {
