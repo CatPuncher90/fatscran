@@ -214,6 +214,11 @@ function changePortion(delta) {
 }
 
 async function init() {
+  if (!recipeId || isNaN(recipeId)) {
+    document.title = 'Not Found — FatScran';
+    mainEl.innerHTML = `<a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
+    return;
+  }
   await initAuth();
   [recipe, isAdmin] = await Promise.all([fetchRecipeByIdDirect(recipeId), checkIsAdmin()]);
 
