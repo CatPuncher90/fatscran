@@ -49,6 +49,7 @@ async function fetchAllRecipes() {
     }));
   } catch(e) {
     console.warn('Supabase fetch failed, falling back to local recipes:', e);
+    if (typeof Sentry !== 'undefined') Sentry.captureException(e);
     return typeof recipes !== 'undefined' ? recipes : [];
   }
 }
@@ -89,6 +90,7 @@ async function fetchRecipeByIdDirect(id) {
     };
   } catch(e) {
     console.warn('fetchRecipeByIdDirect failed, falling back:', e);
+    if (typeof Sentry !== 'undefined') Sentry.captureException(e);
     return typeof recipes !== 'undefined' ? (recipes.find(r => r.id === id) || null) : null;
   }
 }
@@ -216,6 +218,7 @@ async function uploadAvatar(file) {
   if (!res.ok) {
     const errText = await res.text();
     console.error('[uploadAvatar] error response:', errText);
+    if (typeof Sentry !== 'undefined') Sentry.captureMessage(`uploadAvatar failed (${res.status}): ${errText}`);
     throw new Error('Avatar upload failed: ' + errText);
   }
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${filename}`;

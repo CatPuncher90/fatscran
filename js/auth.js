@@ -155,7 +155,7 @@ async function getFavs() {
   try {
     const rows = await sb.get('favourites', 'select=recipe_id&order=created_at.desc');
     return rows.map(r => r.recipe_id);
-  } catch(e) { console.error('getFavs', e); return getFavourites(); }
+  } catch(e) { console.error('getFavs', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); return getFavourites(); }
 }
 
 async function toggleFavSync(id) {
@@ -175,7 +175,7 @@ async function toggleFavSync(id) {
       await sb.post('favourites', { recipe_id: id });
     }
     return getFavs();
-  } catch(e) { console.error('toggleFavSync', e); return []; }
+  } catch(e) { console.error('toggleFavSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); return []; }
 }
 
 // SHOPPING LIST
@@ -186,7 +186,7 @@ async function getListSync() {
   try {
     const rows = await sb.get('shopping_list', 'select=recipe_id,portions&order=created_at.asc');
     return rows.map(r => ({ id: r.recipe_id, portions: r.portions }));
-  } catch(e) { console.error('getListSync', e); return getList(); }
+  } catch(e) { console.error('getListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); return getList(); }
 }
 
 async function saveListSync(list) {
@@ -210,7 +210,7 @@ async function saveListSync(list) {
         await sb.post('shopping_list', { recipe_id: item.id, portions: item.portions });
       }
     }
-  } catch(e) { console.error('saveListSync', e); saveList(list); }
+  } catch(e) { console.error('saveListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); saveList(list); }
 }
 
 async function addToListSync(id, portions) {
@@ -229,13 +229,13 @@ async function addToListSync(id, portions) {
     } else {
       await sb.post('shopping_list', { recipe_id: id, portions });
     }
-  } catch(e) { console.error('addToListSync', e); }
+  } catch(e) { console.error('addToListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); }
 }
 
 async function removeFromListSync(id) {
   if (!isLoggedIn()) { saveList(getList().filter(i => i.id !== id)); return; }
   await ensureSession();
-  try { await sb.delete('shopping_list', `recipe_id=eq.${id}`); } catch(e) { console.error('removeFromListSync', e); }
+  try { await sb.delete('shopping_list', `recipe_id=eq.${id}`); } catch(e) { console.error('removeFromListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); }
 }
 
 // MEAL PLANS
@@ -250,7 +250,7 @@ async function getPlanSync(weekKey) {
     const plan = {};
     rows.forEach(r => { plan[r.slot_key] = r.recipe_id; });
     return plan;
-  } catch(e) { console.error('getPlanSync', e); return {}; }
+  } catch(e) { console.error('getPlanSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); return {}; }
 }
 
 async function savePlanSlot(weekKey, slotKey, recipeId) {
@@ -274,7 +274,7 @@ async function savePlanSlot(weekKey, slotKey, recipeId) {
         await sb.post('meal_plans', { week_key: weekKey, slot_key: slotKey, recipe_id: recipeId });
       }
     }
-  } catch(e) { console.error('savePlanSlot', e); }
+  } catch(e) { console.error('savePlanSlot', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); }
 }
 
 // ---------------------------------------------------------------------------
