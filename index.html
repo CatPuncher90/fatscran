@@ -29,15 +29,15 @@
     <h1>Meal Prep Recipes</h1>
     <p>High protein, batch-friendly meals to fuel your week.</p>
   </div>
-  <div class="search-bar-row">
-    <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="onSearchInput()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <form class="search-bar-row" autocomplete="off" onsubmit="return false;">
+    <input id="search-input" type="text" name="search" placeholder="Search recipes or ingredients..." oninput="onSearchInput()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <select id="sort-select" onchange="applyFilters()" class="sort-select">
       <option value="default">No sort</option>
       <option value="protein">Highest protein</option>
       <option value="calories">Lowest calories</option>
       <option value="cooktime">Quickest cook time</option>
     </select>
-  </div>
+  </form>
   <div class="filters" id="filters">
     <button class="filter-btn active" data-section="all">All</button>
     <button class="filter-btn" data-section="breakfast">Breakfast</button>
