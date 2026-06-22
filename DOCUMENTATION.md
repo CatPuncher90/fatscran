@@ -62,6 +62,12 @@ All pages that use the Supabase backend load scripts in this order:
 
 Loaded by all pages. Contains helpers that would otherwise be duplicated across page scripts.
 
+### HTML escaping
+
+| Function | Description |
+|---|---|
+| `escapeHtml(str)` | Escapes `&`, `<`, `>`, `"`, and `'` to their HTML entities. Returns `''` for null/undefined. **Must be called on all user-supplied strings before they are interpolated into innerHTML template literals.** Does not escape SVG icons, CSS class names, or numeric values. |
+
 ### localStorage helpers
 
 | Function | Description |
@@ -160,10 +166,12 @@ async function onAuthStateChange() { /* re-render with new auth state */ }
 
 These functions sync to Supabase tables when the user is signed in, and fall back to localStorage when signed out. Pages call these instead of directly reading/writing localStorage.
 
+> **`user_id` note:** For `favourites`, `shopping_list`, and `meal_plans`, the `user_id` column is explicitly included in POST request bodies. This ensures Supabase RLS `auth.uid()` can match the row correctly. The `profiles` table is different: its PK column is `id` (not `user_id`) and must be included in upsert payloads as the conflict key.
+
 | Function | Description |
 |---|---|
 | `getFavs()` | Returns array of favourite recipe IDs |
-| `toggleFavSync(id)` | Adds or removes a recipe from favourites |
+| `toggleFavSync(id)` | Adds or removes a recipe from favourites. Calls `ensureSession()` and guards against null session before the POST. |
 | `getListSync()` | Returns array of `{ id, portions }` shopping list items |
 | `saveListSync(list)` | Replaces the shopping list entirely |
 | `addToListSync(id, portions)` | Adds or updates a recipe in the shopping list |
@@ -184,9 +192,9 @@ Loaded by pages that need to read or write recipes or user profiles from Supabas
 | `fetchAllRecipes()` | Fetches all recipes from the 4 recipe tables in parallel and assembles them into the same schema as `recipes.js` |
 | `fetchRecipeById(id)` | Fetches a single recipe from Supabase by ID. Used in admin for editing. |
 | `fetchRecipeByIdDirect(id)` | Fetches a single recipe by hitting only the 4 required tables for that ID in parallel. Faster than loading all recipes. Used by `recipe.html`. Falls back to the local `recipes` array if the fetch fails. |
-| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. If `editingId` is provided, updates existing records; otherwise inserts new ones. Returns the recipe ID. |
+| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. The macro payload includes `sugar` (nullable) in addition to calories, protein, carbs, fat, and fiber. If `editingId` is provided, updates existing records; otherwise inserts new ones. Returns the recipe ID. |
 | `deleteRecipe(id)` | Deletes a recipe and all its related rows in the 4 tables. |
-| `uploadRecipeImage(file)` | Uploads an image file to the `recipe-images` Supabase Storage bucket and returns the public URL. |
+| `uploadRecipeImage(file)` | Uploads an image file to the `recipe-images` Supabase Storage bucket and returns the public URL. Logs the upload URL and response status to the console; on failure logs the error body before throwing. |
 | `checkIsAdmin()` | Checks the `profiles` table for the current user and returns true if `is_admin` is set. Returns false if not signed in. |
 
 ### Profile functions
@@ -195,7 +203,7 @@ Loaded by pages that need to read or write recipes or user profiles from Supabas
 |---|---|
 | `getProfile()` | Calls `ensureSession()` then fetches the current user's row from the `profiles` table (`?id=eq.{userId}`). Returns the profile object or `null` if not signed in or not found. |
 | `saveProfile(data)` | Calls `ensureSession()` then upserts the profile row using POST with `Prefer: resolution=merge-duplicates`. The `id` field (matching the auth user ID) is always included in the payload as the primary key. |
-| `uploadAvatar(file)` | Uploads an image file to the `avatars` Supabase Storage bucket at path `{userId}/avatar.{ext}` with `x-upsert: true`. Returns the public URL. |
+| `uploadAvatar(file)` | Uploads an image file to the `avatars` Supabase Storage bucket at path `{userId}/avatar.{ext}` with `x-upsert: true`. Logs the upload URL before the fetch and the response status after. On failure, logs the error response body before throwing. Returns the public URL on success. |
 
 ---
 
@@ -281,7 +289,7 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 
 ### Features
 
-- **Search:** Filters by recipe title and ingredient names in real time as the user types.
+- **Search:** Filters by recipe title and ingredient names in real time as the user types. The search input has `autocomplete="off"`, `autocorrect="off"`, `autocapitalize="off"`, and `spellcheck="false"` to suppress mobile browser password prompts and autocorrect overlays.
 - **Sort dropdown:** Sits inline with the search bar. Options: No sort (default), Highest protein, Lowest calories, Quickest cook time. Sorting is always applied within section groups, never across them. Cook time sort parses the string value (e.g. "1 hr 20 mins") into minutes for accurate ordering.
 - **Section filters:** Pill buttons for All, Breakfast, Dinner, Tea, Dessert, Favourites. Sauces button is hidden automatically if no sauce recipes exist. Only one active at a time.
 - **Default order:** When sort is set to "No sort" and the All filter is active, recipes are grouped by section in this order: Breakfast, Dinner, Tea, Sauces, Dessert.
@@ -290,7 +298,7 @@ Renders all recipes as a filterable, searchable, sortable grid of cards. Each ca
 - **Recipe cards:** Show image (if present), title, section badge, cook time with clock icon (above macros), macros per portion (kcal, protein, carbs, fat), and a "per portion" label at the bottom.
 - **Card title height:** `.card-name` uses `min-height: calc(1.1rem * 1.35 * 2)` to always reserve two lines of height, keeping all cards consistent regardless of title length.
 - **Admin edit button:** If the signed-in user is an admin, a small pencil icon appears on each card linking to `admin.html?edit={id}`.
-- **Back button state:** When clicking through to a recipe, the active section filter, search query, and sort option are saved to `sessionStorage`. On returning to index.html they are restored automatically.
+- **Back button state:** When clicking through to a recipe, the active section filter, search query, and sort option are saved to `sessionStorage`. On returning to index.html they are restored automatically. `restoreState()` is called *after* `Promise.all([fetchAllRecipes(), getFavs(), ...])` completes, ensuring `currentFavs` is populated before the first `renderCards()` call.
 
 ### Key JS functions
 
@@ -326,13 +334,13 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 - **Banner image:** If `recipe.image` is set, shows a HelloFresh-style image banner with the title/badge overlapping it from below. If no image, shows the title/badge/meta inline.
 - **Portions selector:** +/- buttons that re-render the page with scaled ingredient amounts and scaled macros. Starts at 1 portion.
 - **Macros strip:** Shows calories, protein, carbs, fat scaled to the selected number of portions. Sugar and fiber are shown conditionally if present on the recipe (`!= null` check). The strip uses `repeat(auto-fit, minmax(0, 1fr))` to adapt from 4 to 6 columns depending on which optional macros are present.
-- **Add to shopping list button:** Calls `addToListSync()` to save the recipe to the shopping list (Supabase when signed in, localStorage when not). Button text changes to "Update list" if already in the list.
+- **Add to shopping list button:** Calls `addToListSync()` then `await updateBtn()` to save the recipe and immediately update the button state. Button text changes to "Update list" and background darkens if already in the list.
 - **Share button:** On mobile uses the Web Share API (native share sheet). On desktop copies the URL to clipboard and briefly shows "Copied!" before resetting. Both the add and share buttons use inline SVG icons with a `.btn-label` span for the text so the icon is preserved during state changes.
 - **Ingredients list:** Amounts scaled to selected portions using `basePortions` ratio. "to taste" ingredients show their unit string instead.
 - **Method steps:** Numbered list with a terracotta circle number badge.
 - **Ratings and reviews:** Fetched from and submitted to Supabase `ratings` table. Star picker (1-5), optional text review. Reviews displayed in reverse chronological order with average rating shown.
 - **Admin edit button:** If `checkIsAdmin()` returns true, an "Edit recipe" button appears in the action row linking to `admin.html?edit={id}`.
-- **Print view:** Printing a recipe page hides nav, back link, portions control, action buttons, banner image, and ratings. Shows title, macros, ingredients, and method cleanly in black and white.
+- **Print view:** Printing a recipe page hides nav, back link, portions control, action buttons, banner image, and ratings. Shows title, macros, ingredients, and method steps cleanly in black and white.
 - **Not found state:** If the `id` param doesn't match any recipe (and the Supabase fetch also returns nothing), shows a "Recipe not found" message.
 
 ### Key JS functions
@@ -341,8 +349,8 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 |---|---|
 | `renderPage()` | Full re-render of page content for current portions value |
 | `changePortion(delta)` | Increments/decrements portions (min 1) and re-renders |
-| `addToList()` | Calls `addToListSync()` then updates the button state |
-| `updateBtn()` | Reads current list via `getListSync()` and updates button label and colour |
+| `addToList()` | Calls `addToListSync()` then `await updateBtn()` to update button state |
+| `updateBtn()` | Async. Reads current list via `getListSync()` and updates button label and colour. Must be awaited after `addToListSync()` to avoid a race. |
 | `shareRecipe()` | Shares via Web Share API on mobile, copies URL to clipboard on desktop |
 | `fetchRatings()` | GET request to Supabase ratings table |
 | `submitRating()` | POST request to Supabase ratings table |
@@ -355,13 +363,13 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 
 **URL:** `/fatscran/shopping.html`
 
-Fully JavaScript-rendered. Reads the shopping list via `getListSync()` (Supabase when signed in, localStorage when not) and builds a two-column layout: recipe list on the left, ingredient shopping list on the right.
+Fully JavaScript-rendered. Reads the shopping list via `getListSync()` (Supabase when signed in, localStorage when not) and builds a two-column layout: recipe list on the left (380px), ingredient shopping list on the right.
 
 ### Features
 
-- **Recipe list (left panel):** Shows each added recipe with its title, section, portion count, total kcal and protein. Has +/- portion controls and a Remove button per recipe.
+- **Recipe list (left panel):** Shows each added recipe with its title, section, portion count, total kcal and protein. Has +/- portion controls and a Remove button per recipe. Recipe names are allowed to wrap onto two lines (no truncation).
 - **Weekly nutrition totals:** Below the recipe list, shows the summed calories, protein, carbs, and fat across all recipes and portions.
-- **Weekly macro progress bars:** If the user is signed in and has daily targets set in their profile, coloured progress bars appear below the weekly totals showing actual vs target (×7) for calories, protein, carbs, and fat. Colour logic: green = 90–110% of target, amber = under 90%, red = over 110%.
+- **Weekly macro progress bars:** If the user is signed in and has daily targets set in their profile, coloured progress bars labelled **"WEEKLY MACRO PROGRESS (7-day target)"** appear below the weekly totals showing actual vs target (×7) for calories, protein, carbs, and fat. Colour logic: green = 90–110% of target, amber = under 90%, red = over 110%.
 - **High-protein suggestions:** If the user is signed in and has a profile, the top 5 recipes by protein content that are not already in the list are shown with an Add button. Excludes already-listed recipes.
 - **Ingredient list (right panel):** Aggregates and merges all ingredients across all added recipes, scaled by portions. Groups them by food category. Shows quantities with units.
 - **Tick boxes:** Each ingredient can be ticked off. Ticked state persists in `localStorage` (`fatscran-checked`). Ticked items appear faded with strikethrough and a filled checkbox.
@@ -390,15 +398,38 @@ A weekly calendar view showing Monday to Sunday with three meal slots per day (B
 ### Features
 
 - **Week navigation:** Prev/Next buttons move one week at a time. A "Today" button returns to the current week. Prev/Next disable at the ±4 week limit.
-- **Meal slots:** Each slot shows the assigned recipe title and its macros. Clicking a slot opens the recipe picker modal.
-- **Modal picker:** Searchable list of all recipes. Clicking a recipe assigns it to the slot. Includes a "Remove recipe" option if a recipe is already assigned.
-- **Day totals:** If any slots are filled, each day column shows a total kcal and protein for that day. If the user has a calorie target set, the totals row is colour-coded: green = 80–120% of daily target, amber = under 80%, red = over 120%.
-- **Day progress bar:** A thin bar below the day totals shows how many of the 3 meal slots are filled (proportion filled = slots with recipes / 3).
+- **Meal slots:** Each slot shows the assigned recipe title and its macros. Clicking an empty slot opens the recipe picker modal. Clicking a filled slot also opens the modal (with a "Remove recipe" option).
+- **Slot copy button:** When a slot has a recipe, a small copy icon appears alongside the remove (×) button. Clicking it opens a modal with checkboxes for each other day of the week. Confirming copies that recipe to the same meal slot on all checked days.
+- **Day copy button:** When any slot in a day is filled, a copy icon appears in the day column header. Clicking it opens a modal with checkboxes for the other 6 days. Confirming copies all filled slots from that day to each selected day, overwriting those slots. Empty slots in the source day clear the corresponding target slots.
+- **Both copy operations** call `savePlanSlot()` for each affected slot and re-render the week.
+- **Mobile horizontal scroll:** On screens ≤768px the week grid switches from 7 equal columns to a horizontal scrolling flex row. Each day column is a fixed 220px wide, keeping all three meal slots fully visible with no vertical clipping within the grid. The container uses `overflow-x: auto`, `-webkit-overflow-scrolling: touch`, and `scroll-behavior: smooth`.
+- **Recipe picker modal:** Pre-filtered to the meal type of the slot being opened (e.g. opening a breakfast slot shows breakfast recipes by default). A filter toggle row at the top of the modal provides buttons for Breakfast, Dinner, Tea, and All. The active filter is highlighted. The search input filters within the active section filter. The filter resets to the slot's meal type each time the modal opens.
+- **Suggested recipes:** When opening an **empty** slot with no active search query, the top of the modal shows a **"Suggested for you"** section (highlighted with `accent-light` background) containing up to 3 recipe recommendations. Suggestions are only shown when the user has daily macro targets set in their profile. Suggestions are filtered to the slot's meal section and ranked by how closely each recipe's macros match the remaining daily gap (target minus already-planned macros for that day), with protein weighted 3× over calories. The "All [meal] recipes" divider separates suggestions from the full list. Suggestions disappear while the user is searching.
+- **`userProfile` caching:** The profile (including macro targets) is fetched once in `init()` via `Promise.all` and cached in the module-level `userProfile` variable. The modal suggestion logic reads `userProfile` directly — `getProfile()` is not called on every modal open.
+- **Day totals:** If any slots are filled, each day column shows total kcal and protein for that day. If the user has a calorie target set, the totals row is colour-coded: green = 80–120% of daily target, amber = under 80%, red = over 120%.
+- **Day progress bar:** A thin bar below the day totals shows how many of the 3 meal slots are filled.
 - **Batch cook summary:** Below the grid, lists all recipes planned for the week with the days they're needed and cook time.
-- **Weekly macro overview:** Below the batch summary, if the user has targets set in their profile, shows a totals grid comparing the week's planned macros (calories, protein, carbs, fat) against weekly targets (daily target × 7). Each value is coloured green/amber/red using the same 80–120% thresholds as the day totals.
-- **Add week to shopping list:** Calls `addToListSync()` for each unique planned recipe, then redirects to shopping.html.
+- **Weekly macro overview:** Below the batch summary, if the user has targets set in their profile, shows a totals grid comparing the week's planned macros against weekly targets (daily target × 7). Values are coloured using `tl-green`, `tl-amber`, `tl-red` CSS classes applied directly to the `.weekly-total-value` element.
+- **Add week to shopping list:** Counts how many slots each recipe fills across the week and adds that many portions to the shopping list (e.g. oats planned 3 days → 3 portions added). Then redirects to shopping.html.
 - **Today highlight:** Current day column header is highlighted in the accent colour.
-- **Keyboard:** Pressing Escape closes the modal.
+- **Keyboard:** Pressing Escape closes both the recipe picker modal and the copy modal.
+
+### Key JS functions
+
+| Function | Description |
+|---|---|
+| `renderWeek()` | Renders the full 7-day grid including slots, day totals, copy buttons |
+| `openModal(day, meal)` | Opens the recipe picker for a slot; sets `modalSectionFilter = meal` and highlights the matching filter button |
+| `setModalFilter(section)` | Updates `modalSectionFilter`, active button state, and re-runs `filterModal` |
+| `filterModal(query)` | Rebuilds the modal list; prepends suggestions section when slot is empty and query is blank |
+| `getRemainingMacros(day)` | Sums macros from filled slots in a day column and returns the gap to each daily target (clamped to 0) |
+| `getSuggestions(day, meal)` | Returns up to 3 recipes ranked by macro gap fit; skips if no targets set |
+| `openCopySlotModal(day, meal, recipeId)` | Opens the copy modal for a per-slot copy |
+| `openCopyDayModal(day)` | Opens the copy modal for a per-day copy |
+| `confirmCopy()` | Reads checked days, captures copy state into locals *before* closing the modal, then calls `savePlanSlot()` for each affected slot |
+| `addWeekToShoppingList()` | Counts slot occurrences per recipe ID, then adds that count as portions to the shopping list |
+| `removeFromSlot(day, meal)` | Removes a recipe from a slot and saves |
+| `changeWeek(dir)` | Moves the planner ±1 week and reloads plan data |
 
 ### Data storage
 
@@ -416,7 +447,7 @@ Redirects to `index.html` if the user is not signed in. The page content is full
 
 ### Features
 
-- **Avatar:** Displays a circle with the user's initial if no avatar is set. Clicking "Change photo" triggers a hidden file input; the selected image is uploaded to the `avatars` Supabase Storage bucket via `uploadAvatar()` and the preview updates immediately.
+- **Avatar:** Displays a circle with the user's initial if no avatar is set. Clicking "Change photo" triggers a hidden file input; the selected image is uploaded to the `avatars` Supabase Storage bucket via `uploadAvatar()` and the preview updates immediately. If the upload fails, the full error message is shown in red below the button (not silently swallowed).
 - **Display name:** Free-text input saved to the `display_name` column in `profiles`.
 - **Tab toggle — TDEE Calculator / Manual targets:** Switching tabs shows or hides the TDEE calculator section. The chosen mode is saved as `use_tdee_calc` (bool) in the profile.
 - **TDEE calculator:** Takes age, weight (kg), height (cm), sex, and activity level. Calculates BMR using Mifflin-St Jeor, then multiplies by an activity factor to get TDEE. A goal selector (Maintain / Lose weight / Build muscle / Custom) applies a deficit or surplus. A slider sets the deficit/surplus amount (100–1000 kcal, default 500). The label updates live to show "Deficit: X kcal" or "Surplus: X kcal".
@@ -441,7 +472,7 @@ Activity multipliers: sedentary = 1.2, lightly active = 1.375, moderately active
 | `recalc()` | Reads all TDEE inputs and recalculates the four target fields. No-ops if not on TDEE tab or if age/weight/height are empty. |
 | `setTab(tab)` | Switches between `'tdee'` and `'manual'` modes, shows/hides the TDEE section, and triggers `recalc()`. |
 | `onGoalChange()` | Shows/hides the deficit/surplus slider based on the selected goal. Updates the label. |
-| `handleAvatarUpload(e)` | Calls `uploadAvatar()`, updates the preview image, and shows status text. |
+| `handleAvatarUpload(e)` | Calls `uploadAvatar()`, updates the preview image, and shows status text. On error shows the full error message with the error CSS class. |
 | `saveProfileData()` | Collects all form values and calls `saveProfile()`. Disables the save button during the request. |
 | `renderProfile(p)` | Builds the full profile form HTML from an existing profile object (or defaults if new). |
 
@@ -456,18 +487,18 @@ Protected page. On load, `checkIsAdmin()` is called and non-admins see an access
 ### Features
 
 - **Basic info:** Title, section (dropdown), cook time, base portions.
-- **Macros:** Calories, protein, carbs, fat, fiber — all per portion.
+- **Macros:** Calories, protein, carbs, fat, **sugar (optional)**, fiber (optional) — all per portion. Sugar sits between Fat and Fiber in the 6-column macro grid. Sugar and fiber are optional; if left blank they are stored as `null` and shown conditionally on the recipe page and in previews.
 - **Image upload:** Click-to-upload area. Images are uploaded to the `recipe-images` Supabase Storage bucket via `uploadRecipeImage()`. The returned public URL is stored in the `image` field. An existing image can be removed (sets `image` to null).
 - **Ingredients:** Add, remove, and reorder (↑/↓) ingredients. Each row has name, amount (blank = null/"to taste"), and unit fields.
 - **Method steps:** Add, remove, and reorder steps. Each step has a title and full description textarea.
-- **Preview:** Validates the form, then shows a full-page preview overlay rendering the recipe exactly as it would appear on `recipe.html`. The publish button is available from within the preview.
-- **Publish / Save changes:** Calls `saveRecipe()` which upserts across all 4 recipe tables, then redirects to the new/updated recipe page.
+- **Preview:** Validates the form, then shows a full-page preview overlay rendering the recipe exactly as it would appear on `recipe.html`, including sugar and fiber in the macros strip if set. The publish button is available from within the preview.
+- **Publish / Save changes:** Calls `saveRecipe()` which upserts across all 4 recipe tables (including `sugar` in the macros payload), then redirects to the new/updated recipe page.
 - **Cancel:** Returns to `index.html` without saving.
 - **Delete recipe:** Only shown when editing. Confirms before calling `deleteRecipe()`, then redirects to index.html.
 
 ### Form validation
 
-Before preview or publish, the form is validated for: title, cook time, calories, at least one ingredient (all with names), at least one step (all with title and description).
+Before preview or publish, the form is validated for: title, cook time, calories, at least one ingredient (all with names), at least one step (all with title and description). Sugar and fiber are optional and not validated.
 
 ---
 
@@ -481,7 +512,7 @@ Single stylesheet shared across all pages.
 |---|---|---|
 | `--accent` | `#B8561E` | Primary brand colour, buttons, badges |
 | `--accent-dark` | `#964517` | Button hover states |
-| `--accent-light` | `#F3E0D2` | Hover backgrounds |
+| `--accent-light` | `#F3E0D2` | Hover backgrounds, suggestion panel |
 | `--text` | `#1C1208` | Body text |
 | `--muted` | `#7C6E64` | Secondary text, labels |
 | `--border` | `#DDD4C4` | All borders |
@@ -513,8 +544,8 @@ Single stylesheet shared across all pages.
 | Breakpoint | Changes |
 |---|---|
 | `max-width: 800px` | Recipe body and shopping layout switch to single column. Recipe title shrinks. Macros strip goes 2-column. |
-| `max-width: 700px` | Planner grid goes 2-column (from 7). |
-| `max-width: 640px` | Hamburger nav visible, desktop nav links hidden. Recipe banner height increases to 220px (inside banner wrap). Recipe actions switch from flex row to 2-column grid: first button (Add to list) spans both columns, Share and Edit sit side by side below. Admin form grids collapse to 1-column. |
+| `max-width: 768px` | Planner week grid switches from 7 equal columns to a horizontal scrolling flex row (`overflow-x: auto`, `-webkit-overflow-scrolling: touch`). Each `.day-col` is fixed at 220px wide. |
+| `max-width: 640px` | Hamburger nav visible, desktop nav links hidden. Recipe banner height increases to 220px (inside banner wrap). Recipe actions switch from flex row to 2-column grid: first button (Add to list) spans both columns, Share and Edit sit side by side below. Admin form grids collapse: `admin-grid-2` → 1 column, `admin-grid-5` → 2 columns, `admin-grid-6` → 3 columns. |
 | `max-width: 480px` | Main padding reduced. Nav logo shrinks. Card stats and macros go 2-column. Recipe title and macro values shrink further. |
 
 ### Key component classes
@@ -524,6 +555,7 @@ Single stylesheet shared across all pages.
 - **`.btn-sm`** — Small button variant for panel headers, planner actions, and profile page secondary actions.
 - **`.recipe-actions`** — Flex row of action buttons on the recipe page. Goes 2-column grid at ≤640px.
 - **`.admin-form-actions`** — Flex row containing Preview, Publish/Save, and Cancel buttons on the admin page.
+- **`.admin-grid-5`** / **`.admin-grid-6`** — 5 or 6 equal-column grids for the admin macro fields. Use `admin-grid-6` when all 6 macro fields (calories, protein, carbs, fat, sugar, fiber) are present.
 - **`.nav-hamburger`** — Hidden on desktop, visible at ≤640px. Toggles `.is-open` on `.nav-links` via `js/utils.js`.
 - **`.profile-layout`** — Max-width 640px flex column wrapper for the profile page form.
 - **`.avatar-circle`** — 72px circle showing either the user's initial or their avatar photo.
@@ -536,8 +568,18 @@ Single stylesheet shared across all pages.
 - **`.macro-progress-section`** / **`.macro-bars`** / **`.macro-bar-row`** — Weekly macro progress bars on the shopping list. Bar fill classes: `.macro-bar-fill--green`, `--amber`, `--red`.
 - **`.day-totals--green`** / `--amber` / `--red` — Left border traffic light colours on planner day total rows.
 - **`.day-progress-bar`** / **`.day-progress-fill`** — Thin accent bar below day totals showing meal slot fill proportion.
-- **`.weekly-overview`** — Card below the batch summary on the planner showing weekly macro totals vs targets. Value colour classes: `.tl-green`, `.tl-amber`, `.tl-red` on `.weekly-total-item`.
+- **`.weekly-overview`** — Card below the batch summary on the planner showing weekly macro totals vs targets. Value colour classes: `.tl-green`, `.tl-amber`, `.tl-red` applied directly to **`.weekly-total-value`** elements (not to the container).
 - **`.suggestions-section`** / **`.suggestion-card`** — High-protein recipe suggestion cards on the shopping list page.
+- **`.shopping-picker-panel`** — Left panel of the shopping list layout. Grid column is 380px (wider than the right panel's `1fr`).
+- **`.slot-btns`** — Absolute-positioned container in filled planner slot cards holding the remove (×) and copy icon buttons stacked vertically at the top-right.
+- **`.copy-slot-btn`** — Copy icon button inside `.slot-btns`. Coloured muted, turns accent on hover.
+- **`.copy-day-btn`** — Copy icon button in the planner day column header. Absolute-positioned to the right edge; only rendered when `filledSlots > 0`.
+- **`.modal-filter-row`** / **`.modal-filter-btn`** / **`.modal-filter-btn--active`** — Section filter toggle row inside the recipe picker modal. Active button uses accent background.
+- **`.copy-modal`** / **`.copy-modal-body`** / **`.copy-modal-footer`** / **`.copy-day-label`** — Copy destination modal. Max-width 340px. Footer has Cancel and Copy buttons right-aligned.
+- **`.modal-suggestions`** — Accent-light background panel at the top of the recipe picker list for suggested recipes. Only shown for empty slots with no search query.
+- **`.modal-suggestions-label`** — Small uppercase label above the suggestion cards.
+- **`.modal-recipe--suggested`** — Recipe card style within the suggestions panel.
+- **`.modal-full-list-label`** — "All [meal] recipes" divider text between suggestions and the full list.
 
 ### Print styles
 
@@ -617,8 +659,8 @@ Sessions are stored in localStorage as `fatscran-session`. `initAuth()` checks t
 | `protein` | int4 | Per portion (g) |
 | `carbs` | int4 | Per portion (g) |
 | `fat` | int4 | Per portion (g) |
-| `sugar` | numeric | Nullable. Per portion (g). Shown conditionally on recipe page. |
-| `fiber` | numeric | Nullable. Per portion (g). Shown conditionally on recipe page. |
+| `sugar` | numeric | Nullable. Per portion (g). Shown conditionally on recipe page and in admin preview. |
+| `fiber` | numeric | Nullable. Per portion (g). Shown conditionally on recipe page and in admin preview. |
 
 #### recipe_ingredients
 
@@ -658,7 +700,7 @@ RLS: public `SELECT` and `INSERT` allowed (no auth required for ratings).
 | Column | Type | Notes |
 |---|---|---|
 | `id` | int8 | Primary key |
-| `user_id` | uuid | Set automatically by Supabase RLS from auth.uid() |
+| `user_id` | uuid | Included in POST body by `toggleFavSync()` |
 | `recipe_id` | int4 | |
 | `created_at` | timestamptz | Default now() |
 
@@ -669,7 +711,7 @@ RLS: users can only read and write their own rows.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | int8 | Primary key |
-| `user_id` | uuid | Set automatically by RLS |
+| `user_id` | uuid | Included in POST body by `addToListSync()` / `saveListSync()` |
 | `recipe_id` | int4 | |
 | `portions` | int4 | |
 | `created_at` | timestamptz | Default now() |
@@ -681,7 +723,7 @@ RLS: users can only read and write their own rows.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | int8 | Primary key |
-| `user_id` | uuid | Set automatically by RLS |
+| `user_id` | uuid | Included in POST body by `savePlanSlot()` |
 | `week_key` | text | e.g. `"week-2026-5-15"` |
 | `slot_key` | text | e.g. `"Mon-breakfast"` |
 | `recipe_id` | int4 | Nullable (null removes the assignment) |
@@ -716,7 +758,7 @@ RLS: users can read and write their own row (matched on `id = auth.uid()`). Only
 
 ### RLS notes
 
-- For most user-scoped tables (`favourites`, `shopping_list`, `meal_plans`), `user_id` is **never passed in the request body** — Supabase RLS sets it automatically via `auth.uid()`.
+- For `favourites`, `shopping_list`, and `meal_plans`, `user_id` **is included in the POST body** by the respective sync functions in `js/auth.js`. This ensures RLS policies can correctly match the row via `auth.uid()`.
 - The `profiles` table is an exception: the `id` column is the primary key and must be included in the POST body when upserting, because it is used as the conflict resolution key (`Prefer: resolution=merge-duplicates`). `saveProfile()` always includes `id: session.user.id` in the payload.
 - The `sb` object in `auth.js` uses `authedHeaders()` to attach the user JWT, which is what triggers the RLS `auth.uid()` function.
 
@@ -778,6 +820,8 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 - **The Sauces section** exists in the data schema but currently has no recipes. The filter button is hidden automatically until at least one sauce recipe is added.
 - **Cook times** are stored as strings (e.g. "35 mins", "1 hr 20 mins"). The `parseCookTime()` function in `js/utils.js` converts these to minutes for sorting.
 - **Admin access** is granted by setting `is_admin = true` in the `profiles` table directly in the Supabase dashboard. There is no self-serve way to become an admin.
-- **`user_id` is never sent in request payloads** for `favourites`, `shopping_list`, and `meal_plans` — Supabase RLS sets it automatically. The `profiles` table is the exception: its PK column is `id` (not `user_id`) and must be included in POST upsert payloads as the conflict key.
+- **`user_id` is sent in POST request bodies** for `favourites`, `shopping_list`, and `meal_plans` by the sync functions in `js/auth.js`. The `profiles` table is the exception: its PK column is `id` (not `user_id`) and must be included in POST upsert payloads as the conflict key.
 - **`ensureSession()` before profile fetches.** `getProfile()` and `saveProfile()` both call `ensureSession()` before reading the session object, ensuring the access token is refreshed if expired. If a profile request returns a 401, check that `ensureSession` is resolving correctly.
 - **My Profile nav link** appears in the signed-in user dropdown (above Sign out), added by `updateNavAuth()` in `js/auth.js`. It links to `profile.html`.
+- **XSS protection:** All user-supplied strings (recipe title, step text, ingredient name/unit, review text, cook time, section display text, display name, etc.) must be passed through `escapeHtml()` from `js/utils.js` before being interpolated into an `innerHTML` template literal. Badge CSS class names (`badgeClass()` return values) and numeric macro values are intentionally not escaped. If you add a new `innerHTML` template, apply `escapeHtml()` to every string field that originates from the database or user input.
+- **`confirmCopy()` state capture:** The copy modal's confirm handler captures `copyMode`, `copySlotMeal`, `copySlotRecipeId`, and `copyFromDay` into local variables *before* calling `closeCopyModalDirect()`, because that function resets those module-level variables to null. Always follow this pattern when reading state before closing a modal that clears state.
