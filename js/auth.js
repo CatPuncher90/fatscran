@@ -61,7 +61,7 @@ const sb = {
   },
 
   signInWithGoogle() {
-    const redirectTo = encodeURIComponent(window.location.origin + '/fatscran/');
+    const redirectTo = encodeURIComponent('https://catpuncher90.github.io/fatscran/');
     window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`;
   },
 
