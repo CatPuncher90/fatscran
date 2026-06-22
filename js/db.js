@@ -165,6 +165,8 @@ async function deleteRecipe(id) {
 async function uploadRecipeImage(file) {
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) throw new Error('Must be logged in to upload images');
+  if (!file.type.startsWith('image/')) throw new Error('File must be an image.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5 MB.');
 
   const ext      = file.name.split('.').pop().toLowerCase();
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -209,6 +211,8 @@ async function saveProfile(data) {
 async function uploadAvatar(file) {
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) throw new Error('Must be logged in to upload avatar');
+  if (!file.type.startsWith('image/')) throw new Error('File must be an image.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5 MB.');
   const ext      = file.name.split('.').pop().toLowerCase();
   const filename = `${session.user.id}/avatar.${ext}`;
   const url      = `${SUPABASE_URL}/storage/v1/object/avatars/${filename}`;
