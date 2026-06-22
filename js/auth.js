@@ -377,7 +377,8 @@ async function handleAuthSubmit() {
     updateNavAuth();
     if (typeof onAuthStateChange === 'function') onAuthStateChange();
   } catch(e) {
-    showAuthError(e.message);
+    if (typeof Sentry !== 'undefined') Sentry.captureException(e);
+    showAuthError(authMode === 'signin' ? 'Invalid email or password.' : e.message);
     btn.textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
     btn.disabled    = false;
   }
