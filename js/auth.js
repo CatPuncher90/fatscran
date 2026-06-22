@@ -393,11 +393,11 @@ function updateNavAuth() {
   const user  = getUser();
 
   if (user) {
-    const initial = (user.email || 'U')[0].toUpperCase();
+    const initial = escapeHtml((user.email || 'U')[0].toUpperCase());
     li.innerHTML  = `<div class="nav-user-menu">
-      <button class="nav-avatar" onclick="toggleUserMenu()" title="${user.email}">${initial}</button>
+      <button class="nav-avatar" onclick="toggleUserMenu()" title="${escapeHtml(user.email)}">${initial}</button>
       <div class="user-menu-dropdown" id="user-menu-dropdown" style="display:none;">
-        <div class="user-menu-email">${user.email}</div>
+        <div class="user-menu-email">${escapeHtml(user.email)}</div>
         <a class="user-menu-item" href="profile.html">My Profile</a>
         <button class="user-menu-item" onclick="handleSignOut()">Sign out</button>
       </div>

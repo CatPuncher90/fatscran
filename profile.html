@@ -180,7 +180,7 @@ function chk(val, opt) { return parseFloat(val) === parseFloat(opt) ? 'checked' 
 
 function renderProfile(p) {
   const user    = getUser();
-  const initial = p?.display_name ? p.display_name[0].toUpperCase() : (user?.email || 'U')[0].toUpperCase();
+  const initial = escapeHtml(p?.display_name ? p.display_name[0].toUpperCase() : (user?.email || 'U')[0].toUpperCase());
   avatarUrl     = p?.avatar_url || null;
   currentTab    = p?.use_tdee_calc === false ? 'manual' : 'tdee';
 
@@ -195,7 +195,7 @@ function renderProfile(p) {
       <div class="profile-avatar-row">
         <div class="avatar-circle">
           ${avatarUrl
-            ? `<img id="avatar-img" src="${avatarUrl}" alt="avatar">`
+            ? `<img id="avatar-img" src="${escapeHtml(avatarUrl)}" alt="avatar">`
             : `<span id="avatar-ph">${initial}</span><img id="avatar-img" src="" alt="avatar" style="display:none;">`}
         </div>
         <div class="profile-avatar-info">
@@ -207,7 +207,7 @@ function renderProfile(p) {
 
       <div class="form-group">
         <label for="prof-display-name">Display name</label>
-        <input type="text" id="prof-display-name" class="form-input" placeholder="Your name" value="${p?.display_name || ''}">
+        <input type="text" id="prof-display-name" class="form-input" placeholder="Your name" value="${escapeHtml(p?.display_name || '')}">
       </div>
 
       <div class="profile-tab-toggle">
