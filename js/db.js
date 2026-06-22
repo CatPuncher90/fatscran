@@ -95,13 +95,6 @@ async function fetchRecipeByIdDirect(id) {
   }
 }
 
-async function getNextRecipeId() {
-  try {
-    const res  = await fetch(`${SUPABASE_URL}/rest/v1/recipes?select=id&order=id.desc&limit=1`, { headers: authedHeaders() });
-    const rows = await res.json();
-    return rows.length ? rows[0].id + 1 : 1;
-  } catch(e) { return Date.now(); }
-}
 
 // ---------------------------------------------------------------------------
 // Write
