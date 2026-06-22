@@ -149,7 +149,8 @@ The session is stored in localStorage under the key `fatscran-session` as a JSON
 |---|---|
 | `openAuthModal()` | Shows the auth modal |
 | `closeAuthModalDirect()` | Hides the auth modal |
-| `handleAuthSubmit()` | Handles email/password sign-in or sign-up. On signup, enforces a minimum of 8 characters and at least one number or symbol before calling Supabase. On sign-in failure, always shows a generic "Invalid email or password." message regardless of the Supabase error, to prevent account enumeration. |
+| `handleAuthSubmit()` | Handles email/password sign-in or sign-up. On signup, enforces a minimum of 8 characters and at least one number or symbol before calling Supabase. If `signUpWithEmail()` returns without an `access_token` (Supabase email verification is enabled), the modal closes and `showPageNotice()` displays "Check your email to confirm your account." on the page instead of proceeding to the signed-in state. On sign-in failure, always shows a generic "Invalid email or password." message to prevent account enumeration. |
+| `showPageNotice(msg)` | Injects a green info banner at the top of `<main>` on the current page. Used to surface the email verification prompt after signup. Reuses the `auth-error` CSS class structure with overridden colours. |
 | `updateNavAuth()` | Updates the nav to show sign-in button or user avatar |
 | `toggleUserMenu()` | Opens/closes the avatar dropdown |
 | `handleSignOut()` | Signs out and refreshes nav state |
@@ -220,8 +221,9 @@ All HTTP failure paths call `dbError(context, res)` — a private helper that re
 
 The original recipe data array. Still loaded by all pages and used as:
 
-- **Fallback:** `fetchRecipeByIdDirect()` falls back to this array if the Supabase fetch fails.
-- **Planner and shopping pages:** These pages currently read from `recipes` for fast local lookups (recipe title, macros etc.) alongside the synced list/plan data from Supabase or localStorage.
+- **Fallback:** `fetchRecipeByIdDirect()` and `fetchAllRecipes()` fall back to this array if the Supabase fetch fails. Shopping and planner pages store the result in a module-level `allRecipes` variable; if Supabase is unreachable that variable is populated from this array via the fallback path.
+
+> **Previously** shopping.html and planner.html read directly from the `recipes` global for all lookups. This meant recipes added or edited via admin.html were not reflected until `recipes.js` was manually updated. Both pages now call `fetchAllRecipes()` on load and use the result instead.
 
 The array and its schema are unchanged. See the recipe object schema below.
 
@@ -372,7 +374,9 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 
 **URL:** `/fatscran/shopping.html`
 
-Fully JavaScript-rendered. Reads the shopping list via `getListSync()` (Supabase when signed in, localStorage when not) and builds a two-column layout: recipe list on the left (380px), ingredient shopping list on the right.
+Fully JavaScript-rendered. On load, calls `fetchAllRecipes()` and `getProfile()` in parallel alongside `initAuth()`, storing results in module-level `allRecipes` and `userProfile` variables. All recipe lookups (`calcTotals`, `buildIngredients`, picker rows, suggestions) use `allRecipes` so admin changes are reflected immediately without a `recipes.js` redeploy.
+
+Reads the shopping list via `getListSync()` (Supabase when signed in, localStorage when not) and builds a two-column layout: recipe list on the left (380px), ingredient shopping list on the right.
 
 ### Features
 
@@ -402,7 +406,7 @@ Ingredients are automatically assigned to a display category using `guessCategor
 
 **URL:** `/fatscran/planner.html`
 
-A weekly calendar view showing Monday to Sunday with three meal slots per day (Breakfast, Dinner, Tea). Supports navigating ±4 weeks from the current week.
+A weekly calendar view showing Monday to Sunday with three meal slots per day (Breakfast, Dinner, Tea). Supports navigating ±4 weeks from the current week. On load, calls `fetchAllRecipes()`, `getPlanSync()`, and `getProfile()` in parallel, storing results in module-level `allRecipes`, `currentPlan`, and `userProfile` variables. All recipe lookups (slot rendering, batch summary, weekly overview, modal filter, suggestions, copy modal) use `allRecipes`.
 
 ### Features
 
