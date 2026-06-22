@@ -40,11 +40,12 @@
 const CATEGORY_ORDER = ['meat','fish','dairy','veg','fruit','carbs','tins','sauces','spices','other'];
 
 let userProfile = null;
+let allRecipes  = [];
 
 function calcTotals(list) {
   let calories = 0, protein = 0, carbs = 0, fat = 0;
   for (const item of list) {
-    const r = recipes.find(r => r.id === item.id);
+    const r = allRecipes.find(r => r.id === item.id);
     if (!r) continue;
     calories += r.macrosPerPortion.calories * item.portions;
     protein  += r.macrosPerPortion.protein  * item.portions;
@@ -57,7 +58,7 @@ function calcTotals(list) {
 function buildIngredients(list) {
   const merged = {};
   for (const item of list) {
-    const recipe = recipes.find(r => r.id === item.id);
+    const recipe = allRecipes.find(r => r.id === item.id);
     if (!recipe) continue;
     const scale = item.portions / recipe.basePortions;
     for (const ing of recipe.ingredients) {
@@ -164,7 +165,7 @@ function macroProgressHTML(totals) {
 function suggestionsHTML(list) {
   if (!userProfile) return '';
   const listedIds = new Set(list.map(i => i.id));
-  const candidates = recipes
+  const candidates = allRecipes
     .filter(r => !listedIds.has(r.id))
     .sort((a, b) => b.macrosPerPortion.protein - a.macrosPerPortion.protein)
     .slice(0, 5);
@@ -226,7 +227,7 @@ async function render() {
 
   const totals     = calcTotals(list);
   const recipeRows = list.map(item => {
-    const recipe = recipes.find(r => r.id === item.id);
+    const recipe = allRecipes.find(r => r.id === item.id);
     if (!recipe) return '';
     return `
       <div class="picker-item">
@@ -285,7 +286,10 @@ async function onAuthStateChange() {
 
 async function init() {
   await initAuth();
-  if (isLoggedIn()) userProfile = await getProfile();
+  [allRecipes, userProfile] = await Promise.all([
+    fetchAllRecipes(),
+    isLoggedIn() ? getProfile() : Promise.resolve(null)
+  ]);
   await render();
 }
 

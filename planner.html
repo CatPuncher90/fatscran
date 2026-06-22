@@ -95,6 +95,7 @@ let modalMeal          = null;
 let modalSectionFilter = 'all';
 let currentPlan        = {};
 let userProfile        = null;
+let allRecipes         = [];
 
 let copyMode         = null;
 let copySlotDay      = null;
@@ -157,7 +158,7 @@ function renderWeek() {
     const slots = MEALS.map(meal => {
       const key      = `${day}-${meal}`;
       const recipeId = plan[key];
-      const recipe   = recipeId ? recipes.find(r => r.id === recipeId) : null;
+      const recipe   = recipeId ? allRecipes.find(r => r.id === recipeId) : null;
       if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; filledSlots++; }
       return `
         <div class="meal-slot" onclick="openModal('${day}','${meal}')">
@@ -206,7 +207,7 @@ function renderWeeklyOverview(plan) {
   let totalCal = 0, totalProt = 0, totalCarbs = 0, totalFat = 0;
   for (const [, id] of Object.entries(plan)) {
     if (!id) continue;
-    const r = recipes.find(r => r.id === id);
+    const r = allRecipes.find(r => r.id === id);
     if (!r) continue;
     totalCal   += r.macrosPerPortion.calories;
     totalProt  += r.macrosPerPortion.protein;
@@ -261,7 +262,7 @@ function renderBatchSummary(plan) {
     <p class="section-label">What to batch cook this week</p>
     <div class="batch-grid">
       ${ids.map(id => {
-        const recipe = recipes.find(r => r.id === parseInt(id));
+        const recipe = allRecipes.find(r => r.id === parseInt(id));
         if (!recipe) return '';
         const days = recipeDays[id];
         return `<div class="batch-card"><div class="batch-card-title">${escapeHtml(recipe.title)}</div><div class="batch-card-meta">Needed: ${days.join(', ')}</div><div class="batch-card-meta">${escapeHtml(recipe.cookTime)} &middot; ${days.length} day${days.length !== 1 ? 's' : ''}</div></div>`;
@@ -332,7 +333,7 @@ function getRemainingMacros(day) {
   for (const meal of MEALS) {
     const id = currentPlan[`${day}-${meal}`];
     if (!id) continue;
-    const r = recipes.find(r => r.id === id);
+    const r = allRecipes.find(r => r.id === id);
     if (!r) continue;
     planned.calories += r.macrosPerPortion.calories;
     planned.protein  += r.macrosPerPortion.protein;
@@ -350,7 +351,7 @@ function getRemainingMacros(day) {
 function getSuggestions(day, meal) {
   if (!userProfile?.target_calories && !userProfile?.target_protein) return [];
   const remaining = getRemainingMacros(day);
-  return recipes
+  return allRecipes
     .filter(r => r.section === meal)
     .map(r => {
       // Score by closeness to remaining macros; protein gap weighted 3× over calories
@@ -402,7 +403,7 @@ function closeModalDirect() {
 function filterModal(query) {
   const q         = query.toLowerCase();
   const currentId = currentPlan[`${modalDay}-${modalMeal}`];
-  const filtered  = recipes.filter(r => {
+  const filtered  = allRecipes.filter(r => {
     const matchSection = modalSectionFilter === 'all' || r.section === modalSectionFilter;
     const matchQuery   = !q || r.title.toLowerCase().includes(q) || r.section.toLowerCase().includes(q);
     return matchSection && matchQuery;
@@ -468,7 +469,7 @@ function openCopySlotModal(day, meal, recipeId) {
   copySlotDay      = day;
   copySlotMeal     = meal;
   copySlotRecipeId = recipeId;
-  const recipe     = recipes.find(r => r.id === recipeId);
+  const recipe     = allRecipes.find(r => r.id === recipeId);
   document.getElementById('copy-modal-title').textContent = 'Copy to other days';
   document.getElementById('copy-modal-body').innerHTML = `
     <p class="copy-modal-desc">Copy <strong>${recipe ? escapeHtml(recipe.title) : 'this recipe'}</strong> to the ${escapeHtml(meal)} slot on:</p>
@@ -552,7 +553,8 @@ async function onAuthStateChange() {
 
 async function init() {
   await initAuth();
-  [currentPlan, userProfile] = await Promise.all([
+  [allRecipes, currentPlan, userProfile] = await Promise.all([
+    fetchAllRecipes(),
     getPlanSync(weekKey(currentWeekOffset)),
     isLoggedIn() ? getProfile() : Promise.resolve(null)
   ]);
