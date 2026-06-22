@@ -30,7 +30,7 @@
     <p>High protein, batch-friendly meals to fuel your week.</p>
   </div>
   <div class="search-bar-row">
-    <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="applyFilters()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <input id="search-input" type="text" placeholder="Search recipes or ingredients..." oninput="onSearchInput()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <select id="sort-select" onchange="applyFilters()" class="sort-select">
       <option value="default">No sort</option>
       <option value="protein">Highest protein</option>
@@ -62,6 +62,12 @@ let activeSection = 'all';
 let currentFavs   = [];
 let allRecipes    = [];
 let isAdmin       = false;
+let searchTimer   = null;
+
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 180);
+}
 
 async function toggleFav(id, event) {
   event.preventDefault();
