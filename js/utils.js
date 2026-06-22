@@ -45,6 +45,19 @@ function escapeHtml(str) {
 }
 
 // ---------------------------------------------------------------------------
+// Macro traffic light — shared threshold used on shopping and planner pages
+// green = 90-110%, amber = under 90%, red = over 110%
+// ---------------------------------------------------------------------------
+
+function macroBarClass(actual, target) {
+  if (!target) return 'amber';
+  const pct = actual / target * 100;
+  if (pct > 110) return 'red';
+  if (pct >= 90) return 'green';
+  return 'amber';
+}
+
+// ---------------------------------------------------------------------------
 // Recipe helpers
 // ---------------------------------------------------------------------------
 

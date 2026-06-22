@@ -126,12 +126,6 @@ async function clearAll() {
   await render();
 }
 
-function barClass(pct) {
-  if (pct > 110) return 'macro-bar-fill--red';
-  if (pct >= 90)  return 'macro-bar-fill--green';
-  return 'macro-bar-fill--amber';
-}
-
 function macroProgressHTML(totals) {
   if (!userProfile) return '';
   const { target_calories: tc, target_protein: tp, target_carbs: tch, target_fat: tf } = userProfile;
@@ -142,7 +136,7 @@ function macroProgressHTML(totals) {
     if (!target) return '';
     const pct   = Math.round(actual / target * 100);
     const width = Math.min(pct, 110);
-    const cls   = barClass(pct);
+    const cls   = 'macro-bar-fill--' + macroBarClass(actual, target);
     return `
       <div class="macro-bar-row">
         <div class="macro-bar-header">

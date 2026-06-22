@@ -138,10 +138,7 @@ function updateNav() {
 
 function dayTotalsClass(calories) {
   if (!userProfile?.target_calories || !calories) return '';
-  const pct = calories / userProfile.target_calories * 100;
-  if (pct > 120) return 'day-totals--red';
-  if (pct >= 80) return 'day-totals--green';
-  return 'day-totals--amber';
+  return 'day-totals--' + macroBarClass(calories, userProfile.target_calories);
 }
 
 function renderWeek() {
@@ -223,13 +220,7 @@ function renderWeeklyOverview(plan) {
   const tch = (userProfile.target_carbs   || 0) * 7;
   const tf  = (userProfile.target_fat     || 0) * 7;
 
-  function tlClass(actual, target) {
-    if (!target) return '';
-    const pct = actual / target * 100;
-    if (pct > 120) return 'tl-red';
-    if (pct >= 80) return 'tl-green';
-    return 'tl-amber';
-  }
+  const tlClass = (actual, target) => target ? 'tl-' + macroBarClass(actual, target) : '';
 
   el.innerHTML = `
     <div class="weekly-overview">
