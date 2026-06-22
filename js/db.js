@@ -8,6 +8,14 @@ const STORAGE_URL  = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
 
 const dbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
+async function dbError(context, res) {
+  const detail = await res.text().catch(() => '(no body)');
+  const msg    = `${context} [${res.status}]: ${detail}`;
+  console.error(msg);
+  if (typeof Sentry !== 'undefined') Sentry.captureMessage(msg);
+  throw new Error('Save failed. Please try again.');
+}
+
 function authedHeaders() {
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) return dbHeaders;
@@ -110,11 +118,11 @@ async function saveRecipe(data, existingId) {
   let recipeId;
   if (isEdit) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${existingId}`, { method: 'PATCH', headers, body: JSON.stringify(recipePayload) });
-    if (!res.ok) throw new Error('Failed to update recipe: ' + await res.text());
+    if (!res.ok) await dbError('update recipe', res);
     recipeId = existingId;
   } else {
     const res  = await fetch(`${SUPABASE_URL}/rest/v1/recipes`, { method: 'POST', headers, body: JSON.stringify(recipePayload) });
-    if (!res.ok) throw new Error('Failed to insert recipe: ' + await res.text());
+    if (!res.ok) await dbError('insert recipe', res);
     const rows = await res.json();
     recipeId   = rows[0].id;
   }
@@ -122,14 +130,14 @@ async function saveRecipe(data, existingId) {
   // 2. Macros — delete and re-insert
   await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
   const macroRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros`, { method: 'POST', headers, body: JSON.stringify({ recipe_id: recipeId, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, sugar: data.sugar || null, fiber: data.fiber || null }) });
-  if (!macroRes.ok) throw new Error('Failed to save macros: ' + await macroRes.text());
+  if (!macroRes.ok) await dbError('save macros', macroRes);
 
   // 3. Ingredients — delete and re-insert
   await fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
   if (data.ingredients.length) {
     const ingPayload = data.ingredients.map((ing, i) => ({ recipe_id: recipeId, name: ing.name, amount: ing.amount === '' || ing.amount === null ? null : parseFloat(ing.amount), unit: ing.unit, sort_order: i }));
     const ingRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients`, { method: 'POST', headers, body: JSON.stringify(ingPayload) });
-    if (!ingRes.ok) throw new Error('Failed to save ingredients: ' + await ingRes.text());
+    if (!ingRes.ok) await dbError('save ingredients', ingRes);
   }
 
   // 4. Steps — delete and re-insert
@@ -137,7 +145,7 @@ async function saveRecipe(data, existingId) {
   if (data.steps.length) {
     const stepPayload = data.steps.map((step, i) => ({ recipe_id: recipeId, title: step.title, description: step.description, sort_order: i }));
     const stepRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_steps`, { method: 'POST', headers, body: JSON.stringify(stepPayload) });
-    if (!stepRes.ok) throw new Error('Failed to save steps: ' + await stepRes.text());
+    if (!stepRes.ok) await dbError('save steps', stepRes);
   }
 
   return recipeId;
@@ -147,7 +155,7 @@ async function deleteRecipe(id) {
   const headers = authedHeaders();
   // RLS cascade handles related rows
   const res = await fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${id}`, { method: 'DELETE', headers });
-  if (!res.ok) throw new Error('Failed to delete recipe: ' + await res.text());
+  if (!res.ok) await dbError('delete recipe', res);
   return true;
 }
 
@@ -170,7 +178,7 @@ async function uploadRecipeImage(file) {
     body:    file
   });
 
-  if (!res.ok) throw new Error('Image upload failed: ' + await res.text());
+  if (!res.ok) await dbError('upload recipe image', res);
   return `${STORAGE_URL}/${filename}`;
 }
 
@@ -196,7 +204,7 @@ async function saveProfile(data) {
   if (!session) throw new Error('Not logged in');
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, { method: 'POST', headers, body: JSON.stringify({ id: session.user.id, ...data }) });
-  if (!res.ok) throw new Error('Failed to save profile: ' + await res.text());
+  if (!res.ok) await dbError('save profile', res);
   const rows = await res.json();
   return Array.isArray(rows) ? rows[0] : rows;
 }
@@ -213,10 +221,7 @@ async function uploadAvatar(file) {
   const res = await fetch(url, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' }, body: file });
   console.log('[uploadAvatar] response status:', res.status, res.statusText);
   if (!res.ok) {
-    const errText = await res.text();
-    console.error('[uploadAvatar] error response:', errText);
-    if (typeof Sentry !== 'undefined') Sentry.captureMessage(`uploadAvatar failed (${res.status}): ${errText}`);
-    throw new Error('Avatar upload failed: ' + errText);
+    await dbError('upload avatar', res);
   }
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${filename}`;
 }
