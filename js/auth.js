@@ -104,6 +104,7 @@ function getSession() {
 
 function clearSession() {
   localStorage.removeItem('fatscran-session');
+  sessionStorage.removeItem('fatscran-state');
 }
 
 function getUser() {
