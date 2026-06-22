@@ -352,6 +352,17 @@ async function handleAuthSubmit() {
 
   if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
 
+  if (authMode === 'signup') {
+    if (password.length < 8) {
+      showAuthError('Password must be at least 8 characters.');
+      return;
+    }
+    if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      showAuthError('Password must contain at least one number or symbol.');
+      return;
+    }
+  }
+
   btn.textContent = authMode === 'signin' ? 'Signing in...' : 'Creating account...';
   btn.disabled    = true;
   errorEl.style.display = 'none';
