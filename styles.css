@@ -95,7 +95,7 @@ nav {
 }
 
 @media (max-width: 640px) {
-  .nav-hamburger { display: block; }
+  .nav-hamburger { display: block; margin-left: 12px; }
 
   #main-nav { position: relative; }
 
