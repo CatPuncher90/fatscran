@@ -72,6 +72,8 @@ Loaded by all pages. Contains helpers that would otherwise be duplicated across 
 | Function | Description |
 |---|---|
 | `escapeHtml(str)` | Escapes `&`, `<`, `>`, `"`, and `'` to their HTML entities. Returns `''` for null/undefined. **Must be called on all user-supplied strings before they are interpolated into innerHTML template literals.** Does not escape SVG icons, CSS class names, or numeric values. |
+| `supabaseImgUrl(url, width, quality)` | Appends `?width=N&quality=N` to a URL only if it contains `supabase.co`. Returns the URL unchanged for local paths. Used to request server-side image transforms from Supabase Storage. |
+| `macroBarClass(actual, target)` | Returns `'green'`, `'amber'`, or `'red'` based on the 90–110% threshold. Shared between shopping.html and planner.html to keep traffic light logic consistent. |
 
 ### localStorage helpers
 
@@ -151,7 +153,7 @@ The session is stored in localStorage under the key `fatscran-session` as a JSON
 | `closeAuthModalDirect()` | Hides the auth modal |
 | `handleAuthSubmit()` | Handles email/password sign-in or sign-up. On signup, enforces a minimum of 8 characters and at least one number or symbol before calling Supabase. If `signUpWithEmail()` returns without an `access_token` (Supabase email verification is enabled), the modal closes and `showPageNotice()` displays "Check your email to confirm your account." on the page instead of proceeding to the signed-in state. On sign-in failure, always shows a generic "Invalid email or password." message to prevent account enumeration. |
 | `showPageNotice(msg)` | Injects a green info banner at the top of `<main>` on the current page. Used to surface the email verification prompt after signup. Reuses the `auth-error` CSS class structure with overridden colours. |
-| `updateNavAuth()` | Updates the nav to show sign-in button or user avatar |
+| `updateNavAuth()` | Updates the nav to show sign-in button or user avatar. Inserts a `<div id="nav-auth-btn">` directly into `.nav-inner` (not into `.nav-links`) so the avatar is always visible in the nav bar on mobile. On mobile it sits between the logo and the hamburger (CSS `order: 1`, `margin-left: auto`). |
 | `toggleUserMenu()` | Opens/closes the avatar dropdown |
 | `handleSignOut()` | Signs out and refreshes nav state |
 
@@ -179,7 +181,7 @@ These functions sync to Supabase tables when the user is signed in, and fall bac
 | `getFavs()` | Returns array of favourite recipe IDs |
 | `toggleFavSync(id)` | Fetches all favourite rows in one GET, checks existence locally, issues a single DELETE or POST, then returns the updated ID array from the local copy — no second network round trip. |
 | `getListSync()` | Returns array of `{ id, portions }` shopping list items |
-| `saveListSync(list)` | Replaces the shopping list entirely |
+| `saveListSync(list)` | Replaces the shopping list entirely. Batched: one GET to identify removed IDs, one `DELETE id=in.(...)` for removed items, one batch upsert POST with `on_conflict=user_id,recipe_id` for the full new list. Throws on failure — does not fall back to localStorage. |
 | `addToListSync(id, portions)` | Adds or updates a recipe in the shopping list |
 | `removeFromListSync(id)` | Removes a recipe from the shopping list |
 | `getPlanSync(weekKey)` | Returns the meal plan object for a given week key |
@@ -201,8 +203,8 @@ All HTTP failure paths call `dbError(context, res)` — a private helper that re
 |---|---|
 | `fetchAllRecipes()` | Fetches all recipes from the 4 recipe tables in parallel and assembles them into the same schema as `recipes.js` |
 | `fetchRecipeById(id)` | Fetches a single recipe from Supabase by ID. Used in admin for editing. |
-| `fetchRecipeByIdDirect(id)` | Fetches a single recipe by hitting only the 4 required tables for that ID in parallel. Faster than loading all recipes. Used by `recipe.html`. Falls back to the local `recipes` array if the fetch fails. |
-| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. The macro payload includes `sugar` (nullable) in addition to calories, protein, carbs, fat, and fiber. If `editingId` is provided, updates existing records; otherwise inserts new ones. Returns the recipe ID. |
+| `fetchRecipeByIdDirect(id)` | Fetches a single recipe by hitting only the 4 required tables for that ID in parallel. Faster than loading all recipes. Used by `recipe.html`. Returns `null` on Supabase failure (the local fallback array is now empty). |
+| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. The macro payload includes `sugar` (nullable) in addition to calories, protein, carbs, fat, and fiber. If `editingId` is provided, updates existing records; otherwise inserts new ones. The INSERT uses `Prefer: return=representation` to read `rows[0].id`; all other writes use `return=minimal`. Returns the recipe ID. |
 | `deleteRecipe(id)` | Deletes a recipe and all its related rows in the 4 tables. |
 | `uploadRecipeImage(file)` | Validates that `file.type` starts with `image/` and that `file.size` is under 5 MB before uploading to the `recipe-images` Supabase Storage bucket. On HTTP failure, logs the full status and response body to Sentry via `dbError()` then throws a generic message. |
 | `checkIsAdmin()` | Checks the `profiles` table for the current user and returns true if `is_admin` is set. Returns false if not signed in. |
@@ -212,20 +214,18 @@ All HTTP failure paths call `dbError(context, res)` — a private helper that re
 | Function | Description |
 |---|---|
 | `getProfile()` | Calls `ensureSession()` then fetches the current user's row from the `profiles` table (`?id=eq.{userId}`). Returns the profile object or `null` if not signed in or not found. |
-| `saveProfile(data)` | Calls `ensureSession()` then upserts the profile row using POST with `Prefer: resolution=merge-duplicates`. The `id` field (matching the auth user ID) is always included in the payload as the primary key. |
+| `saveProfile(data)` | Calls `ensureSession()` then upserts the profile row using POST with `Prefer: return=minimal,resolution=merge-duplicates`. The `id` field is always included as the conflict key. Returns nothing — the caller discards the response. |
 | `uploadAvatar(file)` | Validates file type (`image/*`) and size (≤5 MB), then uploads to the `avatars` Supabase Storage bucket at `{userId}/avatar.{ext}`. On failure, logs full detail to Sentry via `dbError()` and throws a generic message. Returns the public URL on success. |
 
 ---
 
-## recipes.js — Client-Side Recipe Array
+## recipes.js — Minimal Stub
 
-The original recipe data array. Still loaded by all pages and used as:
+`recipes.js` is now a 10-line stub. It declares `const recipes = []` (an empty array), preserves the `scaleAmount` helper and the `sections` derived constant, and nothing else. The full recipe data that previously lived here (~2,273 lines, ~127 KB) has been removed.
 
-- **Fallback:** `fetchRecipeByIdDirect()` and `fetchAllRecipes()` fall back to this array if the Supabase fetch fails. Shopping and planner pages store the result in a module-level `allRecipes` variable; if Supabase is unreachable that variable is populated from this array via the fallback path.
+All pages that previously used the `recipes` global for lookups now call `fetchAllRecipes()` on load and store the result in a module-level `allRecipes` variable. If Supabase is unreachable, `allRecipes` will be empty and affected pages will show no recipes rather than stale local data. `recipes.js` is kept in the load order solely to satisfy the `recipes` global reference in `fetchAllRecipes()`'s fallback path and the `sections` reference in `index.html`.
 
-> **Previously** shopping.html and planner.html read directly from the `recipes` global for all lookups. This meant recipes added or edited via admin.html were not reflected until `recipes.js` was manually updated. Both pages now call `fetchAllRecipes()` on load and use the result instead.
-
-The array and its schema are unchanged. See the recipe object schema below.
+**Do not add recipe data back to this file.** All recipe management goes through `admin.html` → Supabase.
 
 ### Recipe Object Schema
 
@@ -281,12 +281,7 @@ A derived array of unique section names prefixed with "all", built from the reci
 
 ### Adding a new recipe
 
-New recipes should be added via `admin.html` which writes directly to Supabase. If adding to `recipes.js` as well for the local fallback:
-
-1. Give it the next available `id` (currently highest is 86).
-2. Set `section` to one of the five valid strings above.
-3. Set `basePortions` to match the ingredient amounts you are entering.
-4. Set `amount: null` for any ingredient that is "to taste" or not scalable.
+All new recipes are added via `admin.html`, which writes directly to Supabase. IDs are assigned by Supabase auto-increment. Do not add recipes to `recipes.js`.
 
 ---
 
@@ -358,8 +353,8 @@ The page is fully JavaScript-rendered into `<main id="page-content">`. On load i
 
 | Function | Description |
 |---|---|
-| `renderPage()` | Full re-render of page content for current portions value |
-| `changePortion(delta)` | Increments/decrements portions (min 1) and re-renders |
+| `renderPage()` | Full re-render of page content for current portions value. Adds `data-macro` attributes to macro value spans and `id="portion-meta"` to the portions display so `changePortion()` can update them in-place. |
+| `changePortion(delta)` | Increments/decrements portions (min 1). Updates only the affected DOM nodes in-place: `#portion-count`, `#portion-meta`, `.macro-value[data-macro=*]` spans, and `.ing-qty` spans. Does not re-render the page and fires no Supabase requests. |
 | `addToList()` | Calls `addToListSync()` then `await updateBtn()` to update button state |
 | `updateBtn()` | Async. Reads current list via `getListSync()` and updates button label and colour. Must be awaited after `addToListSync()` to avoid a race. |
 | `shareRecipe()` | Shares via Web Share API on mobile, copies URL to clipboard on desktop |
@@ -843,3 +838,6 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 - **`isLoggedIn()` checks expiry.** Returns false for sessions where `expires_at <= Date.now()`. Do not use `!!getSession()` as a logged-in check elsewhere — always call `isLoggedIn()`.
 - **`confirmCopy()` state capture:** The copy modal's confirm handler captures `copyMode`, `copySlotMeal`, `copySlotRecipeId`, and `copyFromDay` into local variables *before* calling `closeCopyModalDirect()`, because that function resets those module-level variables to null. Always follow this pattern when reading state before closing a modal that clears state.
 - **Sentry SRI hash:** The Sentry loader script tag on all pages includes an `integrity="sha256-..."` attribute. If the hash ever stops matching (Sentry rotates the loader), the script is silently blocked and error reporting stops. Recompute the hash with `curl -s <url> | openssl dgst -sha256 -binary | openssl base64 -A` and update all 6 HTML files.
+- **`Prefer: return=representation` is used in exactly one place** — the recipe INSERT in `saveRecipe()`, where `rows[0].id` is read to get the auto-incremented ID. All other writes use `return=minimal`. Do not add `return=representation` to new write requests unless the response body is actually consumed.
+- **`recipes.js` is an empty stub.** Do not add recipe data to it. All recipe data lives in Supabase. Adding data back to `recipes.js` would reintroduce the stale-data problem where admin edits are not reflected on shopping and planner pages.
+- **Nav auth element is a `<div>` in `.nav-inner`, not a `<li>` in `.nav-links`.** `updateNavAuth()` inserts `#nav-auth-btn` directly into the flex container so it remains visible on mobile even when the hamburger menu is closed. Do not move it back into `.nav-links` — that element has `display:none` on mobile and would hide the avatar again.
