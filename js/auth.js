@@ -125,65 +125,6 @@ async function ensureSession() {
   return s;
 }
 
-// ---------------------------------------------------------------------------
-// Offline → Supabase data merge after sign-in
-// ---------------------------------------------------------------------------
-
-async function mergeLocalData() {
-  try {
-    const localFavs     = getFavourites();
-    const localList     = getList();
-    const localPlanKeys = Object.keys(localStorage).filter(k => k.startsWith('week-'));
-    const hasLocal      = localFavs.length > 0 || localList.length > 0 || localPlanKeys.length > 0;
-    if (!hasLocal) return;
-
-    const [sbFavs, sbList] = await Promise.all([getFavs(), getListSync()]);
-    const hasSupabase = sbFavs.length > 0 || sbList.length > 0;
-
-    let keepLocal;
-    if (!hasSupabase) {
-      keepLocal = true;
-    } else {
-      keepLocal = confirm(
-        'You have data saved offline.\n\n' +
-        'OK — keep offline data (replaces account data)\n' +
-        'Cancel — use account data (discard offline data)'
-      );
-    }
-
-    if (keepLocal) {
-      const session = getSession();
-      if (localFavs.length) {
-        for (const id of localFavs) {
-          try {
-            const rows = await sb.get('favourites', `select=id&recipe_id=eq.${id}`);
-            if (!rows.length) await sb.post('favourites', { recipe_id: id, user_id: session.user.id });
-          } catch(e) {}
-        }
-      }
-      if (localList.length) {
-        try { await saveListSync(localList); } catch(e) {}
-      }
-      for (const key of localPlanKeys) {
-        try {
-          const plan = JSON.parse(localStorage.getItem(key) || '{}');
-          for (const [slotKey, recipeId] of Object.entries(plan)) {
-            if (recipeId) await savePlanSlot(key, slotKey, recipeId).catch(() => {});
-          }
-        } catch(e) {}
-      }
-    }
-
-    // Clear local fallback data regardless of which was kept
-    saveFavourites([]);
-    saveList([]);
-    localPlanKeys.forEach(k => localStorage.removeItem(k));
-  } catch(e) {
-    console.error('mergeLocalData failed', e);
-    if (typeof Sentry !== 'undefined') Sentry.captureException(e);
-  }
-}
-
 // Handle Google OAuth redirect (hash fragment)
 async function handleAuthRedirect() {
   const hash = window.location.hash;
@@ -200,7 +141,6 @@ async function handleAuthRedirect() {
     const user = await res.json();
     saveSession({ access_token: accessToken, refresh_token: refreshToken, expires_in: parseInt(expiresIn) || 3600, user });
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    await mergeLocalData();
     return true;
   } catch(e) { return false; }
 }
@@ -432,7 +372,6 @@ async function handleAuthSubmit() {
   try {
     if (authMode === 'signin') {
       await sb.signInWithEmail(email, password);
-      await mergeLocalData();
     } else {
       const data = await sb.signUpWithEmail(email, password);
       if (!data.access_token) {
