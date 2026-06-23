@@ -197,25 +197,37 @@ async function getListSync() {
 async function saveListSync(list) {
   if (!isLoggedIn()) { saveList(list); return; }
   await ensureSession();
-  // Upsert each item individually to preserve unique constraint
+  const session = getSession();
   try {
     const current = await sb.get('shopping_list', 'select=id,recipe_id');
-    const currentIds = current.map(r => r.recipe_id);
-    const newIds = list.map(i => i.id);
-    // Delete removed items
-    for (const row of current) {
-      if (!newIds.includes(row.recipe_id)) await sb.delete('shopping_list', `id=eq.${row.id}`);
+    const newIds  = new Set(list.map(i => i.id));
+    const removed = current.filter(r => !newIds.has(r.recipe_id)).map(r => r.id);
+
+    if (removed.length) {
+      await sb.delete('shopping_list', `id=in.(${removed.join(',')})`);
     }
-    // Upsert existing/new items
-    for (const item of list) {
-      const existing = current.find(r => r.recipe_id === item.id);
-      if (existing) {
-        await sb.patch('shopping_list', `id=eq.${existing.id}`, { portions: item.portions });
-      } else {
-        await sb.post('shopping_list', { recipe_id: item.id, portions: item.portions });
-      }
+
+    if (list.length) {
+      const payload = list.map(item => ({
+        user_id:   session.user.id,
+        recipe_id: item.id,
+        portions:  item.portions,
+      }));
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/shopping_list?on_conflict=user_id,recipe_id`,
+        {
+          method:  'POST',
+          headers: { ...sb.authedHeaders(), 'Prefer': 'return=minimal,resolution=merge-duplicates' },
+          body:    JSON.stringify(payload),
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
     }
-  } catch(e) { console.error('saveListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); saveList(list); }
+  } catch(e) {
+    console.error('saveListSync', e);
+    if (typeof Sentry !== 'undefined') Sentry.captureException(e);
+    throw e;
+  }
 }
 
 async function addToListSync(id, portions) {
