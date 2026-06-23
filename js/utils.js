@@ -49,7 +49,8 @@ function escapeHtml(str) {
 // ---------------------------------------------------------------------------
 
 function supabaseImgUrl(url, width, quality) {
-  if (!url || !url.includes('supabase.co')) return url;
+  if (!url) return url;
+  if (!url.includes('supabase.co')) return url;
   return `${url}?width=${width}&quality=${quality}`;
 }
 
