@@ -145,7 +145,7 @@ function renderPage() {
           <h1 class="recipe-title">${escapeHtml(recipe.title)}</h1>
           <div class="recipe-meta">
             <span class="recipe-meta-item">${clockIconSvg(16)} ${escapeHtml(recipe.cookTime)}</span>
-            <span class="recipe-meta-item">${portionIconSvg(16)} ${portions} portion${portions !== 1 ? 's' : ''}</span>
+            <span class="recipe-meta-item">${portionIconSvg(16)} <span id="portion-meta">${portions} portion${portions !== 1 ? 's' : ''}</span></span>
           </div>
         </div>
       </div>` : `
@@ -153,7 +153,7 @@ function renderPage() {
       <h1 class="recipe-title">${escapeHtml(recipe.title)}</h1>
       <div class="recipe-meta">
         <span class="recipe-meta-item">${clockIconSvg(16)} ${escapeHtml(recipe.cookTime)}</span>
-        <span class="recipe-meta-item">${portionIconSvg(16)} ${portions} portion${portions !== 1 ? 's' : ''}</span>
+        <span class="recipe-meta-item">${portionIconSvg(16)} <span id="portion-meta">${portions} portion${portions !== 1 ? 's' : ''}</span></span>
       </div>`}
 
     <div id="avg-rating"><span class="ratings-loading">Loading reviews...</span></div>
@@ -166,12 +166,12 @@ function renderPage() {
     </div>
 
     <div class="macros-strip">
-      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.calories * portions)}</span><span class="macro-label">Calories</span></div>
-      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.protein  * portions)}g</span><span class="macro-label">Protein</span></div>
-      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.carbs    * portions)}g</span><span class="macro-label">Carbs</span></div>
-      <div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fat      * portions)}g</span><span class="macro-label">Fat</span></div>
-      ${recipe.macrosPerPortion.sugar != null ? `<div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.sugar * portions)}g</span><span class="macro-label">Sugar</span></div>` : ''}
-      ${recipe.macrosPerPortion.fiber != null ? `<div class="macro-item"><span class="macro-value">${Math.round(recipe.macrosPerPortion.fiber * portions)}g</span><span class="macro-label">Fiber</span></div>` : ''}
+      <div class="macro-item"><span class="macro-value" data-macro="calories">${Math.round(recipe.macrosPerPortion.calories * portions)}</span><span class="macro-label">Calories</span></div>
+      <div class="macro-item"><span class="macro-value" data-macro="protein">${Math.round(recipe.macrosPerPortion.protein  * portions)}g</span><span class="macro-label">Protein</span></div>
+      <div class="macro-item"><span class="macro-value" data-macro="carbs">${Math.round(recipe.macrosPerPortion.carbs    * portions)}g</span><span class="macro-label">Carbs</span></div>
+      <div class="macro-item"><span class="macro-value" data-macro="fat">${Math.round(recipe.macrosPerPortion.fat      * portions)}g</span><span class="macro-label">Fat</span></div>
+      ${recipe.macrosPerPortion.sugar != null ? `<div class="macro-item"><span class="macro-value" data-macro="sugar">${Math.round(recipe.macrosPerPortion.sugar * portions)}g</span><span class="macro-label">Sugar</span></div>` : ''}
+      ${recipe.macrosPerPortion.fiber != null ? `<div class="macro-item"><span class="macro-value" data-macro="fiber">${Math.round(recipe.macrosPerPortion.fiber * portions)}g</span><span class="macro-label">Fiber</span></div>` : ''}
     </div>
 
     <div class="recipe-actions">
@@ -210,7 +210,32 @@ function renderPage() {
 
 function changePortion(delta) {
   portions = Math.max(1, portions + delta);
-  renderPage();
+
+  const countEl = document.getElementById('portion-count');
+  if (countEl) countEl.textContent = portions;
+
+  const metaEl = document.getElementById('portion-meta');
+  if (metaEl) metaEl.textContent = `${portions} portion${portions !== 1 ? 's' : ''}`;
+
+  const m = recipe.macrosPerPortion;
+  [['calories', Math.round(m.calories * portions)],
+   ['protein',  Math.round(m.protein  * portions) + 'g'],
+   ['carbs',    Math.round(m.carbs    * portions) + 'g'],
+   ['fat',      Math.round(m.fat      * portions) + 'g'],
+   ...(m.sugar != null ? [['sugar', Math.round(m.sugar * portions) + 'g']] : []),
+   ...(m.fiber != null ? [['fiber', Math.round(m.fiber * portions) + 'g']] : []),
+  ].forEach(([key, val]) => {
+    const el = document.querySelector(`.macro-value[data-macro="${key}"]`);
+    if (el) el.textContent = val;
+  });
+
+  const ingQtyEls = document.querySelectorAll('.ing-qty');
+  recipe.ingredients.forEach((ing, i) => {
+    if (!ingQtyEls[i]) return;
+    ingQtyEls[i].textContent = ing.amount === null
+      ? ing.unit
+      : (Math.round(ing.amount * (portions / recipe.basePortions) * 100) / 100) + ' ' + ing.unit;
+  });
 }
 
 async function init() {
