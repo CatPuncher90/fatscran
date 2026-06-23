@@ -217,9 +217,7 @@ async function uploadAvatar(file) {
   const ext      = file.name.split('.').pop().toLowerCase();
   const filename = `${session.user.id}/avatar.${ext}`;
   const url      = `${SUPABASE_URL}/storage/v1/object/avatars/${filename}`;
-  console.log('[uploadAvatar] uploading to:', url);
   const res = await fetch(url, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' }, body: file });
-  console.log('[uploadAvatar] response status:', res.status, res.statusText);
   if (!res.ok) {
     await dbError('upload avatar', res);
   }
