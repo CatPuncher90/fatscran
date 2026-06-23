@@ -480,15 +480,15 @@ function updateNavAuth() {
   const existing = document.getElementById('nav-auth-btn');
   if (existing) existing.remove();
 
-  const nav   = document.querySelector('.nav-links');
-  if (!nav) return;
+  const navInner = document.querySelector('.nav-inner');
+  if (!navInner) return;
 
-  const li    = document.createElement('li');
-  const user  = getUser();
+  const el   = document.createElement('div');
+  const user = getUser();
 
   if (user) {
     const initial = escapeHtml((user.email || 'U')[0].toUpperCase());
-    li.innerHTML  = `<div class="nav-user-menu">
+    el.innerHTML  = `<div class="nav-user-menu">
       <button class="nav-avatar" onclick="toggleUserMenu()" title="${escapeHtml(user.email)}">${initial}</button>
       <div class="user-menu-dropdown" id="user-menu-dropdown" style="display:none;">
         <div class="user-menu-email">${escapeHtml(user.email)}</div>
@@ -497,11 +497,11 @@ function updateNavAuth() {
       </div>
     </div>`;
   } else {
-    li.innerHTML = `<button class="nav-signin-btn" onclick="openAuthModal()">Sign in</button>`;
+    el.innerHTML = `<button class="nav-signin-btn" onclick="openAuthModal()">Sign in</button>`;
   }
 
-  li.id = 'nav-auth-btn';
-  nav.appendChild(li);
+  el.id = 'nav-auth-btn';
+  navInner.appendChild(el);
 }
 
 function toggleUserMenu() {
