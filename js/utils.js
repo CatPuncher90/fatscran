@@ -45,6 +45,15 @@ function escapeHtml(str) {
 }
 
 // ---------------------------------------------------------------------------
+// Image URL helpers
+// ---------------------------------------------------------------------------
+
+function supabaseImgUrl(url, width, quality) {
+  if (!url || !url.includes('supabase.co')) return url;
+  return `${url}?width=${width}&quality=${quality}`;
+}
+
+// ---------------------------------------------------------------------------
 // Macro traffic light — shared threshold used on shopping and planner pages
 // green = 90-110%, amber = under 90%, red = over 110%
 // ---------------------------------------------------------------------------
