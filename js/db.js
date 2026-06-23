@@ -6,7 +6,7 @@
 // SUPABASE_KEY defined in auth.js
 const STORAGE_URL  = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
 
-const dbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+const dbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 
 async function dbError(context, res) {
   const detail = await res.text().catch(() => '(no body)');
@@ -121,7 +121,7 @@ async function saveRecipe(data, existingId) {
     if (!res.ok) await dbError('update recipe', res);
     recipeId = existingId;
   } else {
-    const res  = await fetch(`${SUPABASE_URL}/rest/v1/recipes`, { method: 'POST', headers, body: JSON.stringify(recipePayload) });
+    const res  = await fetch(`${SUPABASE_URL}/rest/v1/recipes`, { method: 'POST', headers: { ...headers, 'Prefer': 'return=representation' }, body: JSON.stringify(recipePayload) });
     if (!res.ok) await dbError('insert recipe', res);
     const rows = await res.json();
     recipeId   = rows[0].id;
@@ -202,11 +202,9 @@ async function saveProfile(data) {
   if (typeof ensureSession === 'function') await ensureSession();
   const session = typeof getSession === 'function' ? getSession() : null;
   if (!session) throw new Error('Not logged in');
-  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' };
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=merge-duplicates' };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, { method: 'POST', headers, body: JSON.stringify({ id: session.user.id, ...data }) });
   if (!res.ok) await dbError('save profile', res);
-  const rows = await res.json();
-  return Array.isArray(rows) ? rows[0] : rows;
 }
 
 async function uploadAvatar(file) {
