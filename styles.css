@@ -2171,6 +2171,9 @@ main {
   box-sizing: border-box;
   padding: 11px 16px;
   min-height: 44px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   text-decoration: none;
   -webkit-appearance: none;
   appearance: none;
