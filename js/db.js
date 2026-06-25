@@ -2,24 +2,14 @@
 // All recipe reads/writes go through here.
 // Falls back to local recipes array if Supabase fails.
 
-// SUPABASE_URL defined in auth.js
-// SUPABASE_KEY defined in auth.js
-const STORAGE_URL  = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
+// SUPABASE_URL, SUPABASE_KEY, and _supabase defined in auth.js
+const STORAGE_URL = `${SUPABASE_URL}/storage/v1/object/public/recipe-images`;
 
-const dbHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-
-async function dbError(context, res) {
-  const detail = await res.text().catch(() => '(no body)');
-  const msg    = `${context} [${res.status}]: ${detail}`;
+function dbError(context, error) {
+  const msg = `${context}: ${error.message || error}`;
   console.error(msg);
   if (typeof Sentry !== 'undefined') Sentry.captureMessage(msg);
   throw new Error('Save failed. Please try again.');
-}
-
-function authedHeaders() {
-  const session = typeof getSession === 'function' ? getSession() : null;
-  if (!session) return dbHeaders;
-  return { ...dbHeaders, 'Authorization': 'Bearer ' + session.access_token };
 }
 
 // ---------------------------------------------------------------------------
@@ -29,17 +19,18 @@ function authedHeaders() {
 async function fetchAllRecipes() {
   try {
     const [recipeRes, macroRes, ingRes, stepRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/recipes?select=*&order=id.asc`, { headers: dbHeaders }),
-      fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?select=*`, { headers: dbHeaders }),
-      fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients?select=*&order=sort_order.asc`, { headers: dbHeaders }),
-      fetch(`${SUPABASE_URL}/rest/v1/recipe_steps?select=*&order=sort_order.asc`, { headers: dbHeaders })
+      _supabase.from('recipes').select('*').order('id', { ascending: true }),
+      _supabase.from('recipe_macros').select('*'),
+      _supabase.from('recipe_ingredients').select('*').order('sort_order', { ascending: true }),
+      _supabase.from('recipe_steps').select('*').order('sort_order', { ascending: true })
     ]);
 
-    if (!recipeRes.ok) throw new Error('recipes fetch failed');
+    if (recipeRes.error) throw recipeRes.error;
 
-    const [dbRecipes, macros, ingredients, steps] = await Promise.all([
-      recipeRes.json(), macroRes.json(), ingRes.json(), stepRes.json()
-    ]);
+    const dbRecipes   = recipeRes.data;
+    const macros      = macroRes.data      || [];
+    const ingredients = ingRes.data        || [];
+    const steps       = stepRes.data       || [];
 
     return dbRecipes.map(r => ({
       id:           r.id,
@@ -47,7 +38,7 @@ async function fetchAllRecipes() {
       section:      r.section,
       basePortions: r.base_portions,
       cookTime:     r.cook_time,
-      image:        r.image_url || null,
+      image:        r.image || null,
       macrosPerPortion: (() => {
         const m = macros.find(m => m.recipe_id === r.id);
         return m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, sugar: m.sugar || null, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -70,31 +61,27 @@ async function fetchRecipeById(id) {
 async function fetchRecipeByIdDirect(id) {
   try {
     const [recipeRes, macroRes, ingRes, stepRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${id}&select=*`, { headers: dbHeaders }),
-      fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?recipe_id=eq.${id}&select=*`, { headers: dbHeaders }),
-      fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients?recipe_id=eq.${id}&select=*&order=sort_order.asc`, { headers: dbHeaders }),
-      fetch(`${SUPABASE_URL}/rest/v1/recipe_steps?recipe_id=eq.${id}&select=*&order=sort_order.asc`, { headers: dbHeaders })
+      _supabase.from('recipes').select('*').eq('id', id),
+      _supabase.from('recipe_macros').select('*').eq('recipe_id', id),
+      _supabase.from('recipe_ingredients').select('*').eq('recipe_id', id).order('sort_order', { ascending: true }),
+      _supabase.from('recipe_steps').select('*').eq('recipe_id', id).order('sort_order', { ascending: true })
     ]);
 
-    if (!recipeRes.ok) throw new Error('recipe fetch failed');
+    if (recipeRes.error) throw recipeRes.error;
+    if (!recipeRes.data.length) return null;
 
-    const [dbRecipes, macros, ingredients, steps] = await Promise.all([
-      recipeRes.json(), macroRes.json(), ingRes.json(), stepRes.json()
-    ]);
-
-    if (!dbRecipes.length) return null;
-    const r = dbRecipes[0];
-    const m = macros[0];
+    const r = recipeRes.data[0];
+    const m = macroRes.data && macroRes.data[0];
     return {
       id:           r.id,
       title:        r.title,
       section:      r.section,
       basePortions: r.base_portions,
       cookTime:     r.cook_time,
-      image:        r.image_url || null,
+      image:        r.image || null,
       macrosPerPortion: m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, sugar: m.sugar || null, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
-      ingredients:  ingredients.map(i => ({ name: i.name, amount: i.amount, unit: i.unit })),
-      steps:        steps.map(s => ({ title: s.title, description: s.description }))
+      ingredients:  (ingRes.data  || []).map(i => ({ name: i.name, amount: i.amount, unit: i.unit })),
+      steps:        (stepRes.data || []).map(s => ({ title: s.title, description: s.description }))
     };
   } catch(e) {
     console.warn('fetchRecipeByIdDirect failed, falling back:', e);
@@ -103,59 +90,55 @@ async function fetchRecipeByIdDirect(id) {
   }
 }
 
-
 // ---------------------------------------------------------------------------
 // Write
 // ---------------------------------------------------------------------------
 
 async function saveRecipe(data, existingId) {
-  const headers = authedHeaders();
-  const isEdit  = !!existingId;
-
-  // 1. Upsert recipe row
-  const recipePayload = { title: data.title, section: data.section, base_portions: data.basePortions, cook_time: data.cookTime, image_url: data.imageUrl || null };
+  const isEdit = !!existingId;
+  const recipePayload = { title: data.title, section: data.section, base_portions: data.basePortions, cook_time: data.cookTime, image: data.image || null };
 
   let recipeId;
   if (isEdit) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${existingId}`, { method: 'PATCH', headers, body: JSON.stringify(recipePayload) });
-    if (!res.ok) await dbError('update recipe', res);
+    const { error } = await _supabase.from('recipes').update(recipePayload).eq('id', existingId);
+    if (error) dbError('update recipe', error);
     recipeId = existingId;
   } else {
-    const res  = await fetch(`${SUPABASE_URL}/rest/v1/recipes`, { method: 'POST', headers: { ...headers, 'Prefer': 'return=representation' }, body: JSON.stringify(recipePayload) });
-    if (!res.ok) await dbError('insert recipe', res);
-    const rows = await res.json();
-    recipeId   = rows[0].id;
+    const { data: rows, error } = await _supabase.from('recipes').insert(recipePayload).select('id');
+    if (error) dbError('insert recipe', error);
+    recipeId = rows[0].id;
   }
 
-  // 2. Macros — delete and re-insert
-  await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
-  const macroRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_macros`, { method: 'POST', headers, body: JSON.stringify({ recipe_id: recipeId, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, sugar: data.sugar || null, fiber: data.fiber || null }) });
-  if (!macroRes.ok) await dbError('save macros', macroRes);
+  // Macros — delete and re-insert
+  const { error: macroDelErr } = await _supabase.from('recipe_macros').delete().eq('recipe_id', recipeId);
+  if (macroDelErr) dbError('delete macros', macroDelErr);
+  const { error: macroInsErr } = await _supabase.from('recipe_macros').insert({ recipe_id: recipeId, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, sugar: data.sugar || null, fiber: data.fiber || null });
+  if (macroInsErr) dbError('save macros', macroInsErr);
 
-  // 3. Ingredients — delete and re-insert
-  await fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
+  // Ingredients — delete and re-insert
+  const { error: ingDelErr } = await _supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+  if (ingDelErr) dbError('delete ingredients', ingDelErr);
   if (data.ingredients.length) {
     const ingPayload = data.ingredients.map((ing, i) => ({ recipe_id: recipeId, name: ing.name, amount: ing.amount === '' || ing.amount === null ? null : parseFloat(ing.amount), unit: ing.unit, sort_order: i }));
-    const ingRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_ingredients`, { method: 'POST', headers, body: JSON.stringify(ingPayload) });
-    if (!ingRes.ok) await dbError('save ingredients', ingRes);
+    const { error } = await _supabase.from('recipe_ingredients').insert(ingPayload);
+    if (error) dbError('save ingredients', error);
   }
 
-  // 4. Steps — delete and re-insert
-  await fetch(`${SUPABASE_URL}/rest/v1/recipe_steps?recipe_id=eq.${recipeId}`, { method: 'DELETE', headers });
+  // Steps — delete and re-insert
+  const { error: stepDelErr } = await _supabase.from('recipe_steps').delete().eq('recipe_id', recipeId);
+  if (stepDelErr) dbError('delete steps', stepDelErr);
   if (data.steps.length) {
     const stepPayload = data.steps.map((step, i) => ({ recipe_id: recipeId, title: step.title, description: step.description, sort_order: i }));
-    const stepRes = await fetch(`${SUPABASE_URL}/rest/v1/recipe_steps`, { method: 'POST', headers, body: JSON.stringify(stepPayload) });
-    if (!stepRes.ok) await dbError('save steps', stepRes);
+    const { error } = await _supabase.from('recipe_steps').insert(stepPayload);
+    if (error) dbError('save steps', error);
   }
 
   return recipeId;
 }
 
 async function deleteRecipe(id) {
-  const headers = authedHeaders();
-  // RLS cascade handles related rows
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/recipes?id=eq.${id}`, { method: 'DELETE', headers });
-  if (!res.ok) await dbError('delete recipe', res);
+  const { error } = await _supabase.from('recipes').delete().eq('id', id);
+  if (error) dbError('delete recipe', error);
   return true;
 }
 
@@ -164,21 +147,18 @@ async function deleteRecipe(id) {
 // ---------------------------------------------------------------------------
 
 async function uploadRecipeImage(file) {
-  const session = typeof getSession === 'function' ? getSession() : null;
-  if (!session) throw new Error('Must be logged in to upload images');
+  if (!_currentSession) throw new Error('Must be logged in to upload images');
   if (!file.type.startsWith('image/')) throw new Error('File must be an image.');
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5 MB.');
 
   const ext      = file.name.split('.').pop().toLowerCase();
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/recipe-images/${filename}`, {
-    method:  'POST',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' },
-    body:    file
-  });
+  const { error } = await _supabase.storage
+    .from('recipe-images')
+    .upload(filename, file, { upsert: true, contentType: file.type });
 
-  if (!res.ok) await dbError('upload recipe image', res);
+  if (error) dbError('upload recipe image', error);
   return `${STORAGE_URL}/${filename}`;
 }
 
@@ -187,38 +167,39 @@ async function uploadRecipeImage(file) {
 // ---------------------------------------------------------------------------
 
 async function getProfile() {
-  if (typeof ensureSession === 'function') await ensureSession();
-  const session = typeof getSession === 'function' ? getSession() : null;
-  if (!session) return null;
+  if (!_currentSession) return null;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=*`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } });
-    if (!res.ok) return null;
-    const rows = await res.json();
-    return rows.length ? rows[0] : null;
+    const { data, error } = await _supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', _currentSession.user.id)
+      .single();
+    if (error) return null;
+    return data;
   } catch(e) { return null; }
 }
 
 async function saveProfile(data) {
-  if (typeof ensureSession === 'function') await ensureSession();
-  const session = typeof getSession === 'function' ? getSession() : null;
-  if (!session) throw new Error('Not logged in');
-  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=merge-duplicates' };
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, { method: 'POST', headers, body: JSON.stringify({ id: session.user.id, ...data }) });
-  if (!res.ok) await dbError('save profile', res);
+  if (!_currentSession) throw new Error('Not logged in');
+  const { error } = await _supabase
+    .from('profiles')
+    .upsert({ id: _currentSession.user.id, ...data });
+  if (error) dbError('save profile', error);
 }
 
 async function uploadAvatar(file) {
-  const session = typeof getSession === 'function' ? getSession() : null;
-  if (!session) throw new Error('Must be logged in to upload avatar');
+  if (!_currentSession) throw new Error('Must be logged in to upload avatar');
   if (!file.type.startsWith('image/')) throw new Error('File must be an image.');
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5 MB.');
+
   const ext      = file.name.split('.').pop().toLowerCase();
-  const filename = `${session.user.id}/avatar.${ext}`;
-  const url      = `${SUPABASE_URL}/storage/v1/object/avatars/${filename}`;
-  const res = await fetch(url, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': file.type, 'x-upsert': 'true' }, body: file });
-  if (!res.ok) {
-    await dbError('upload avatar', res);
-  }
+  const filename = `${_currentSession.user.id}/avatar.${ext}`;
+
+  const { error } = await _supabase.storage
+    .from('avatars')
+    .upload(filename, file, { upsert: true, contentType: file.type });
+
+  if (error) dbError('upload avatar', error);
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${filename}`;
 }
 
@@ -227,11 +208,14 @@ async function uploadAvatar(file) {
 // ---------------------------------------------------------------------------
 
 async function checkIsAdmin() {
-  const session = typeof getSession === 'function' ? getSession() : null;
-  if (!session) return false;
+  if (!_currentSession) return false;
   try {
-    const res  = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=is_admin&id=eq.${session.user.id}`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } });
-    const rows = await res.json();
-    return rows.length ? rows[0].is_admin === true : false;
+    const { data, error } = await _supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', _currentSession.user.id)
+      .single();
+    if (error) return false;
+    return data ? data.is_admin === true : false;
   } catch(e) { return false; }
 }
