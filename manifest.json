@@ -2,7 +2,7 @@
   "name": "FatScran",
   "short_name": "FatScran",
   "description": "High protein meal prep recipes",
-  "start_url": "/fatscran/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#DDD4C4",
   "theme_color": "#C25A28",
