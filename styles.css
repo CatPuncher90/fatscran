@@ -2160,6 +2160,7 @@ main {
   display: flex;
   gap: 0.75rem;
   align-items: stretch;
+  margin-bottom: 2rem;
 }
 .recipe-actions > * {
   flex: 1;
@@ -2169,6 +2170,7 @@ main {
   gap: 6px;
   box-sizing: border-box;
   padding: 11px 16px;
+  min-height: 44px;
   text-decoration: none;
   -webkit-appearance: none;
   appearance: none;
