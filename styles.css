@@ -1037,6 +1037,7 @@ main {
   font-family: 'DM Sans', sans-serif;
   transition: all 0.15s;
   letter-spacing: 0.01em;
+  box-sizing: border-box;
 }
 
 .btn-secondary:hover { background: var(--bg-card); }
