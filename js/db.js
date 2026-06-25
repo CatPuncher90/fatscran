@@ -38,7 +38,7 @@ async function fetchAllRecipes() {
       section:      r.section,
       basePortions: r.base_portions,
       cookTime:     r.cook_time,
-      image:        r.image || null,
+      image:        r.image_url || null,
       macrosPerPortion: (() => {
         const m = macros.find(m => m.recipe_id === r.id);
         return m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, sugar: m.sugar || null, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -78,7 +78,7 @@ async function fetchRecipeByIdDirect(id) {
       section:      r.section,
       basePortions: r.base_portions,
       cookTime:     r.cook_time,
-      image:        r.image || null,
+      image:        r.image_url || null,
       macrosPerPortion: m ? { calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, sugar: m.sugar || null, fiber: m.fiber || null } : { calories: 0, protein: 0, carbs: 0, fat: 0 },
       ingredients:  (ingRes.data  || []).map(i => ({ name: i.name, amount: i.amount, unit: i.unit })),
       steps:        (stepRes.data || []).map(s => ({ title: s.title, description: s.description }))
@@ -96,7 +96,7 @@ async function fetchRecipeByIdDirect(id) {
 
 async function saveRecipe(data, existingId) {
   const isEdit = !!existingId;
-  const recipePayload = { title: data.title, section: data.section, base_portions: data.basePortions, cook_time: data.cookTime, image: data.image || null };
+  const recipePayload = { title: data.title, section: data.section, base_portions: data.basePortions, cook_time: data.cookTime, image_url: data.image || null };
 
   let recipeId;
   if (isEdit) {
