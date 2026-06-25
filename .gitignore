@@ -2,3 +2,6 @@ DOCUMENTATION.md
 AUDIT.md
 SECURITY_AUDIT.md
 fix-missing-data.sql
+*:Zone.Identifier
+.claude/
+gitignore
