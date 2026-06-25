@@ -51,13 +51,14 @@ All pages that use the Supabase backend load scripts in this order:
 <script src="https://js-de.sentry-cdn.com/7e75aa5aac90f9f87fe2ea2f59c6b137.min.js"
         integrity="sha256-uJqZ9zwsj6gMvcoGxgfxs6q1L3kHWCLNxJGRCckAZ6E="
         crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
 <!-- then js/db.js if the page needs it -->
 ```
 
-The Sentry loader is first so unhandled errors in all subsequent scripts are captured. It carries a Subresource Integrity hash — if the CDN content changes the browser will refuse to execute it. `auth.js` defines `SUPABASE_URL` and `SUPABASE_KEY`, which `db.js` depends on, so `auth.js` must always come before `db.js`.
+The Sentry loader is first so unhandled errors in all subsequent scripts are captured. It carries a Subresource Integrity hash — if the CDN content changes the browser will refuse to execute it. The supabase-js UMD bundle is second and exposes `window.supabase`; `auth.js` calls `supabase.createClient()` at parse time so the bundle must be loaded before it. `auth.js` defines `SUPABASE_URL`, `SUPABASE_KEY`, and `_supabase`, which `db.js` depends on, so `auth.js` must always come before `db.js`.
 
 > **SRI maintenance:** If Sentry rotates the loader, the `integrity` hash will no longer match and the script will be blocked silently. Recompute the hash with `curl -s <url> | openssl dgst -sha256 -binary | openssl base64 -A` and update all 6 HTML pages.
 
@@ -108,40 +109,30 @@ An IIFE at the bottom of `utils.js` wires up the mobile hamburger nav. It listen
 
 The most important shared script. Loaded by all pages. Defines `SUPABASE_URL` and `SUPABASE_KEY` (used by `db.js` and `recipe.html` for ratings). Provides auth, session management, the nav sign-in/avatar UI, and all synced data functions.
 
-### The `sb` object
+### Supabase client
 
-A minimal Supabase REST client. All methods use `authedHeaders()` which injects the user's JWT when a session exists, or falls back to the anon key when signed out.
+`auth.js` creates the official SDK client at parse time:
 
-| Method | Description |
-|---|---|
-| `sb.get(table, params)` | GET request to a Supabase table |
-| `sb.post(table, body)` | POST (insert) to a Supabase table |
-| `sb.patch(table, params, body)` | PATCH (update) to a Supabase table |
-| `sb.delete(table, params)` | DELETE from a Supabase table |
-| `sb.signInWithEmail(email, password)` | Signs in via email/password |
-| `sb.signUpWithEmail(email, password)` | Creates a new account |
-| `sb.signInWithGoogle()` | Initiates Google OAuth redirect. The `redirect_to` URL is hardcoded to `https://catpuncher90.github.io/fatscran/` (not derived from `window.location.origin`) to prevent open redirect if the page is proxied from another domain. |
-| `sb.signOut()` | Signs out and clears session |
-| `sb.refreshSession(refreshToken)` | Refreshes an expired access token |
+```js
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+```
+
+`_supabase` is a global used by both `auth.js` and `db.js`. All table queries use `_supabase.from(table)` and all auth operations use `_supabase.auth.*`. The SDK handles JWT injection, token refresh, and session persistence automatically — no manual header construction or refresh logic exists.
+
+An `onAuthStateChange` listener is registered at parse time. It updates `_currentSession`, clears `fatscran-state` from sessionStorage on `SIGNED_OUT`, calls `updateNavAuth()`, and calls the page-level `onAuthStateChange()` callback on `SIGNED_IN` and `SIGNED_OUT` events only (not on `INITIAL_SESSION` or `TOKEN_REFRESHED`, which are background events that do not require a page re-render).
 
 ### Session management
 
-The session is stored in localStorage under the key `fatscran-session` as a JSON object:
-
-```js
-{
-  access_token: String,
-  refresh_token: String,
-  expires_at: Number,   // Unix timestamp (ms)
-  user: { id, email }
-}
-```
+The session is managed entirely by the SDK. It is persisted in localStorage under the key `sb-qtvlctyyjjxmrpbchchl-auth-token`. A module-level `_currentSession` variable mirrors the current SDK session and is updated by the `onAuthStateChange` listener.
 
 | Function | Description |
 |---|---|
-| `getSession()` | Returns the stored session object, or null |
-| `isLoggedIn()` | Returns true only if a session exists **and** `expires_at > Date.now()`. Expired sessions return false so auth-gated UI does not appear before `ensureSession()` refreshes the token. |
-| `clearSession()` | Removes `fatscran-session` from localStorage and `fatscran-state` from sessionStorage (prevents search state leaking to the next user on a shared device). |
+| `getSession()` | Returns `_currentSession` (the SDK session object), or null. The session object has `access_token`, `refresh_token`, `expires_at` (Unix seconds), and `user`. |
+| `getUser()` | Returns `_currentSession.user`, or null. |
+| `isLoggedIn()` | Returns `!!_currentSession`. The SDK sets `_currentSession` to null when the session expires or is signed out, so no manual expiry check is needed. |
+| `ensureSession()` | No-op stub returning `_currentSession`. The SDK's `autoRefreshToken: true` handles proactive token refresh. Retained only to avoid breaking existing call sites. |
 
 ### Auth modal
 
@@ -151,19 +142,20 @@ The session is stored in localStorage under the key `fatscran-session` as a JSON
 |---|---|
 | `openAuthModal()` | Shows the auth modal |
 | `closeAuthModalDirect()` | Hides the auth modal |
-| `handleAuthSubmit()` | Handles email/password sign-in or sign-up. On signup, enforces a minimum of 8 characters and at least one number or symbol before calling Supabase. If `signUpWithEmail()` returns without an `access_token` (Supabase email verification is enabled), the modal closes and `showPageNotice()` displays "Check your email to confirm your account." on the page instead of proceeding to the signed-in state. On sign-in failure, always shows a generic "Invalid email or password." message to prevent account enumeration. |
+| `handleAuthSubmit()` | Handles email/password sign-in or sign-up. On signup, enforces a minimum of 8 characters and at least one number or symbol before calling Supabase. Uses `_supabase.auth.signInWithPassword()` for sign-in and `_supabase.auth.signUp()` for sign-up. If `data.session` is null after signup (Supabase email verification is enabled), the modal closes and `showPageNotice()` displays "Check your email to confirm your account." instead of proceeding to the signed-in state. After successful sign-in the modal is closed and the SDK's `SIGNED_IN` event drives `updateNavAuth()` and the page `onAuthStateChange()`. On sign-in failure, always shows a generic "Invalid email or password." message to prevent account enumeration. |
 | `showPageNotice(msg)` | Injects a green info banner at the top of `<main>` on the current page. Used to surface the email verification prompt after signup. Reuses the `auth-error` CSS class structure with overridden colours. |
+| `signInWithGoogle()` | Calls `_supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: '...' } })`. The `redirectTo` URL is hardcoded to `https://catpuncher90.github.io/fatscran/` to prevent open redirect if the page is proxied from another domain. The SDK handles the OAuth callback automatically via `detectSessionInUrl: true` (default). |
 | `updateNavAuth()` | Updates the nav to show sign-in button or user avatar. Inserts a `<div id="nav-auth-btn">` directly into `.nav-inner` (not into `.nav-links`) so the avatar is always visible in the nav bar on mobile. On mobile it sits between the logo and the hamburger (CSS `order: 1`, `margin-left: auto`). |
 | `toggleUserMenu()` | Opens/closes the avatar dropdown |
-| `handleSignOut()` | Signs out and refreshes nav state |
+| `handleSignOut()` | Calls `_supabase.auth.signOut()`. The SDK fires `SIGNED_OUT` which triggers `updateNavAuth()`, page `onAuthStateChange()`, and clears `fatscran-state` from sessionStorage. Then reloads the page. |
 
 ### Page lifecycle
 
 `initAuth()` is called at the bottom of each page's script. It:
-1. Checks for a Google OAuth callback in the URL and completes the flow if present.
-2. Loads and validates the stored session (refreshing if expired).
-3. Injects the auth modal and nav UI.
-4. Calls `onAuthStateChange()` if the page defines it (used to re-render after sign-in/out).
+1. Calls `_supabase.auth.getSession()` to populate `_currentSession` synchronously before any page code runs (the SDK's `onAuthStateChange` listener may not have fired yet at this point).
+2. Injects the auth modal and updates the nav UI.
+
+The `onAuthStateChange` listener (registered at parse time, before `initAuth()` is called) handles all subsequent auth events: `SIGNED_IN` and `SIGNED_OUT` trigger `updateNavAuth()` and the page-level callback; `INITIAL_SESSION` and `TOKEN_REFRESHED` only update `_currentSession` silently.
 
 Pages that need to react to auth state define:
 ```js
@@ -181,7 +173,7 @@ These functions sync to Supabase tables when the user is signed in, and fall bac
 | `getFavs()` | Returns array of favourite recipe IDs |
 | `toggleFavSync(id)` | Fetches all favourite rows in one GET, checks existence locally, issues a single DELETE or POST, then returns the updated ID array from the local copy — no second network round trip. |
 | `getListSync()` | Returns array of `{ id, portions }` shopping list items |
-| `saveListSync(list)` | Replaces the shopping list entirely. Batched: one GET to identify removed IDs, one `DELETE id=in.(...)` for removed items, one batch upsert POST with `on_conflict=user_id,recipe_id` for the full new list. Throws on failure — does not fall back to localStorage. |
+| `saveListSync(list)` | Replaces the shopping list entirely. Batched: one GET to identify removed IDs, one `.delete().in('id', removed)` for removed items, one `.upsert(payload, { onConflict: 'user_id,recipe_id' })` for the full new list. Throws on failure — does not fall back to localStorage. |
 | `addToListSync(id, portions)` | Adds or updates a recipe in the shopping list |
 | `removeFromListSync(id)` | Removes a recipe from the shopping list |
 | `getPlanSync(weekKey)` | Returns the meal plan object for a given week key |
@@ -195,7 +187,7 @@ Loaded by pages that need to read or write recipes or user profiles from Supabas
 
 ### Error handling
 
-All HTTP failure paths call `dbError(context, res)` — a private helper that reads the response body, logs `context [status]: body` to the console and to Sentry, then throws `new Error('Save failed. Please try again.')`. This prevents raw Supabase error text (which can contain table names, column names, and constraint details) from reaching the user.
+All failure paths call `dbError(context, error)` — a private helper that logs `context: error.message` to the console and to Sentry, then throws `new Error('Save failed. Please try again.')`. The `error` argument is the SDK error object (has a `.message` property), not a `Response`. This prevents raw Supabase error text (which can contain table names, column names, and constraint details) from reaching the user.
 
 ### Recipe functions
 
@@ -204,7 +196,7 @@ All HTTP failure paths call `dbError(context, res)` — a private helper that re
 | `fetchAllRecipes()` | Fetches all recipes from the 4 recipe tables in parallel and assembles them into the same schema as `recipes.js` |
 | `fetchRecipeById(id)` | Fetches a single recipe from Supabase by ID. Used in admin for editing. |
 | `fetchRecipeByIdDirect(id)` | Fetches a single recipe by hitting only the 4 required tables for that ID in parallel. Faster than loading all recipes. Used by `recipe.html`. Returns `null` on Supabase failure (the local fallback array is now empty). |
-| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. The macro payload includes `sugar` (nullable) in addition to calories, protein, carbs, fat, and fiber. If `editingId` is provided, updates existing records; otherwise inserts new ones. The INSERT uses `Prefer: return=representation` to read `rows[0].id`; all other writes use `return=minimal`. Returns the recipe ID. |
+| `saveRecipe(data, editingId)` | Creates or updates a recipe across all 4 tables. The macro payload includes `sugar` (nullable) in addition to calories, protein, carbs, fat, and fiber. If `editingId` is provided, updates existing records; otherwise inserts new ones. The INSERT uses `.insert(payload).select('id')` to read `rows[0].id` for the new auto-incremented ID. Returns the recipe ID. |
 | `deleteRecipe(id)` | Deletes a recipe and all its related rows in the 4 tables. |
 | `uploadRecipeImage(file)` | Validates that `file.type` starts with `image/` and that `file.size` is under 5 MB before uploading to the `recipe-images` Supabase Storage bucket. On HTTP failure, logs the full status and response body to Sentry via `dbError()` then throws a generic message. |
 | `checkIsAdmin()` | Checks the `profiles` table for the current user and returns true if `is_admin` is set. Returns false if not signed in. |
@@ -213,8 +205,8 @@ All HTTP failure paths call `dbError(context, res)` — a private helper that re
 
 | Function | Description |
 |---|---|
-| `getProfile()` | Calls `ensureSession()` then fetches the current user's row from the `profiles` table (`?id=eq.{userId}`). Returns the profile object or `null` if not signed in or not found. |
-| `saveProfile(data)` | Calls `ensureSession()` then upserts the profile row using POST with `Prefer: return=minimal,resolution=merge-duplicates`. The `id` field is always included as the conflict key. Returns nothing — the caller discards the response. |
+| `getProfile()` | Fetches the current user's row from the `profiles` table via `_supabase.from('profiles').select('*').eq('id', _currentSession.user.id).single()`. Returns the profile object or `null` if not signed in or not found. |
+| `saveProfile(data)` | Upserts the profile row via `_supabase.from('profiles').upsert({ id: _currentSession.user.id, ...data })`. The `id` field is always included as the conflict key. Returns nothing — the caller discards the response. |
 | `uploadAvatar(file)` | Validates file type (`image/*`) and size (≤5 MB), then uploads to the `avatars` Supabase Storage bucket at `{userId}/avatar.{ext}`. On failure, logs full detail to Sentry via `dbError()` and throws a generic message. Returns the public URL on success. |
 
 ---
@@ -639,10 +631,10 @@ This approach ensures users always receive fresh recipe data and assets. The pre
 
 Users sign in via the modal injected by `js/auth.js`. Two methods are supported:
 
-- **Email/password:** Standard Supabase email + password auth.
-- **Google OAuth:** Redirects to Google and returns to the page via URL hash. The callback is handled by `initAuth()` on page load.
+- **Email/password:** `_supabase.auth.signInWithPassword({ email, password })`.
+- **Google OAuth:** `_supabase.auth.signInWithOAuth({ provider: 'google', ... })` redirects to Google. On return the SDK detects the URL hash and exchanges the token automatically (`detectSessionInUrl: true` by default). No manual callback handling is needed.
 
-Sessions are stored in localStorage as `fatscran-session`. `initAuth()` checks the session on every page load and refreshes the access token if expired. Signing out clears the session and re-renders the nav.
+Sessions are persisted in localStorage by the SDK under the key `sb-qtvlctyyjjxmrpbchchl-auth-token`. `autoRefreshToken: true` handles proactive token refresh in the background. Signing out calls `_supabase.auth.signOut()`, which fires `SIGNED_OUT` and clears the SDK's storage.
 
 ### Database tables
 
@@ -768,7 +760,7 @@ RLS: users can read and write their own row (matched on `id = auth.uid()`). Only
 
 - For `favourites`, `shopping_list`, and `meal_plans`, `user_id` **is included in the POST body** by the respective sync functions in `js/auth.js`. This ensures RLS policies can correctly match the row via `auth.uid()`.
 - The `profiles` table is an exception: the `id` column is the primary key and must be included in the POST body when upserting, because it is used as the conflict resolution key (`Prefer: resolution=merge-duplicates`). `saveProfile()` always includes `id: session.user.id` in the payload.
-- The `sb` object in `auth.js` uses `authedHeaders()` to attach the user JWT, which is what triggers the RLS `auth.uid()` function.
+- The `_supabase` client automatically attaches the current session's JWT to every request, which is what triggers the RLS `auth.uid()` function.
 
 ---
 
@@ -780,7 +772,7 @@ When a user is **signed in**, all personal data (favourites, shopping list, meal
 
 | Key | Used by | Description |
 |---|---|---|
-| `fatscran-session` | js/auth.js | Current user session (access token, refresh token, user object) |
+| `sb-qtvlctyyjjxmrpbchchl-auth-token` | supabase-js SDK | Current user session (access token, refresh token, user object). Managed entirely by the SDK — do not read or write this key directly. |
 | `fatscran-favs` | js/auth.js (fallback) | Array of favourite recipe IDs (used when signed out) |
 | `fatscran-list` | js/auth.js (fallback) | Array of `{ id, portions }` shopping list items (used when signed out) |
 | `fatscran-checked` | shopping.html | Array of ticked ingredient keys. Always local, never synced. |
@@ -829,15 +821,15 @@ GitHub Pages deploys automatically on push to `main`. Allow 30-60 seconds for ch
 - **Cook times** are stored as strings (e.g. "35 mins", "1 hr 20 mins"). The `parseCookTime()` function in `js/utils.js` converts these to minutes for sorting.
 - **Admin access** is granted by setting `is_admin = true` in the `profiles` table directly in the Supabase dashboard. There is no self-serve way to become an admin.
 - **`user_id` is sent in POST request bodies** for `favourites`, `shopping_list`, and `meal_plans` by the sync functions in `js/auth.js`. The `profiles` table is the exception: its PK column is `id` (not `user_id`) and must be included in POST upsert payloads as the conflict key.
-- **`ensureSession()` before profile fetches.** `getProfile()` and `saveProfile()` both call `ensureSession()` before reading the session object, ensuring the access token is refreshed if expired. If a profile request returns a 401, check that `ensureSession` is resolving correctly.
+- **`ensureSession()` is a no-op.** Token refresh is handled automatically by the SDK (`autoRefreshToken: true`). The function is retained only to avoid breaking any future call sites. Do not add new `await ensureSession()` calls — they do nothing.
 - **My Profile nav link** appears in the signed-in user dropdown (above Sign out), added by `updateNavAuth()` in `js/auth.js`. It links to `profile.html`.
 - **XSS protection:** All user-supplied strings (recipe title, step text, ingredient name/unit, review text, cook time, section display text, display name, user email, avatar URL, etc.) must be passed through `escapeHtml()` from `js/utils.js` before being interpolated into an `innerHTML` template literal. Badge CSS class names (`badgeClass()` return values) and numeric macro values are intentionally not escaped. If you add a new `innerHTML` template, apply `escapeHtml()` to every string field that originates from the database or user input.
 - **Never surface raw Supabase errors to users.** All HTTP failure paths in `js/db.js` go through `dbError(context, res)` which logs the full detail to Sentry and throws a generic "Save failed. Please try again." message. Do not add new `throw new Error('... ' + await res.text())` patterns.
 - **Password validation is client-side only** for the signup flow (≥8 chars, ≥1 number or symbol). Supabase enforces its own minimum server-side. The client check exists for immediate feedback — do not remove it without also tightening the Supabase Auth settings.
 - **Login error messages are intentionally generic.** `handleAuthSubmit()` always shows "Invalid email or password." on sign-in failure, regardless of what Supabase returns. This prevents account enumeration. The real error goes to Sentry. Do not change this to show the Supabase error message.
-- **`isLoggedIn()` checks expiry.** Returns false for sessions where `expires_at <= Date.now()`. Do not use `!!getSession()` as a logged-in check elsewhere — always call `isLoggedIn()`.
+- **`isLoggedIn()` returns `!!_currentSession`.** The SDK nulls out `_currentSession` when a session expires or is signed out, so no manual expiry check is needed. Do not use `!!getSession()` as a logged-in check — always call `isLoggedIn()`.
 - **`confirmCopy()` state capture:** The copy modal's confirm handler captures `copyMode`, `copySlotMeal`, `copySlotRecipeId`, and `copyFromDay` into local variables *before* calling `closeCopyModalDirect()`, because that function resets those module-level variables to null. Always follow this pattern when reading state before closing a modal that clears state.
 - **Sentry SRI hash:** The Sentry loader script tag on all pages includes an `integrity="sha256-..."` attribute. If the hash ever stops matching (Sentry rotates the loader), the script is silently blocked and error reporting stops. Recompute the hash with `curl -s <url> | openssl dgst -sha256 -binary | openssl base64 -A` and update all 6 HTML files.
-- **`Prefer: return=representation` is used in exactly one place** — the recipe INSERT in `saveRecipe()`, where `rows[0].id` is read to get the auto-incremented ID. All other writes use `return=minimal`. Do not add `return=representation` to new write requests unless the response body is actually consumed.
+- **`.select('id')` after insert is used in exactly one place** — the recipe INSERT in `saveRecipe()`, where `.insert(payload).select('id')` is chained to retrieve `rows[0].id` for the auto-incremented ID. All other writes do not chain `.select()`. Do not add `.select()` to new write operations unless the response data is actually consumed.
 - **`recipes.js` is an empty stub.** Do not add recipe data to it. All recipe data lives in Supabase. Adding data back to `recipes.js` would reintroduce the stale-data problem where admin edits are not reflected on shopping and planner pages.
 - **Nav auth element is a `<div>` in `.nav-inner`, not a `<li>` in `.nav-links`.** `updateNavAuth()` inserts `#nav-auth-btn` directly into the flex container so it remains visible on mobile even when the hamburger menu is closed. Do not move it back into `.nav-links` — that element has `display:none` on mobile and would hide the avatar again.
