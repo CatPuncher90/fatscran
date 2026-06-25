@@ -80,23 +80,49 @@ function shareRecipe() {
 
 async function fetchRatings() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ratings?recipe_id=eq.${recipeId}&select=stars,review,created_at&order=created_at.desc`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
-    if (!res.ok) return [];
-    return res.json();
+    const { data, error } = await _supabase
+      .from('ratings')
+      .select('id,stars,review,created_at,user_id')
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return data;
   } catch(e) { return []; }
 }
 
 async function submitRating() {
   const review = document.getElementById('review-text').value.trim();
   if (!selectedStars) { alert('Please select a star rating.'); return; }
+  const session = getSession();
+  const userId  = session ? session.user.id : null;
+  if (!userId) return;
   const btn = document.getElementById('submit-btn');
   btn.textContent = 'Submitting...';
   btn.disabled    = true;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ratings`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ recipe_id: recipeId, stars: selectedStars, review: review || null }) });
-    if (res.ok) { document.getElementById('review-form').innerHTML = '<p class="review-thanks">Thanks for your review!</p>'; loadRatings(); }
-    else { btn.textContent = 'Submit review'; btn.disabled = false; alert('Something went wrong, try again.'); }
-  } catch(e) { btn.textContent = 'Submit review'; btn.disabled = false; alert('Network error, try again.'); }
+    const { data: existing } = await _supabase
+      .from('ratings')
+      .select('id')
+      .eq('recipe_id', recipeId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await _supabase
+        .from('ratings')
+        .update({ stars: selectedStars, review: review || null })
+        .eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await _supabase
+        .from('ratings')
+        .insert({ recipe_id: recipeId, stars: selectedStars, review: review || null, user_id: userId });
+      if (error) throw error;
+    }
+
+    document.getElementById('review-form').innerHTML = '<p class="review-thanks">Thanks for your review!</p>';
+    loadRatings();
+  } catch(e) { btn.textContent = 'Submit review'; btn.disabled = false; alert('Something went wrong, try again.'); }
 }
 
 async function loadRatings() {
@@ -104,6 +130,20 @@ async function loadRatings() {
   const avgEl   = document.getElementById('avg-rating');
   const listEl  = document.getElementById('review-list');
   if (!avgEl) return;
+
+  // Batch-fetch display names for all user_ids in one query
+  const userIds = [...new Set(ratings.filter(r => r.user_id).map(r => r.user_id))];
+  const nameMap = {};
+  if (userIds.length) {
+    const { data: profiles } = await _supabase
+      .from('profiles')
+      .select('id,display_name')
+      .in('id', userIds);
+    if (profiles) profiles.forEach(p => {
+      nameMap[p.id] = p.display_name ? p.display_name.trim().split(' ')[0] : 'Anonymous';
+    });
+  }
+
   if (!ratings.length) {
     avgEl.innerHTML = '<p class="reviews-empty">No reviews yet. Be the first!</p>';
   } else {
@@ -112,12 +152,16 @@ async function loadRatings() {
     for (let i = 1; i <= 5; i++) s += `<span class="star ${i <= Math.round(avg) ? 'star--filled' : 'star--empty'}">&#9733;</span>`;
     avgEl.innerHTML = `<div class="avg-rating-row">${s}<span class="avg-rating-label">${avg.toFixed(1)} (${ratings.length} review${ratings.length !== 1 ? 's' : ''})</span></div>`;
   }
-  if (listEl) listEl.innerHTML = ratings.map(r => `
+  if (listEl) listEl.innerHTML = ratings.map(r => {
+    const name = r.user_id ? (nameMap[r.user_id] || 'Anonymous') : 'Anonymous';
+    return `
     <div class="review-item">
       <div class="review-stars">${[1,2,3,4,5].map(i => `<span class="star ${i <= r.stars ? 'star--filled' : 'star--empty'}">&#9733;</span>`).join('')}</div>
+      <p class="review-name">${escapeHtml(name)}</p>
       ${r.review ? `<p class="review-text">${escapeHtml(r.review)}</p>` : ''}
       <p class="review-date">${new Date(r.created_at).toLocaleDateString('en-GB')}</p>
-    </div>`).join('') || '<p class="reviews-empty">No reviews yet. Be the first!</p>';
+    </div>`;
+  }).join('') || '<p class="reviews-empty">No reviews yet. Be the first!</p>';
 }
 
 function setStars(n) {
