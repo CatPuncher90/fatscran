@@ -59,7 +59,7 @@ async function ensureSession() {
 function signInWithGoogle() {
   _supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://catpuncher90.github.io/fatscran/' }
+    options: { redirectTo: 'https://fatscran.com/' }
   });
 }
 
