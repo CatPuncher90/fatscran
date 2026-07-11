@@ -17,7 +17,7 @@
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">☰</button>
     <ul class="nav-links" id="nav-links">
-      <li><a href="index.html" class="active">Recipes</a></li>
+      <li><a href="recipes.html" class="active">Recipes</a></li>
       <li><a href="shopping.html">Shopping List</a></li>
       <li><a href="planner.html">Planner</a></li>
     </ul>
@@ -180,13 +180,13 @@ function renderPage() {
   const adminEditBtn   = isAdmin ? `<a href="admin.html?edit=${recipe.id}" class="btn-secondary" style="text-decoration:none;">&#9998; Edit recipe</a>` : '';
 
   mainEl.innerHTML = `
-    <a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a>
+    <a href="recipes.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a>
 
     ${recipe.image ? `
       <div class="recipe-banner-wrap">
         <div class="recipe-banner-image"><img src="${escapeHtml(supabaseImgUrl(recipe.image, 800, 85))}" alt="${escapeHtml(recipe.title)}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
         <div class="recipe-hero-card">
-          <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${escapeHtml(recipe.section)}</span></div>
+          <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${escapeHtml(sectionLabel(recipe.section))}</span></div>
           <h1 class="recipe-title">${escapeHtml(recipe.title)}</h1>
           <div class="recipe-meta">
             <span class="recipe-meta-item">${clockIconSvg(16)} ${escapeHtml(recipe.cookTime)}</span>
@@ -194,7 +194,7 @@ function renderPage() {
           </div>
         </div>
       </div>` : `
-      <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${escapeHtml(recipe.section)}</span></div>
+      <div class="recipe-hero-top"><span class="${badgeClass(recipe.section)}">${escapeHtml(sectionLabel(recipe.section))}</span></div>
       <h1 class="recipe-title">${escapeHtml(recipe.title)}</h1>
       <div class="recipe-meta">
         <span class="recipe-meta-item">${clockIconSvg(16)} ${escapeHtml(recipe.cookTime)}</span>
@@ -286,7 +286,7 @@ function changePortion(delta) {
 async function init() {
   if (!recipeId || isNaN(recipeId)) {
     document.title = 'Not Found — FatScran';
-    mainEl.innerHTML = `<a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
+    mainEl.innerHTML = `<a href="recipes.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
     return;
   }
   await initAuth();
@@ -294,7 +294,7 @@ async function init() {
 
   if (!recipe) {
     document.title = 'Not Found — FatScran';
-    mainEl.innerHTML = `<a href="index.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
+    mainEl.innerHTML = `<a href="recipes.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
     return;
   }
 

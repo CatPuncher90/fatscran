@@ -17,7 +17,7 @@
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">☰</button>
     <ul class="nav-links" id="nav-links">
-      <li><a href="index.html">Recipes</a></li>
+      <li><a href="recipes.html">Recipes</a></li>
       <li><a href="shopping.html">Shopping List</a></li>
       <li><a href="planner.html" class="active">Planner</a></li>
     </ul>
@@ -57,8 +57,8 @@
     </div>
     <div class="modal-filter-row">
       <button class="modal-filter-btn" data-section="breakfast" onclick="setModalFilter('breakfast')">Breakfast</button>
-      <button class="modal-filter-btn" data-section="dinner" onclick="setModalFilter('dinner')">Dinner</button>
-      <button class="modal-filter-btn" data-section="tea" onclick="setModalFilter('tea')">Tea</button>
+      <button class="modal-filter-btn" data-section="dinner" onclick="setModalFilter('dinner')">Lunch</button>
+      <button class="modal-filter-btn" data-section="tea" onclick="setModalFilter('tea')">Dinner</button>
       <button class="modal-filter-btn" data-section="all" onclick="setModalFilter('all')">All</button>
     </div>
     <div class="modal-list" id="modal-list"></div>
@@ -163,7 +163,7 @@ function renderWeek() {
       if (recipe) { dayCalories += recipe.macrosPerPortion.calories; dayProtein += recipe.macrosPerPortion.protein; filledSlots++; }
       return `
         <div class="meal-slot" onclick="openModal('${day}','${meal}')">
-          <div class="meal-slot-label">${meal.charAt(0).toUpperCase() + meal.slice(1)}</div>
+          <div class="meal-slot-label">${sectionLabel(meal)}</div>
           ${recipe ? `
             <div class="slot-recipe" onclick="event.stopPropagation()">
               <div class="slot-btns">
@@ -374,7 +374,7 @@ function openModal(day, meal) {
   modalMeal          = meal;
   modalSectionFilter = meal;
   document.getElementById('modal-search-input').value = '';
-  document.getElementById('modal-title').textContent  = `${day} – ${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
+  document.getElementById('modal-title').textContent  = `${day} – ${sectionLabel(meal)}`;
   document.querySelectorAll('.modal-filter-btn').forEach(b =>
     b.classList.toggle('modal-filter-btn--active', b.dataset.section === meal)
   );
@@ -421,17 +421,17 @@ function filterModal(query) {
         ${suggestions.map(r => `
           <div class="modal-recipe modal-recipe--suggested" onclick="selectRecipe(${r.id})">
             <div class="modal-recipe-title">${escapeHtml(r.title)}</div>
-            <div class="modal-recipe-meta">${escapeHtml(r.section)} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${escapeHtml(r.cookTime)}</div>
+            <div class="modal-recipe-meta">${escapeHtml(sectionLabel(r.section))} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${escapeHtml(r.cookTime)}</div>
           </div>`).join('')}
       </div>
-      <p class="modal-full-list-label">All ${modalMeal} recipes</p>`;
+      <p class="modal-full-list-label">All ${sectionLabel(modalMeal)} recipes</p>`;
     }
   }
 
   html += filtered.map(r => `
     <div class="modal-recipe ${r.id === currentId ? 'modal-recipe--selected' : ''}" onclick="selectRecipe(${r.id})">
       <div class="modal-recipe-title">${escapeHtml(r.title)}</div>
-      <div class="modal-recipe-meta">${escapeHtml(r.section)} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${escapeHtml(r.cookTime)}</div>
+      <div class="modal-recipe-meta">${escapeHtml(sectionLabel(r.section))} &middot; ${r.macrosPerPortion.calories} kcal &middot; ${r.macrosPerPortion.protein}g protein &middot; ${escapeHtml(r.cookTime)}</div>
     </div>`).join('');
 
   document.getElementById('modal-list').innerHTML = html;
@@ -473,7 +473,7 @@ function openCopySlotModal(day, meal, recipeId) {
   const recipe     = allRecipes.find(r => r.id === recipeId);
   document.getElementById('copy-modal-title').textContent = 'Copy to other days';
   document.getElementById('copy-modal-body').innerHTML = `
-    <p class="copy-modal-desc">Copy <strong>${recipe ? escapeHtml(recipe.title) : 'this recipe'}</strong> to the ${escapeHtml(meal)} slot on:</p>
+    <p class="copy-modal-desc">Copy <strong>${recipe ? escapeHtml(recipe.title) : 'this recipe'}</strong> to the ${sectionLabel(meal)} slot on:</p>
     ${DAYS.filter(d => d !== day).map(d => `
       <label class="copy-day-label">
         <input type="checkbox" value="${d}"> ${d}

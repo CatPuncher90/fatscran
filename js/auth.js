@@ -283,6 +283,7 @@ function injectAuthModal() {
           <div id="auth-error" class="auth-error" style="display:none;"></div>
           <input id="auth-email" type="email" placeholder="Email address" class="auth-input">
           <input id="auth-password" type="password" placeholder="Password" class="auth-input">
+          <button id="auth-forgot-btn" class="auth-toggle-btn" style="text-align:left;font-size:0.8rem;padding:0.15rem 0 0.4rem;" onclick="enterResetMode()">Forgot password?</button>
           <button id="auth-submit-btn" class="btn-primary auth-submit" onclick="handleAuthSubmit()">Sign in</button>
           <button class="auth-toggle-btn" onclick="toggleAuthMode()">
             <span id="auth-toggle-text">Don't have an account? Sign up</span>
@@ -296,12 +297,14 @@ let authMode = 'signin';
 
 function openAuthModal() {
   authMode = 'signin';
-  document.getElementById('auth-modal-title').textContent = 'Sign in';
-  document.getElementById('auth-submit-btn').textContent  = 'Sign in';
-  document.getElementById('auth-toggle-text').textContent = "Don't have an account? Sign up";
-  document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('auth-email').value    = '';
-  document.getElementById('auth-password').value = '';
+  document.getElementById('auth-modal-title').textContent    = 'Sign in';
+  document.getElementById('auth-submit-btn').textContent     = 'Sign in';
+  document.getElementById('auth-toggle-text').textContent    = "Don't have an account? Sign up";
+  document.getElementById('auth-error').style.display        = 'none';
+  document.getElementById('auth-email').value                = '';
+  document.getElementById('auth-password').value             = '';
+  document.getElementById('auth-password').style.display     = '';
+  document.getElementById('auth-forgot-btn').style.display   = '';
   document.getElementById('auth-modal-overlay').style.display = 'flex';
   setTimeout(() => document.getElementById('auth-email').focus(), 50);
 }
@@ -315,12 +318,34 @@ function closeAuthModalDirect() {
 }
 
 function toggleAuthMode() {
+  if (authMode === 'reset') {
+    authMode = 'signin';
+    document.getElementById('auth-modal-title').textContent  = 'Sign in';
+    document.getElementById('auth-submit-btn').textContent   = 'Sign in';
+    document.getElementById('auth-toggle-text').textContent  = "Don't have an account? Sign up";
+    document.getElementById('auth-password').style.display   = '';
+    document.getElementById('auth-forgot-btn').style.display = '';
+    document.getElementById('auth-error').style.display      = 'none';
+    return;
+  }
   authMode = authMode === 'signin' ? 'signup' : 'signin';
   const isSignIn = authMode === 'signin';
-  document.getElementById('auth-modal-title').textContent = isSignIn ? 'Sign in' : 'Create account';
-  document.getElementById('auth-submit-btn').textContent  = isSignIn ? 'Sign in' : 'Create account';
-  document.getElementById('auth-toggle-text').textContent = isSignIn ? "Don't have an account? Sign up" : 'Already have an account? Sign in';
-  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-modal-title').textContent  = isSignIn ? 'Sign in' : 'Create account';
+  document.getElementById('auth-submit-btn').textContent   = isSignIn ? 'Sign in' : 'Create account';
+  document.getElementById('auth-toggle-text').textContent  = isSignIn ? "Don't have an account? Sign up" : 'Already have an account? Sign in';
+  document.getElementById('auth-forgot-btn').style.display = isSignIn ? '' : 'none';
+  document.getElementById('auth-password').style.display   = '';
+  document.getElementById('auth-error').style.display      = 'none';
+}
+
+function enterResetMode() {
+  authMode = 'reset';
+  document.getElementById('auth-modal-title').textContent  = 'Reset password';
+  document.getElementById('auth-submit-btn').textContent   = 'Send reset email';
+  document.getElementById('auth-toggle-text').textContent  = 'Back to sign in';
+  document.getElementById('auth-password').style.display   = 'none';
+  document.getElementById('auth-forgot-btn').style.display = 'none';
+  document.getElementById('auth-error').style.display      = 'none';
 }
 
 async function handleAuthSubmit() {
@@ -328,6 +353,25 @@ async function handleAuthSubmit() {
   const password = document.getElementById('auth-password').value;
   const errorEl  = document.getElementById('auth-error');
   const btn      = document.getElementById('auth-submit-btn');
+
+  if (authMode === 'reset') {
+    if (!email) { showAuthError('Please enter your email address.'); return; }
+    btn.textContent = 'Sending...';
+    btn.disabled    = true;
+    errorEl.style.display = 'none';
+    try {
+      const { error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://fatscran.com' });
+      if (error) throw error;
+      closeAuthModalDirect();
+      showPageNotice('Check your email for a password reset link.');
+    } catch(e) {
+      if (typeof Sentry !== 'undefined') Sentry.captureException(e);
+      showAuthError("Couldn't send reset email. Please try again.");
+      btn.textContent = 'Send reset email';
+      btn.disabled    = false;
+    }
+    return;
+  }
 
   if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
 

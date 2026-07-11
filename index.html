@@ -17,203 +17,99 @@
     <a href="index.html" class="nav-logo">Fat<span class="logo-scran">Scran</span></a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">☰</button>
     <ul class="nav-links" id="nav-links">
-      <li><a href="index.html" class="active">Recipes</a></li>
+      <li><a href="recipes.html">Recipes</a></li>
       <li><a href="shopping.html">Shopping List</a></li>
       <li><a href="planner.html">Planner</a></li>
     </ul>
   </div>
 </nav>
 
-<main>
-  <div class="page-header">
-    <h1>Meal Prep Recipes</h1>
-    <p>High protein, batch-friendly meals to fuel your week.</p>
-  </div>
-  <form class="search-bar-row" autocomplete="off" onsubmit="return false;">
-    <input id="search-input" type="text" name="search" placeholder="Search recipes or ingredients..." oninput="onSearchInput()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-    <select id="sort-select" onchange="applyFilters()" class="sort-select">
-      <option value="default">No sort</option>
-      <option value="protein">Highest protein</option>
-      <option value="calories">Lowest calories</option>
-      <option value="cooktime">Quickest cook time</option>
-    </select>
-  </form>
-  <div class="filters" id="filters">
-    <button class="filter-btn active" data-section="all">All</button>
-    <button class="filter-btn" data-section="breakfast">Breakfast</button>
-    <button class="filter-btn" data-section="dinner">Dinner</button>
-    <button class="filter-btn" data-section="tea">Tea</button>
-    <button class="filter-btn" data-section="dessert">Dessert</button>
-    <button class="filter-btn" data-section="favourites">&#9825; Favourites</button>
-  </div>
-  <p id="result-count" class="result-count"></p>
-  <div class="recipe-grid" id="recipe-grid">
-    <div class="no-results" style="font-style:normal;">Loading recipes...</div>
-  </div>
+<main class="landing-main">
+  <section class="hero">
+    <h1 class="hero__headline">Real recipes.<br>Real results.</h1>
+    <p class="hero__sub">We built FatScran to lose weight on a tight budget. High-protein, cheap, and filling recipes &mdash; with a meal planner and shopping list built in.</p>
+    <div class="hero__ctas">
+      <a href="recipes.html" class="btn-primary" style="text-decoration:none;">Browse Recipes</a>
+      <button id="cta-signup-btn" class="btn-secondary" onclick="openAuthModal()">Create a free account</button>
+    </div>
+  </section>
+
+  <section class="landing-section">
+    <div class="landing-section__inner">
+      <h2 class="landing-section__heading">How it works</h2>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-card__num">1</div>
+          <div class="how-card__title">Pick your recipes</div>
+          <p class="how-card__body">Browse high-protein, budget-friendly meals and save your favourites.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-card__num">2</div>
+          <div class="how-card__title">Plan your week</div>
+          <p class="how-card__body">Assign recipes to each day of the week and track your daily macro targets.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-card__num">3</div>
+          <div class="how-card__title">Build your shopping list</div>
+          <p class="how-card__body">Add your planned meals to a shopping list and get a combined, scaled ingredient list.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section" id="about">
+    <div class="landing-section__inner">
+      <h2 class="landing-section__heading">Why we built this</h2>
+      <div class="landing-prose">
+        <p>We needed high-protein meals that were cheap, filling, and easy to prep in bulk. We couldn't find a tool that combined good recipes with a proper meal planner and shopping list, so we built one. Every recipe has been cooked and tested by us.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section" id="privacy">
+    <div class="landing-section__inner">
+      <h2 class="landing-section__heading">Privacy Policy</h2>
+      <p class="privacy-updated">Last updated: 11 July 2026</p>
+      <ul class="privacy-list">
+        <li><strong>What we collect:</strong> Email address and password (via Supabase Auth), display name and avatar (optional), daily macro targets (calories, protein, carbs, fat), meal plans, shopping list, recipe favourites.</li>
+        <li><strong>What we do not collect:</strong> We do not store age, weight, height, or any other health inputs. These are used locally on your device to calculate macro targets and are never sent to our servers.</li>
+        <li><strong>Why we collect it:</strong> To sync your data across devices when signed in.</li>
+        <li><strong>How long we keep it:</strong> Until you delete your account.</li>
+        <li><strong>Your rights:</strong> You can delete your account and all associated data at any time from your profile page.</li>
+        <li><strong>Data controller:</strong> Marley, <a href="mailto:wittermarley@gmail.com">wittermarley@gmail.com</a></li>
+        <li>Hosted on <a href="https://supabase.com" rel="noopener">Supabase</a>. Error monitoring via <a href="https://sentry.io" rel="noopener">Sentry</a>.</li>
+      </ul>
+    </div>
+  </section>
 </main>
 
+<footer class="landing-footer">
+  <div class="landing-footer__inner">
+    <p class="landing-footer__tagline">FatScran &mdash; built with &hearts; on a budget</p>
+    <nav class="landing-footer__links" aria-label="Footer">
+      <a href="recipes.html">Recipes</a>
+      <a href="#about">About</a>
+      <a href="#privacy">Privacy Policy</a>
+    </nav>
+  </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="recipes.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/db.js"></script>
 <script>
-const SECTION_ORDER = ['breakfast','dinner','tea','sauces','dessert'];
-let activeSection = 'all';
-let currentFavs   = [];
-let allRecipes    = [];
-let isAdmin       = false;
-let searchTimer   = null;
-
-function onSearchInput() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(applyFilters, 180);
+function updateHeroCtas() {
+  const signupBtn = document.getElementById('cta-signup-btn');
+  if (signupBtn) signupBtn.style.display = isLoggedIn() ? 'none' : '';
 }
 
-async function toggleFav(id, event) {
-  event.preventDefault();
-  event.stopPropagation();
-  currentFavs = await toggleFavSync(id);
-  applyFilters();
-}
-
-function recipeMatchesSearch(recipe, query) {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  if (recipe.title.toLowerCase().includes(q)) return true;
-  return recipe.ingredients.some(i => i.name.toLowerCase().includes(q));
-}
-
-function sortWithinGroups(list, sortBy) {
-  if (sortBy === 'default') return list;
-  return list.slice().sort((a, b) => {
-    if (a.section !== b.section) return SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section);
-    if (sortBy === 'protein')  return b.macrosPerPortion.protein  - a.macrosPerPortion.protein;
-    if (sortBy === 'calories') return a.macrosPerPortion.calories - b.macrosPerPortion.calories;
-    if (sortBy === 'cooktime') return parseCookTime(a.cookTime)   - parseCookTime(b.cookTime);
-    return 0;
-  });
-}
-
-function groupBySection(list) {
-  const groups = {};
-  SECTION_ORDER.forEach(s => groups[s] = []);
-  list.forEach(r => { if (groups[r.section]) groups[r.section].push(r); else groups[r.section] = [r]; });
-  return SECTION_ORDER.flatMap(s => groups[s] || []);
-}
-
-function saveState() {
-  sessionStorage.setItem('fatscran-state', JSON.stringify({ section: activeSection, query: document.getElementById('search-input').value, sort: document.getElementById('sort-select').value }));
-}
-
-function restoreState() {
-  try {
-    const state = JSON.parse(sessionStorage.getItem('fatscran-state') || 'null');
-    if (!state) return;
-    activeSection = state.section || 'all';
-    document.getElementById('search-input').value = state.query || '';
-    document.getElementById('sort-select').value  = state.sort  || 'default';
-    document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
-  } catch(e) {}
-}
-
-function renderCards(list) {
-  const grid  = document.getElementById('recipe-grid');
-  const count = document.getElementById('result-count');
-
-  if (list.length === 0) {
-    if (activeSection === 'favourites') {
-      grid.innerHTML = `<div class="empty-state empty-state--full"><p class="empty-state__title">No favourites yet</p><p class="empty-state__body">Tap the &#9825; on any recipe card to save it here.</p><button class="btn-primary-sm" onclick="setSection('all')">Browse all recipes</button></div>`;
-    } else {
-      grid.innerHTML = '<p class="no-results">No recipes found.</p>';
-    }
-    count.textContent = '';
-    return;
-  }
-
-  count.textContent = 'Showing ' + list.length + ' recipe' + (list.length === 1 ? '' : 's');
-
-  grid.innerHTML = list.map(r => {
-    const isFav     = currentFavs.includes(r.id);
-    const imageBlock = r.image ? `<div class="card-image"><img src="${escapeHtml(supabaseImgUrl(r.image, 400, 80))}" alt="${escapeHtml(r.title)}" loading="lazy"></div>` : '';
-    const adminBtn   = isAdmin ? `<button onclick="event.preventDefault();event.stopPropagation();window.location='admin.html?edit=${r.id}'" class="card-admin-btn" title="Edit recipe">&#9998;</button>` : '';
-    return `
-      <a class="recipe-card" href="recipe.html?id=${r.id}" onclick="saveState()">
-        ${imageBlock}
-        <div class="card-top">
-          <span class="card-name">${escapeHtml(r.title)}</span>
-          <div class="card-top-actions">
-            ${adminBtn}
-            <button onclick="toggleFav(${r.id}, event)" class="fav-btn ${isFav ? 'fav-btn--active' : ''}" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}">${isFav ? '&#9829;' : '&#9825;'}</button>
-            <span class="${badgeClass(r.section)}">${escapeHtml(r.section)}</span>
-          </div>
-        </div>
-        <div class="card-cooktime">${clockIconSvg(13)}<span>${escapeHtml(r.cookTime)}</span></div>
-        <div class="card-stats">
-          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.calories}</span><span class="stat-label">kcal</span></div>
-          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.protein}g</span><span class="stat-label">protein</span></div>
-          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.carbs}g</span><span class="stat-label">carbs</span></div>
-          <div class="stat-block"><span class="stat-value">${r.macrosPerPortion.fat}g</span><span class="stat-label">fat</span></div>
-        </div>
-        <div class="card-footer-label">per portion</div>
-      </a>`;
-  }).join('');
-}
-
-function setSection(section) {
-  activeSection = section;
-  document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.section === activeSection));
-  applyFilters();
-}
-
-function applyFilters() {
-  const query  = document.getElementById('search-input').value;
-  const sortBy = document.getElementById('sort-select').value;
-  let filtered = allRecipes.filter(r =>
-    (activeSection === 'all' || (activeSection === 'favourites' ? currentFavs.includes(r.id) : r.section === activeSection)) &&
-    recipeMatchesSearch(r, query)
-  );
-  filtered = sortBy === 'default' ? groupBySection(filtered) : sortWithinGroups(filtered, sortBy);
-  renderCards(filtered);
-}
-
-document.getElementById('filters').addEventListener('click', e => {
-  const btn = e.target.closest('.filter-btn');
-  if (!btn) return;
-  setSection(btn.dataset.section);
-});
-
-async function onAuthStateChange() {
-  isAdmin     = await checkIsAdmin();
-  currentFavs = await getFavs();
-  // Show/hide admin nav link
-  updateAdminNav();
-  applyFilters();
-}
-
-function updateAdminNav() {
-  const existing = document.getElementById('admin-nav-link');
-  if (isAdmin && !existing) {
-    const nav = document.querySelector('.nav-links');
-    const li  = document.createElement('li');
-    li.id = 'admin-nav-link';
-    li.innerHTML = `<a href="admin.html">+ New Recipe</a>`;
-    nav.insertBefore(li, nav.lastElementChild);
-  } else if (!isAdmin && existing) {
-    existing.remove();
-  }
+function onAuthStateChange() {
+  updateHeroCtas();
 }
 
 async function init() {
   await initAuth();
-  [allRecipes, currentFavs, isAdmin] = await Promise.all([fetchAllRecipes(), getFavs(), checkIsAdmin()]);
-  restoreState();
-  if (!allRecipes.some(r => r.section === 'sauces')) {
-    const saucesBtn = document.querySelector('.filter-btn[data-section="sauces"]');
-    if (saucesBtn) saucesBtn.style.display = 'none';
-  }
-  updateAdminNav();
-  applyFilters();
+  updateHeroCtas();
 }
 
 init();

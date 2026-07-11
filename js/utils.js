@@ -75,6 +75,13 @@ function badgeClass(section) {
   return 'badge badge-' + section.toLowerCase();
 }
 
+function sectionLabel(section) {
+  if (!section) return '';
+  if (section === 'dinner') return 'Lunch';
+  if (section === 'tea')    return 'Dinner';
+  return section.charAt(0).toUpperCase() + section.slice(1);
+}
+
 function parseCookTime(str) {
   if (!str) return 9999;
   const hrs  = (str.match(/(\d+)\s*hr/)  || [0, 0])[1];
