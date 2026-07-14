@@ -24,7 +24,7 @@ let _currentSession = null;
 // the page's init() handles initial data load itself.
 _supabase.auth.onAuthStateChange((event, session) => {
   _currentSession = session;
-  if (event === 'SIGNED_OUT') sessionStorage.removeItem('fatscran-state');
+  if (event === 'SIGNED_OUT') { sessionStorage.removeItem('fatscran-state'); localStorage.removeItem('fatscran-list-cache'); }
   updateNavAuth();
   if (['SIGNED_IN', 'SIGNED_OUT'].includes(event) && typeof onAuthStateChange === 'function') {
     onAuthStateChange();
@@ -126,8 +126,14 @@ async function getListSync() {
       .select('recipe_id,portions')
       .order('created_at', { ascending: true });
     if (error) throw error;
-    return data.map(r => ({ id: r.recipe_id, portions: r.portions }));
-  } catch(e) { console.error('getListSync', e); if (typeof Sentry !== 'undefined') Sentry.captureException(e); return getList(); }
+    const list = data.map(r => ({ id: r.recipe_id, portions: r.portions }));
+    localStorage.setItem('fatscran-list-cache', JSON.stringify(list));
+    return list;
+  } catch(e) {
+    console.error('getListSync', e);
+    if (typeof Sentry !== 'undefined') Sentry.captureException(e);
+    try { return JSON.parse(localStorage.getItem('fatscran-list-cache') || '[]'); } catch(_) { return []; }
+  }
 }
 
 async function saveListSync(list) {
