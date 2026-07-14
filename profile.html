@@ -304,9 +304,44 @@ function renderProfile(p) {
         <span class="profile-save-status" id="save-status"></span>
       </div>
 
+      <div class="danger-zone">
+        <p class="danger-zone__label">Danger zone</p>
+        <button class="btn-danger" id="delete-btn" onclick="deleteAccount()">Delete account</button>
+        <p class="danger-zone__status" id="delete-status"></p>
+      </div>
+
     </div>`;
 
   if (currentTab === 'tdee') recalc();
+}
+
+async function deleteAccount() {
+  if (!confirm('This will permanently delete your account and all your data. This cannot be undone. Are you sure?')) return;
+
+  const statusEl = document.getElementById('delete-status');
+  const btn      = document.getElementById('delete-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
+  if (statusEl) statusEl.style.display = 'none';
+
+  try {
+    const session = getSession();
+    const res = await fetch(
+      SUPABASE_URL + '/functions/v1/delete-account',
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + session.access_token },
+      }
+    );
+    if (!res.ok) throw new Error('non-200');
+    await _supabase.auth.signOut();
+    window.location.href = '/';
+  } catch(err) {
+    if (statusEl) {
+      statusEl.textContent = 'Account deletion failed. Please try again or contact wittermarley@gmail.com';
+      statusEl.style.display = 'block';
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete account'; }
+  }
 }
 
 async function init() {
