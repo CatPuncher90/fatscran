@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Profile — FatScran</title>
+  <title>My Profile | FatScran</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
@@ -269,9 +269,9 @@ function renderProfile(p) {
         <div class="form-group">
           <label>Protein multiplier</label>
           <div class="radio-group">
-            <label class="radio-label"><input type="radio" name="prof-protein" value="1.6" ${chk(mult,1.6)} onchange="recalc()"> 1.6 g/kg &mdash; minimum</label>
-            <label class="radio-label"><input type="radio" name="prof-protein" value="2.0" ${chk(mult,2.0) || (!p?.protein_multiplier ? 'checked' : '')} onchange="recalc()"> 2 g/kg &mdash; recommended</label>
-            <label class="radio-label"><input type="radio" name="prof-protein" value="2.4" ${chk(mult,2.4)} onchange="recalc()"> 2.4 g/kg &mdash; high</label>
+            <label class="radio-label"><input type="radio" name="prof-protein" value="1.6" ${chk(mult,1.6)} onchange="recalc()"> 1.6 g/kg (minimum)</label>
+            <label class="radio-label"><input type="radio" name="prof-protein" value="2.0" ${chk(mult,2.0) || (!p?.protein_multiplier ? 'checked' : '')} onchange="recalc()"> 2 g/kg (recommended)</label>
+            <label class="radio-label"><input type="radio" name="prof-protein" value="2.4" ${chk(mult,2.4)} onchange="recalc()"> 2.4 g/kg (high)</label>
           </div>
         </div>
 

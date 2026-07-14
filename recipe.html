@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FatScran — High Protein Meal Prep</title>
+  <title>FatScran | High Protein Meal Prep</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
@@ -61,7 +61,7 @@ function shareRecipe() {
   const url      = window.location.href;
   const shareBtn = document.getElementById('share-btn');
   if (navigator.share) {
-    navigator.share({ title: recipe.title + ' — FatScran', url });
+    navigator.share({ title: recipe.title + ' | FatScran', url });
   } else {
     navigator.clipboard.writeText(url).then(() => {
       const label = shareBtn.querySelector('.btn-label');
@@ -173,7 +173,7 @@ function setStars(n) {
 }
 
 function renderPage() {
-  document.title = recipe.title + ' — FatScran';
+  document.title = recipe.title + ' | FatScran';
 
   const ingredientRows = recipe.ingredients.map(ing => `<li><span>${escapeHtml(ing.name)}</span><span class="ing-qty">${ing.amount === null ? escapeHtml(ing.unit) : (Math.round(ing.amount * (portions / recipe.basePortions) * 100) / 100) + ' ' + escapeHtml(ing.unit)}</span></li>`).join('');
   const methodSteps    = recipe.steps.map((step, i) => `<li><span class="step-num">${i + 1}</span><span class="step-text"><strong>${escapeHtml(step.title)}:</strong> ${escapeHtml(step.description)}</span></li>`).join('');
@@ -285,7 +285,7 @@ function changePortion(delta) {
 
 async function init() {
   if (!recipeId || isNaN(recipeId)) {
-    document.title = 'Not Found — FatScran';
+    document.title = 'Not Found | FatScran';
     mainEl.innerHTML = `<a href="recipes.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
     return;
   }
@@ -293,7 +293,7 @@ async function init() {
   [recipe, isAdmin] = await Promise.all([fetchRecipeByIdDirect(recipeId), checkIsAdmin()]);
 
   if (!recipe) {
-    document.title = 'Not Found — FatScran';
+    document.title = 'Not Found | FatScran';
     mainEl.innerHTML = `<a href="recipes.html" class="back-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>All Recipes</a><div class="not-found-state"><p class="not-found-state__title">Recipe not found</p><p>The recipe you're looking for doesn't exist.</p></div>`;
     return;
   }
